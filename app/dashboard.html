@@ -25,33 +25,20 @@
 			<app-header></app-header>
 			<app-goback></app-goback>
 			<app-body>
-				<div class="search-card">
-					<a class="logo-box" href="#farmacia">
-						<img src="https://api.assistentefarmacia.it/uploads/images/placeholder-logo-farmacia.jpg" alt="Logo Farmacia" width="130" height="40" />
-					</a>
-
-					<p class="ai-helper-text">Scrivi qui la tua richiesta: la nostra farmacista virtuale ti risponderà in pochi secondi.</p>
-
-					<div class="input-row">
-						<img src="https://api.assistentefarmacia.it/uploads/images/placeholder-assistente.jpg" class="avatar" alt="Avatar" width="44" height="44" />
-
-						<input id="smart-search" class="search-input" type="text" readonly placeholder="Chiedi al nostro assistente digitale AI..." onclick="goTo(AppURLs.page.chatbot())" />
-
-						<script>
-							const esempi = [
-								"Orari farmacia",
-								"Info Farmaco o equivalente",
-								"Consigli benessere",
-								"Servizi disponibili"
-							];
-							let i = 0;
-							setInterval(() => {
-								document.getElementById("smart-search").placeholder = "Chiedi: " + esempi[i];
-								i = (i + 1) % esempi.length;
-							}, 3000);
-						</script>
+				<section class="dashboard-topbar-card" aria-label="Intestazione dashboard">
+					<div class="dashboard-topbar-card__left">
+						<div class="dashboard-topbar-card__logo" aria-hidden="true">
+							<img src="./assets/favicon/favicon-96x96.png" alt="" width="28" height="28" />
+						</div>
+						<div class="dashboard-topbar-card__text">
+							<h1 class="dashboard-topbar-card__title">AssistenteFarmacia.it</h1>
+							<p class="dashboard-topbar-card__subtitle">Home</p>
+						</div>
 					</div>
-				</div>
+					<button class="dashboard-topbar-card__menu" type="button" aria-label="Apri menu" onclick="document.querySelector('.btn-trigger-menu')?.click()">
+						<i class="fa-solid fa-bars" aria-hidden="true"></i>
+					</button>
+				</section>
 				<!-- Hero CTA Ordina Ricetta -->
 				<section class="hero-cta" aria-label="Richiedi prodotti">
 					<div class="hero-cta__content">
