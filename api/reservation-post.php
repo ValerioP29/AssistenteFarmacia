@@ -16,16 +16,32 @@ if( ! $user ){
 
 $pharma = getMyPharma();
 
+function parse_boolish($value){
+	if (is_bool($value)) return $value;
+	if ($value === null) return false;
+	if (is_int($value) || is_float($value)) return (int)$value === 1;
+	$value = strtolower(trim((string)$value));
+	return in_array($value, ['1', 'true', 'yes', 'on'], true);
+}
+
+function parse_json_array($value){
+	if (!is_string($value) || trim($value) === '') return [];
+	$decoded = json_decode($value, true);
+	if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) return [];
+	return $decoded;
+}
+
 //------------------------------------------------
 
 $input = $_POST;
 $files = $_FILES;
 
-$products = $input['products'] ? json_decode($input['products'], true) : [];
+$products = parse_json_array($input['products'] ?? '');
 $pickup   = $input['pickup'] ?? null;
 $note     = $input['note'] ?? '';
-$urgent   = $input['urgent'] === 'true';
-$delivery = $input['delivery'] === 'true';
+$urgent   = parse_boolish($input['urgent'] ?? false);
+$salta_fila = parse_boolish($input['salta_fila'] ?? false);
+$delivery = parse_boolish($input['delivery'] ?? false);
 
 $items = $products ?? [];
 if( empty($products) ){
@@ -141,6 +157,10 @@ if ($pickup) {
     $orderSummary .= "\n📅 Ritiro previsto: *$date*";
 }
 
+if ($salta_fila) {
+    $orderSummary .= "\n⚡ Opzione salta fila richiesta";
+}
+
 if ($delivery) {
     $orderSummary .= "\n📮 Si richiede consegna a domicilio";
 }
@@ -170,6 +190,7 @@ $metadata = [
 	'pickup'   => $pickup,
 	'note'     => $note,
 	'urgent'   => $urgent,
+	'salta_fila' => $salta_fila,
 	'delivery' => $delivery,
 ];
 

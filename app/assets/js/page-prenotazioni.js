@@ -6,12 +6,25 @@ const ReservationForm = {
 	table: null,
 	currProd: null,
 	sending: false,
+	relatedTagsPreset: [
+		{value: 'dolore_febbre', label: 'Dolore/Febbre'},
+		{value: 'raffreddore_influenza', label: 'Raffreddore/Influenza'},
+		{value: 'gola', label: 'Gola'},
+		{value: 'tosse', label: 'Tosse'},
+		{value: 'gastro', label: 'Gastro'},
+		{value: 'vitamine_integratori', label: 'Vitamine/Integratori'},
+		{value: 'dermocosmesi', label: 'Dermocosmesi'},
+		{value: 'igiene_orale', label: 'Igiene orale'},
+		{value: 'naso', label: 'Naso'},
+		{value: 'occhi', label: 'Occhi'},
+	],
 
 	init() {
 		this.form = document.querySelector('#form-reservation');
 		this.picker = document.querySelector('#pickup');
 		this.table = document.querySelector('#product-summary');
 
+		this.initRelatedProducts();
 		this.initTomSelect();
 		// this.resetCartData();
 		this.resetForm();
@@ -119,6 +132,145 @@ const ReservationForm = {
 				el.classList.add('d-none');
 			}
 		});
+
+		const relatedBlock = document.querySelector('#related-products-block');
+		if (relatedBlock) {
+			relatedBlock.classList.toggle('d-none', val !== 0);
+		}
+		const relatedBlockRx = document.querySelector('#related-products-block-rx');
+		if (relatedBlockRx) {
+			relatedBlockRx.classList.toggle('d-none', val !== 1);
+		}
+
+		if (val === 0) {
+			this.loadRelatedProducts(document.querySelector('#related-tag-select')?.value || '', 0);
+		} else if (val === 1) {
+			this.loadRelatedProducts(document.querySelector('#related-seed-tag-prescription')?.value || '', 1);
+		}
+	},
+	initRelatedProducts() {
+		const selectNoRx = document.querySelector('#related-tag-select');
+		if (selectNoRx && selectNoRx.options.length <= 1) {
+			this.relatedTagsPreset.forEach((tag) => {
+				const option = document.createElement('option');
+				option.value = tag.value;
+				option.textContent = tag.label;
+				selectNoRx.appendChild(option);
+			});
+		}
+
+		selectNoRx?.addEventListener('change', () => {
+			this.loadRelatedProducts(selectNoRx.value || '', 0);
+		});
+
+		const selectRx = document.querySelector('#related-seed-tag-prescription');
+		selectRx?.addEventListener('change', () => {
+			this.loadRelatedProducts(selectRx.value || '', 1);
+		});
+	},
+	getRelatedElementsByMode(mode = 0) {
+		if (mode === 1) {
+			return {
+				listEl: document.querySelector('#related-products-list-rx'),
+				emptyEl: document.querySelector('#related-products-empty-rx'),
+			};
+		}
+
+		return {
+			listEl: document.querySelector('#related-products-list'),
+			emptyEl: document.querySelector('#related-products-empty'),
+		};
+	},
+	getSelectedProductIdsForRelated() {
+		if (!this.cart?.products?.length) return [];
+		return this.cart.products
+			.map((p) => p?.product?.id)
+			.filter((id) => Number.isInteger(id) || (!Number.isNaN(parseInt(id, 10)) && parseInt(id, 10) > 0))
+			.map((id) => parseInt(id, 10));
+	},
+	formatRelatedPrice(item) {
+		const sale = item.sale_price !== null && item.sale_price !== undefined && item.sale_price !== '';
+		const price = item.price !== null && item.price !== undefined && item.price !== '';
+		if (!sale && !price) return 'Prezzo su richiesta';
+		if (sale) return `€${parseFloat(item.sale_price).toFixed(2)}`;
+		return `€${parseFloat(item.price).toFixed(2)}`;
+	},
+	renderRelatedProducts(products = [], mode = 0) {
+		const {listEl, emptyEl} = this.getRelatedElementsByMode(mode);
+		if (!listEl || !emptyEl) return;
+
+		listEl.innerHTML = '';
+		if (!Array.isArray(products) || products.length === 0) {
+			emptyEl.classList.remove('d-none');
+			return;
+		}
+
+		emptyEl.classList.add('d-none');
+		products.forEach((item) => {
+			const row = document.createElement('div');
+			row.className = 'related-product-item';
+			row.innerHTML = `
+				<div>
+					<div class="related-product-item__name">${escapeHtml(item.name || 'Prodotto')}</div>
+					<div class="related-product-item__price">${this.formatRelatedPrice(item)}</div>
+				</div>
+				<button class="btn btn-outline-primary btn-sm" type="button">Aggiungi</button>
+			`;
+
+			row.querySelector('button')?.addEventListener('click', () => {
+				const relatedData = {
+					type: 0,
+					product: {
+						id: item.id,
+						name: item.name,
+						code: item.sku || 'N/A',
+						price: item.price ?? null,
+						sale_price: item.sale_price ?? null,
+						thumbnail: item.image ? (item.image.startsWith('http') ? item.image : `https://app.assistentefarmacia.it/panel/${item.image}`) : null,
+					},
+					name: item.name,
+					code: item.sku || 'N/A',
+					price: item.sale_price ? item.sale_price : item.price,
+					qty: 1,
+				};
+
+				if (!this.currProductIsValid(relatedData, true)) return;
+				this.addProduct(relatedData);
+				showToast?.('Suggerimento aggiunto', 'success');
+			});
+
+			listEl.appendChild(row);
+		});
+	},
+	loadRelatedProducts(tag = '', mode = null) {
+		if (mode === null) mode = this.getSubOrderChecked();
+		if (![0, 1].includes(mode)) return;
+
+		const pharmaId = dataStore.pharma?.id;
+		if (!pharmaId) return;
+
+		const url = new URL(AppURLs.api.productSuggestions());
+		url.searchParams.set('pharma_id', pharmaId);
+		url.searchParams.set('related_mode', '1');
+		url.searchParams.set('limit', '8');
+		if (tag && tag !== 'altro') url.searchParams.set('related_tag', tag);
+
+		const selectedIds = this.getSelectedProductIdsForRelated();
+		if (selectedIds.length > 0) {
+			url.searchParams.set('exclude_ids', selectedIds.join(','));
+		}
+
+		appFetchWithToken(url.toString(), {method: 'GET'})
+			.then((data) => {
+				if (data?.status && Array.isArray(data?.data?.products)) {
+					this.renderRelatedProducts(data.data.products, mode);
+				} else {
+					this.renderRelatedProducts([], mode);
+				}
+			})
+			.catch(() => {
+				this.renderRelatedProducts([], mode);
+			});
 	},
 	setSubOrderType(type) {
 		const input = this.form.querySelector('#suborder-type--' + type);
@@ -358,6 +510,7 @@ const ReservationForm = {
 			note: '',
 			pickup: null,
 			urgent: false,
+			salta_fila: false,
 			delivery: false,
 		};
 	},
@@ -415,12 +568,22 @@ const ReservationForm = {
 		this.addProductToTable(data);
 		this.setVisProductsTable(this.countCartItems() > 0);
 		this.resetSubFormProduct();
+		const mode = this.getSubOrderChecked();
+		const selectedTag = mode === 1
+			? document.querySelector('#related-seed-tag-prescription')?.value || ''
+			: document.querySelector('#related-tag-select')?.value || '';
+		this.loadRelatedProducts(selectedTag, mode);
 	},
 
 	removeProduct(uuid) {
 		this.removeProductFromCart(uuid);
 		this.removeProductFromTable(uuid);
 		this.setVisProductsTable(this.countCartItems() > 0);
+		const mode = this.getSubOrderChecked();
+		const selectedTag = mode === 1
+			? document.querySelector('#related-seed-tag-prescription')?.value || ''
+			: document.querySelector('#related-tag-select')?.value || '';
+		this.loadRelatedProducts(selectedTag, mode);
 	},
 
 	insertProduct() {
@@ -484,6 +647,7 @@ const ReservationForm = {
 			note: document.querySelector('#note').value,
 			delivery: !!document.querySelector('#delivery')?.checked,
 			urgent: !!document.querySelector('#urgent')?.checked,
+			salta_fila: !!document.querySelector('#salta-fila')?.checked,
 			pickup: document.querySelector('#pickup').value.trim(),
 		};
 
@@ -549,6 +713,7 @@ const ReservationForm = {
 		formData.append('pickup', cartMeta.pickup);
 		formData.append('note', cartMeta.note);
 		formData.append('urgent', cartMeta.urgent);
+		formData.append('salta_fila', cartMeta.salta_fila);
 		formData.append('delivery', cartMeta.delivery);
 
 		cart.products.forEach((p, idx) => {

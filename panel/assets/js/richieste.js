@@ -351,6 +351,7 @@ class RichiesteManager {
     renderRequestDetails(request) {
         const content = document.getElementById('requestDetailsContent');
         const productsTable = renderProductsTableFromMeta(request.metadata);
+        const optionsRow = renderRequestOptionsFromMeta(request.metadata);
         
         content.innerHTML = `
             <div class="row">
@@ -400,6 +401,7 @@ class RichiesteManager {
             </div>
 
             ${productsTable}
+            ${optionsRow}
 
             <div class="row mt-3">
                 <div class="col-12">
@@ -809,6 +811,24 @@ class RichiesteManager {
     }
 
 
+}
+
+function renderRequestOptionsFromMeta(meta) {
+  const m = parseMetadataRequest(meta);
+  const saltaFila = !!(parseInt(m?.salta_fila, 10) || 0);
+  const domicilio = !!(parseInt(m?.delivery, 10) || parseInt(m?.domicilio, 10) || 0);
+
+  return `
+    <div class="row mt-2">
+      <div class="col-12">
+        <h6><i class="fas fa-sliders-h me-2"></i>Opzioni ordine</h6>
+        <div class="d-flex flex-wrap gap-2">
+          <span class="badge ${saltaFila ? 'bg-success' : 'bg-secondary'}">Salta fila: ${saltaFila ? 'Sì' : 'No'}</span>
+          <span class="badge ${domicilio ? 'bg-success' : 'bg-secondary'}">Domicilio: ${domicilio ? 'Sì' : 'No'}</span>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 function nl2br(str) {

@@ -1,0 +1,549 @@
+{
+    "pharma_id": 1,
+    "items": [
+        {
+            "sku": "53025",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "248031",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "248056",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "307037",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "307052",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "367058",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "367072",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "367108",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "550044",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "550057",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "590012",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "590036",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "590051",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "872010",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "872034",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "917017",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "1042023",
+            "tags": [
+                "sonno_stress"
+            ],
+            "is_featured": 1
+        },
+        {
+            "sku": "1328020",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "1340025",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "1740063",
+            "tags": [
+                "dermocosmesi",
+                "allergia"
+            ],
+            "is_featured": 1
+        },
+        {
+            "sku": "1802026",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "2021032",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "2021069",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "2039055",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "2089151",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "2089187",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "2238044",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "2427274",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "2646077",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "2860017",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "2868014",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "2918047",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "2918050",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "2922060",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "2955060",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "2955108",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "2992016",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "3060023",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "3235049",
+            "tags": [
+                "occhi"
+            ],
+            "is_featured": 1
+        },
+        {
+            "sku": "3235076",
+            "tags": [
+                "occhi"
+            ],
+            "is_featured": 1
+        },
+        {
+            "sku": "3337033",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "3366147",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "3366150",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "3366186",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "3366198",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "3366200",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "3410065",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "3763164",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "3763176",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "3763190",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "3763214",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "3763238",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "3763265",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "3763277",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "3785033",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "3785058",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "3785072",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "3803095",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "3950019",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "4123030",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "4198065",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "4225013",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "4225025",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "4287025",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "4308019",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "4347011",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "4446011",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "4535011",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "4558197",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "4558209",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "4667022",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "4763037",
+            "tags": [
+                "dolore_febbre"
+            ],
+            "is_featured": 1
+        },
+        {
+            "sku": "4763114",
+            "tags": [
+                "dolore_febbre"
+            ],
+            "is_featured": 1
+        },
+        {
+            "sku": "4763153",
+            "tags": [
+                "dolore_febbre"
+            ],
+            "is_featured": 1
+        },
+        {
+            "sku": "4763254",
+            "tags": [
+                "dolore_febbre"
+            ],
+            "is_featured": 1
+        },
+        {
+            "sku": "4763330",
+            "tags": [
+                "dolore_febbre"
+            ],
+            "is_featured": 1
+        },
+        {
+            "sku": "4763379",
+            "tags": [
+                "dolore_febbre"
+            ],
+            "is_featured": 1
+        },
+        {
+            "sku": "4763405",
+            "tags": [
+                "dolore_febbre"
+            ],
+            "is_featured": 1
+        },
+        {
+            "sku": "4763544",
+            "tags": [
+                "dolore_febbre"
+            ],
+            "is_featured": 1
+        },
+        {
+            "sku": "4763557",
+            "tags": [
+                "dolore_febbre"
+            ],
+            "is_featured": 1
+        },
+        {
+            "sku": "4844015",
+            "tags": [
+                "medicazione"
+            ],
+            "is_featured": 1
+        },
+        {
+            "sku": "4844027",
+            "tags": [
+                "medicazione"
+            ],
+            "is_featured": 1
+        },
+        {
+            "sku": "4853014",
+            "tags": [
+                "sonno_stress"
+            ],
+            "is_featured": 1
+        },
+        {
+            "sku": "4853026",
+            "tags": [
+                "sonno_stress"
+            ],
+            "is_featured": 1
+        },
+        {
+            "sku": "4853053",
+            "tags": [
+                "sonno_stress"
+            ],
+            "is_featured": 1
+        },
+        {
+            "sku": "4880023",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "4894010",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "4901043",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "4901056",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "4901068",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "4901195",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "4901219",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "4901233",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "4905117",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "4905129",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "4905143",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "4930020",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "4961049",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "5064187",
+            "tags": null,
+            "is_featured": 1
+        },
+        {
+            "sku": "5064201",
+            "tags": null,
+            "is_featured": 1
+        }
+    ],
+    "meta": {
+        "source": "/workspace/AssistenteFarmacia/panel/scripts/../import/prodotti-giovinazzi.csv",
+        "pool_size": 200,
+        "featured_target": 100,
+        "generated_at": "2026-02-24T17:01:59+00:00",
+        "note": "Pool da CSV: non disponibile stato is_active/image, usato criterio fallback documentato."
+    }
+}

@@ -81,6 +81,9 @@ try {
     
     // Decodifica metadata
     $metadata = json_decode($request['metadata'], true) ?: [];
+$metadata['salta_fila'] = !empty($metadata['salta_fila']) ? 1 : 0;
+$metadata['delivery'] = !empty($metadata['delivery']) ? 1 : 0;
+$metadata['domicilio'] = $metadata['delivery'];
     
             // Formatta la risposta
         $formattedRequest = [

@@ -13,6 +13,56 @@ checkAccess(['pharmacist']);
 
 header('Content-Type: application/json');
 
+function parseBoolishValue($value): int {
+    return in_array($value, ['1', 1, true, 'true', 'on', 'yes'], true) ? 1 : 0;
+}
+
+function normalizeProductTagsInput($rawTags): ?array {
+    if ($rawTags === null) {
+        return null;
+    }
+
+    $tags = [];
+
+    if (is_string($rawTags)) {
+        $rawTags = trim($rawTags);
+        if ($rawTags === '') {
+            return null;
+        }
+
+        $decoded = json_decode($rawTags, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            $tags = $decoded;
+        } else {
+            $tags = explode(',', $rawTags);
+        }
+    } elseif (is_array($rawTags)) {
+        $tags = $rawTags;
+    } else {
+        $tags = [$rawTags];
+    }
+
+    $normalized = [];
+    foreach ($tags as $tag) {
+        if (is_array($tag) || is_object($tag)) {
+            continue;
+        }
+
+        $tagValue = strtolower(trim((string)$tag));
+        if ($tagValue === '') {
+            continue;
+        }
+
+        $normalized[$tagValue] = true;
+    }
+
+    if (empty($normalized)) {
+        return null;
+    }
+
+    return array_keys($normalized);
+}
+
 try {
     // Ottieni farmacia corrente
     $pharmacy = getCurrentPharmacy();
@@ -45,6 +95,11 @@ try {
     $price = floatval($_POST['price'] ?? 0);
     $salePrice = !empty($_POST['sale_price']) ? floatval($_POST['sale_price']) : null;
     $isActive = isset($_POST['is_active']) ? 1 : 0;
+    $isFeaturedInputProvided = array_key_exists('is_featured', $_POST);
+    $isFeatured = $isFeaturedInputProvided ? parseBoolishValue($_POST['is_featured']) : null;
+    $tagsInputProvided = array_key_exists('tags', $_POST);
+    $normalizedTags = $tagsInputProvided ? normalizeProductTagsInput($_POST['tags']) : null;
+    $tagsForDb = $normalizedTags !== null ? json_encode($normalizedTags, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null;
     $productId = intval($_POST['product_id'] ?? 0); // ID del prodotto globale associato
     $createGlobalProduct = isset($_POST['create_global_product']) && $_POST['create_global_product'] === '1';
     
@@ -70,17 +125,23 @@ try {
     
     // Se è un aggiornamento, mantieni i valori esistenti se non specificati
     if ($id > 0) {
-        $existingProduct = db_fetch_one("SELECT is_on_sale, sale_start_date, sale_end_date FROM jta_pharma_prods WHERE id = ? AND pharma_id = ?", [$id, $pharmacyId]);
+        $existingProduct = db_fetch_one("SELECT is_on_sale, sale_start_date, sale_end_date, is_featured, tags FROM jta_pharma_prods WHERE id = ? AND pharma_id = ?", [$id, $pharmacyId]);
         if ($existingProduct) {
             $isOnSale = isset($_POST['is_on_sale']) ? 1 : ($existingProduct['is_on_sale'] ?? null);
             $saleStartDate = !empty($_POST['sale_start_date']) ? $_POST['sale_start_date'] : $existingProduct['sale_start_date'];
             $saleEndDate = !empty($_POST['sale_end_date']) ? $_POST['sale_end_date'] : $existingProduct['sale_end_date'];
+            $isFeatured = $isFeaturedInputProvided ? $isFeatured : (int)($existingProduct['is_featured'] ?? 0);
+
+            if (!$tagsInputProvided) {
+                $tagsForDb = $existingProduct['tags'] ?? null;
+            }
         }
     } else {
         // Per nuovi prodotti, usa i valori dal form se specificati
         $isOnSale = isset($_POST['is_on_sale']) ? 1 : null;
         $saleStartDate = !empty($_POST['sale_start_date']) ? $_POST['sale_start_date'] : null;
         $saleEndDate = !empty($_POST['sale_end_date']) ? $_POST['sale_end_date'] : null;
+        $isFeatured = $isFeaturedInputProvided ? $isFeatured : 0;
     }
     
     // Validazione
@@ -217,9 +278,11 @@ try {
             'price' => $price,
             'sale_price' => $salePrice,
             'is_active' => $isActive, 
+            'is_featured' => $isFeatured,
             'is_on_sale' => $isOnSale,
             'sale_start_date' => $saleStartDate,
-            'sale_end_date' => $saleEndDate
+            'sale_end_date' => $saleEndDate,
+            'tags' => $tagsForDb,
         ];
         
         // Aggiungi immagine se caricata
@@ -283,6 +346,8 @@ try {
         'description' => $description,
         'price' => $price,
         'is_active' => $isActive,
+        'is_featured' => $isFeatured,
+        'tags' => $tagsForDb,
     ];
 
     if (isset($_POST['sale_price']) && $_POST['sale_price'] !== '') {
