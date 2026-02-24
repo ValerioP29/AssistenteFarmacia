@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="it">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<title>Assistente Farmacia</title>
+
+		<!-- Favicon -->
+		<link rel="icon" type="image/png" href="./assets/favicon/favicon-96x96.png" sizes="96x96" />
+		<link rel="icon" type="image/svg+xml" href="./assets/favicon/favicon.svg" />
+		<link rel="shortcut icon" href="./assets/favicon/favicon.ico" />
+		<link rel="apple-touch-icon" sizes="180x180" href="./assets/favicon/apple-touch-icon.png" />
+		<meta name="apple-mobile-web-app-title" content="Assistente" />
+		<link rel="manifest" href="./assets/favicon/site.webmanifest" />
+
+		<!-- Styles -->
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+		<link rel="stylesheet" href="./assets/css/style.min.css?v=1.1.1" />
+	</head>
+	<body class="page-app page-checkup loading">
+		<div id="app" class="app-container">
+			<app-header></app-header>
+			<app-goback></app-goback>
+			<app-body>
+				<app-card>
+					<h1>
+						<i class="fas fa-hand-holding-medical"></i>
+						Mini Check-Up Mani
+					</h1>
+					<div class="checkup-section">
+						<p>Con il Mini Check-Up Mani puoi valutare lo stato di idratazione e salute della tua pelle. Bastano pochi secondi per ricevere un'analisi gratuita e consigli personalizzati.</p>
+						<img src="https://assistentefarmacia.it/app-cliente-farmacia/mini-checkup/mani/mano.jpg" alt="Checkup mani" />
+
+						<div class="steps">
+							<p><strong>1. Scatta una foto nitida</strong></p>
+							<p><strong>2. Carica la foto</strong></p>
+							<p><strong>3. Ricevi subito la tua analisi personalizzata</strong></p>
+						</div>
+
+						<form id="checkupForm" data-checkup-type="mani" novalidate>
+							<div class="upload-btn-wrapper">
+								<label class="btn-upload">
+									<i class="fas fa-upload"></i>
+									Carica una foto
+									<input type="file" name="file" accept="image/*" id="checkupImage" required />
+								</label>
+								<div id="fileInfo" class="mt-2"></div>
+							</div>
+
+							<textarea id="notes" class="form-control" placeholder="Note aggiuntive (facoltative)"></textarea>
+							<button class="cta-button" type="submit">Ricevi il consiglio personalizzato</button>
+						</form>
+
+						<div id="checkupResult" class="checkupResult"></div>
+
+						<p class="disclaimer">Questo strumento non sostituisce un consulto medico. Le analisi fornite sono a scopo informativo e non rappresentano una diagnosi professionale.</p>
+					</div>
+				</app-card>
+			</app-body>
+			<app-footer></app-footer>
+		</div>
+
+		<!-- Scripts -->
+		<script type="module" src="./assets/components/layout.js?v=1.1.1"></script>
+		<script type="text/javascript" src="./assets/js/app.js?v=1.1.1"></script>
+		<script src="./assets/js/cart.js?v=1.1.1"></script>
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+		<script src="./assets/js/page-checkup.js?v=1.1.1"></script>
+	</body>
+</html>

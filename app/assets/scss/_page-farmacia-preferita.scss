@@ -1,0 +1,77 @@
+body.page-star-pharma {
+	h1 {
+		text-align: center;
+		color: $primary-color;
+		margin: 10px 0 20px;
+		font-weight: bold;
+		font-size: 20px;
+	}
+
+	.pharma-logo {
+		width: 50px;
+		margin-bottom: 10px;
+		border-radius: 50%;
+	}
+
+	.pharmacy {
+		border: 1px solid #ccc;
+		border-radius: 12px;
+		padding: 14px;
+		margin-bottom: 12px;
+		position: relative;
+
+		.name {
+			font-weight: bold;
+			font-size: 15px;
+			color: #6d2a93;
+		}
+
+		.address {
+			font-size: 13px;
+			color: #555;
+			margin-top: 4px;
+		}
+
+		.actions {
+			margin-top: 10px;
+			display: flex;
+			gap: 10px;
+
+			button {
+				padding: 6px 10px;
+				font-size: 13px;
+				border: none;
+				border-radius: 6px;
+				cursor: pointer;
+				background-color: #f91818;
+			}
+
+			.set-default {
+				background: #6d2a93;
+				color: white;
+			}
+		}
+	}
+
+	.preferred-pharmacy {
+		background-color: #6d2a93;
+		color: white;
+		border: none;
+
+		.name,
+		.address {
+			color: white;
+		}
+	}
+
+	.pharmacy-list-empty {
+		font-style: italic;
+		font-size: 14px;
+	}
+
+	.section-label {
+		font-weight: bold;
+		color: #555;
+		margin-bottom: 10px;
+	}
+}

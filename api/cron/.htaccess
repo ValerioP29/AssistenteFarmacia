@@ -1,0 +1,3 @@
+# Blocca accessi web alla cartella cron
+Order Deny,Allow
+Deny from all 

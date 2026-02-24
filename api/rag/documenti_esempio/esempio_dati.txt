@@ -1,0 +1,11 @@
+Nome,Cognome,Età,Città,Professione
+Mario,Rossi,35,Milano,Ingegnere
+Anna,Bianchi,28,Roma,Designer
+Luca,Verdi,42,Torino,Medico
+Sofia,Neri,31,Napoli,Avvocato
+Giuseppe,Gialli,39,Palermo,Architetto
+Elena,Rossi,26,Bologna,Insegnante
+Marco,Bianchi,45,Firenze,Imprenditore
+Laura,Verdi,33,Genova,Psicologa
+Paolo,Neri,37,Bari,Programmatore
+Chiara,Gialli,29,Catania,Artista 

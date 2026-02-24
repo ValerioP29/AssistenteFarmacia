@@ -1,0 +1,15 @@
+:root {
+	--primary-color: #{$primary-color};
+	// --secondary-color: #{$secondary-color};
+	// --accent-color   : #{$accent-color};
+
+	--body-bg: #{$body-bg};
+	--text-color: #{$text-color};
+
+	--app-padding-x: #{$app_padding_x};
+	--app-padding-y: #{$app_padding_y};
+
+	--app-width: #{$app_width};
+
+	--bg-rainbow: #{$bg-rainbow};
+}

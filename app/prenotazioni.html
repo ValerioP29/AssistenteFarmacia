@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="it">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<title>Assistente Farmacia</title>
+
+		<!-- Favicon -->
+		<link rel="icon" type="image/png" href="./assets/favicon/favicon-96x96.png" sizes="96x96" />
+		<link rel="icon" type="image/svg+xml" href="./assets/favicon/favicon.svg" />
+		<link rel="shortcut icon" href="./assets/favicon/favicon.ico" />
+		<link rel="apple-touch-icon" sizes="180x180" href="./assets/favicon/apple-touch-icon.png" />
+		<meta name="apple-mobile-web-app-title" content="Assistente" />
+		<link rel="manifest" href="./assets/favicon/site.webmanifest" />
+
+		<!-- Styles -->
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+		<link rel="stylesheet" href="./assets/css/style.min.css?v=1.1.1" />
+
+		<!-- Tom Select CSS -->
+		<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet" />
+
+		<style></style>
+	</head>
+
+	<body class="page-app page-reservation loading">
+		<div id="app" class="app-container">
+			<app-header></app-header>
+			<app-goback></app-goback>
+			<app-body>
+				<app-card>
+					<h1>Prenota Prodotti</h1>
+
+					<form id="form-reservation" class="form-reservation" novalidate>
+						<div class="form-group mb-3 form-group--product">
+							<!-- Toggle per selezionare tipo di ordine -->
+							<div class="form-group mb-3">
+
+								<div class="btn-group w-100 suborder-type_group" role="group" aria-label="Per questi prodotti hai la ricetta oppure ordini senza?">
+									<input type="radio" class="btn-check" name="suborder-type" id="suborder-type--0" onchange="ReservationForm.updateSubOrderView();" value="0" autocomplete="off" checked>
+									<label class="btn btn-outline-primary" for="suborder-type--0">Senza ricetta</label>
+
+									<input type="radio" class="btn-check" name="suborder-type" id="suborder-type--1" onchange="ReservationForm.updateSubOrderView();" value="1" autocomplete="off">
+									<label class="btn btn-outline-primary" for="suborder-type--1">Con ricetta</label>
+								</div>
+							</div>
+
+							<div class="suborder-group suborder-group--0">
+								<div class="form-group form-group--ts _mb-3">
+									<label for="product-name" class="form-label">Prodotto</label>
+									<div class="ts-container">
+										<select id="product-name" class="w-100" placeholder="Inserisci il nome del prodotto"></select>
+										<!-- <input type="text" id="product-name" class="form-control" placeholder="Inserisci il nome del prodotto" /> -->
+									</div>
+								</div>
+
+								<div id="product-details"></div>
+
+								<div class="form-group mt-3 mb-3">
+									<label for="res-prod-qty" class="form-label">Quantit&agrave;</label>
+									<input type="number" id="res-prod-qty" class="form-control" min="1" max="99" value="1" step="1" />
+								</div>
+							</div>
+
+							<div class="suborder-group suborder-group--1 d-none">
+								<!-- Toggle per selezionare tipo di ricetta -->
+								<div class="form-group mb-3">
+									<label class="form-label">Tipo di ricetta</label>
+									<div class="form-check form-switch">
+										<input class="form-check-input" type="checkbox" id="res-prod-toggle-prescription" name="res-prod-toggle-prescription" onchange="ReservationForm.togglePrescription();" />
+										<label class="form-check-label" for="res-prod-toggle-prescription">Inserisci codice NRE</label>
+									</div>
+								</div>
+
+								<!-- Ricetta con file (mostrata di default) -->
+								<div class="form-group mb-3 form-group--file prescription-method prescription-file" id="upload-prescription-block">
+									<label for="res-prod-prescription" class="form-label">Carica ricetta</label>
+
+									<div>
+										<input type="file" class="form-control" id="res-prod-prescription" accept=".jpg,.jpeg,.png,.gif,.pdf,image/jpeg,image/png,image/gif,application/pdf" />
+
+										<button class="btn btn-danger btn-remove" type="button" onclick="ReservationForm.clearFileSelected();" title="Rimuovi file">
+											<i class="fas fa-trash-alt px-1"></i>
+										</button>
+									</div>
+								</div>
+
+								<!-- Ricetta con codice (nascosta inizialmente) -->
+								<div class="prescription-method prescription-method-nre d-none">
+									<div class="form-group mb-3" id="prescription-cf-code">
+										<label for="res-prod-cf" class="form-label">Codice fiscale</label>
+										<input type="text" class="form-control" id="res-prod-cf" placeholder="Es. XXXXXXXXXXXXXX" />
+									</div>
+
+									<div class="form-group mb-3" id="prescription-nre-code">
+										<label for="res-prod-nre" class="form-label">Codice ricetta (NRE-NRBE)</label>
+										<input type="text" class="form-control" id="res-prod-nre" placeholder="Es. 1300A4000000123" />
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<button type="button" class="btn btn-primary btn-add mb-4 w-100" onclick="ReservationForm.insertProduct()">+ Aggiungi al carrello</button>
+
+						<table id="product-summary" class="table product-table mb-3 d-none">
+							<thead>
+								<tr>
+									<th>Prodotto</th>
+									<th>Quantit&agrave;</th>
+								</tr>
+							</thead>
+							<tbody></tbody>
+						</table>
+
+						<div class="form-group mb-3">
+							<label for="pickup" class="form-label">Data e ora di ritiro <small>(opzionale)</small></label>
+							<div class="input-group">
+								<i class="icon fas fa-calendar-alt calendar-icon" onclick="ReservationForm.openCalendarPicker();"></i>
+								<input type="datetime-local" id="pickup" name="pickup" class="form-control booking-form" />
+							</div>
+						</div>
+
+						<div class="form-group mb-3">
+							<label for="note" class="form-label">Note aggiuntive</label>
+							<textarea id="note" name="note" rows="4" class="form-control" placeholder="Es. richieste particolari..."></textarea>
+						</div>
+
+						<div class="form-group mb-3 form-group--checkbox urgent-toggle">
+							<input type="checkbox" id="urgent" name="urgent" />
+							<label for="urgent">&Egrave; urgente</label>
+						</div>
+
+						<div class="form-group mb-3 form-group--checkbox delivery-toggle">
+							<input type="checkbox" id="delivery" name="delivery" />
+							<label for="delivery">Consegna a domicilio</label>
+						</div>
+
+						<p class="small text-muted">* La disponibilit&agrave; dei prodotti sar&agrave; verificata. Riceverai un messaggio di conferma su WhatsApp.</p>
+
+						<p class="small text-muted">** Le richieste inviate dopo le ore 13:00 potrebbero essere gestite il giorno successivo.</p>
+
+						<!-- <p id="total-price" class="text-end fw-bold mt-2">Totale: €0.00</p> -->
+
+						<div class="form-group">
+							<button type="submit" class="btn btn-primary w-100 cta-submit">
+								Conferma Prenotazione
+								<i class="icon-loading ms-1 fa-solid fa-spinner fa-spin-pulse"></i>
+							</button>
+						</div>
+					</form>
+				</app-card>
+				<app-footer></app-footer>
+			</app-body>
+		</div>
+
+		<script type="module" src="./assets/components/layout.js?v=1.1.1"></script>
+		<script type="text/javascript" src="./assets/js/app.js?v=1.1.1"></script>
+		<script src="./assets/js/cart.js?v=1.1.1"></script>
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js?v=1.1.1"></script>
+		<script src="./assets/js/page-prenotazioni.js?v=1.1.1"></script>
+	</body>
+</html>

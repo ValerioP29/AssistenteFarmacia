@@ -1,0 +1,118 @@
+// === HEADER ===
+.header {
+	$box-shadow: 0 11px 6px -10px rgba(0, 0, 0, 0.3);
+
+	position: fixed;
+	top: $app_padding_y;
+	left: 0;
+	right: 0;
+	z-index: 51;
+
+	width: calc(100% - 2 * #{$app_padding_x});
+	max-width: 400px;
+	margin: 0 auto;
+
+	background: $primary-color-1;
+	padding: 0 $app_padding_x;
+	border-radius: $border-radius;
+	box-shadow: $box-shadow;
+	font-family: $font-family-base;
+
+	.header-inner {
+		max-width: 1024px;
+		margin: 0 auto;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		height: 70px;
+		border-radius: $border-radius;
+		width: 100%;
+	}
+}
+
+// === TOOLBAR ===
+.toolbar {
+	display: flex;
+	align-items: center;
+	gap: $app_padding_x;
+
+	.btn-trigger-menu {
+		width: 36px;
+		height: 36px;
+		background: $primary-color;
+		color: #fff;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 2px;
+		cursor: pointer;
+		border: none;
+		transition: $transition-base;
+
+		&:hover {
+			background: $secondary-color;
+		}
+	}
+}
+
+// === MENU CONTENUTO ===
+.app-menu {
+	position: absolute;
+	z-index: 52;
+	top: 100%;
+	left: 0;
+	right: 0;
+
+	background-color: $primary-color;
+	border-top: 1px solid $primary-color-2;
+	color: white;
+	border-radius: 0 0 $border-radius $border-radius;
+	font-size: $font-size-large;
+	padding: $app_padding_y $app_padding_x;
+
+	display: none;
+	box-shadow: $box-shadow-hover;
+	transition: $transition-base;
+
+	max-height: calc(100vh - (70px + 2 * #{$app_padding_y}));
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	box-sizing: border-box;
+
+	nav {
+		display: flex;
+		flex-direction: column;
+		gap: $app_padding_y;
+	}
+
+	a {
+		color: white;
+		font-size: $font-size-base;
+		padding: 0.375em 1em;
+		font-weight: $font-weight-bold;
+		border-radius: $border-radius-small;
+		text-decoration: none;
+		transition: $transition-fast;
+		&:hover {
+			background-color: rgba(255, 255, 255, 0.2);
+		}
+	}
+}
+
+body.show-menu {
+	overflow: hidden; // opzionale: blocca scroll sotto
+	.header {
+		border-radius: $border-radius $border-radius 0 0;
+	}
+	.app-menu {
+		display: block;
+	}
+}
+
+// === PUSH SOTTO IL CONTENUTO ===
+.app-container {
+	padding-top: 70px + ($app_padding_y * 2);
+	padding-left: $app_padding_x;
+	padding-right: $app_padding_x;
+}

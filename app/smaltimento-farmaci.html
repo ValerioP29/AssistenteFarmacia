@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="it">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<title>Assistente Farmacia</title>
+
+		<!-- Favicon -->
+		<link rel="icon" type="image/png" href="./assets/favicon/favicon-96x96.png" sizes="96x96" />
+		<link rel="icon" type="image/svg+xml" href="./assets/favicon/favicon.svg" />
+		<link rel="shortcut icon" href="./assets/favicon/favicon.ico" />
+		<link rel="apple-touch-icon" sizes="180x180" href="./assets/favicon/apple-touch-icon.png" />
+		<meta name="apple-mobile-web-app-title" content="Assistente" />
+		<link rel="manifest" href="./assets/favicon/site.webmanifest" />
+
+		<!-- Styles -->
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+		<link rel="stylesheet" href="./assets/css/style.min.css?v=1.1.1" />
+	</head>
+	<body class="page-app page-waste loading">
+		<div id="app" class="app-container">
+			<app-header></app-header>
+			<app-goback></app-goback>
+			<app-body>
+				<app-card>
+					<h1>
+						<i class="fas fa-recycle icon-green"></i>
+						Smaltimento Corretto dei Farmaci
+					</h1>
+					<p>
+						<i class="fas fa-leaf icon-green"></i>
+						I farmaci non vanno mai gettati nella spazzatura o negli scarichi domestici. Possono inquinare l'ambiente e danneggiare la salute pubblica. Ecco come comportarti.
+					</p>
+
+					<h2>
+						<i class="fas fa-check-circle icon-green"></i>
+						Cosa puoi smaltire
+					</h2>
+					<ul>
+						<li>
+							<i class="fas fa-pills icon-green"></i>
+							Farmaci scaduti o inutilizzati
+						</li>
+						<li>
+							<i class="fas fa-capsules icon-green"></i>
+							Compresse, capsule, pomate, spray
+						</li>
+						<li>
+							<i class="fas fa-vial icon-green"></i>
+							Sciroppi e flaconi con residui
+						</li>
+						<li>
+							<i class="fas fa-syringe icon-green"></i>
+							Siringhe e aghi (in contenitori rigidi)
+						</li>
+					</ul>
+
+					<h2 style="color: #d12c2c;">
+						<i class="fas fa-times-circle" style="color: #d12c2c;"></i>
+						Cosa NON inserire
+					</h2>
+					<ul>
+						<li>Scatole esterne</li>
+						<li>Foglietti illustrativi</li>
+						<li>Blister vuoti</li>
+						<li>Imballaggi in carta, plastica o alluminio</li>
+					</ul>
+					<p>
+						<i class="fas fa-trash-alt icon-green"></i>
+						Questi vanno conferiti nella raccolta differenziata tradizionale.
+					</p>
+
+					<h2>
+						<i class="fas fa-list-ol icon-green"></i>
+						Come fare
+					</h2>
+					<ol>
+						<li>Rimuovi confezione esterna e bugiardino</li>
+						<li>Porta solo il farmaco al contenitore in farmacia</li>
+						<li>Per aghi e siringhe, usa un contenitore sicuro e chiedi alla farmacia</li>
+					</ol>
+
+					<h2>
+						<i class="fas fa-clock icon-green"></i>
+						Quando smaltire?
+					</h2>
+					<p>Controlla il tuo armadietto dei farmaci ogni 3 mesi e porta in farmacia quelli scaduti o inutilizzati.</p>
+
+					<h2>
+						<i class="fas fa-map-marker-alt icon-green"></i>
+						Dove smaltire?
+					</h2>
+					<p>Presso le farmacie che aderiscono al servizio o nei centri di raccolta comunali. Chiedi conferma al tuo farmacista.</p>
+
+					<div class="note">
+						<strong>
+							<i class="fas fa-exclamation-triangle"></i>
+							Importante:
+						</strong>
+						Non versare mai farmaci liquidi o antibiotici negli scarichi.
+					</div>
+
+					<a role="button" onclick="goTo(AppURLs.page.reminders() + '?scadenza')" class="cta show-on-pharma--1 d-none">
+						<i class="fas fa-bell"></i>
+						Imposta promemoria
+					</a>
+
+					<p style="font-size: 13px; color: #777; text-align: center; margin-top: 40px;">© 2025 AssistenteFarmacia.it</p>
+				</app-card>
+			</app-body>
+			<app-footer></app-footer>
+		</div>
+
+		<!-- Scripts -->
+		<script type="module" src="./assets/components/layout.js?v=1.1.1"></script>
+		<script type="text/javascript" src="./assets/js/app.js?v=1.1.1"></script>
+		<script src="./assets/js/cart.js?v=1.1.1"></script>
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+	</body>
+</html>

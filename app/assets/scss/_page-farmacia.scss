@@ -1,0 +1,103 @@
+body.page-pharmacy {
+	h1 {
+		text-align: center;
+		color: $primary-color;
+		margin: 10px 0 20px;
+		font-weight: bold;
+		font-size: 20px;
+	}
+	h2 {
+		color: #8031aa;
+		margin-top: 30px;
+		font-size: 1.2em;
+	}
+
+	ul {
+		padding-left: 20px;
+
+		li::marker {
+			color: #8031aa;
+		}
+	}
+
+	.contact {
+		background-color: #f3f3f3;
+		padding: 20px;
+		text-align: center;
+		font-size: 14px;
+		border-radius: 16px;
+		margin: 20px auto;
+
+		a {
+			color: #8031aa;
+			font-weight: 600;
+
+			&:hover {
+				text-decoration: underline;
+			}
+		}
+	}
+
+	.accordion {
+		background-color: #a054c4;
+		color: #fff;
+		cursor: pointer;
+		padding: 14px;
+		width: 100%;
+		border: none;
+		text-align: left;
+		outline: none;
+		font-size: 16px;
+		font-weight: 600;
+		border-top: 1px solid #ddd;
+		border-radius: 8px 8px 0 0;
+		margin-top: 16px;
+
+		&::after {
+			content: '▼';
+			color: #fff;
+			font-weight: bold;
+			float: right;
+		}
+
+		&.active::after {
+			content: '▲';
+		}
+	}
+
+	.panel {
+		display: none;
+		overflow: hidden;
+		background-color: #fff;
+		border-radius: 0 0 8px 8px;
+		margin-top: 10px;
+
+		table {
+			width: 100%;
+			border-collapse: collapse;
+			font-size: 14px;
+		}
+		th {
+			text-align: left;
+			padding: 8px;
+			border-bottom: 1px solid #ddd;
+		}
+
+		td {
+			padding: 8px;
+		}
+	}
+
+	.cover-image {
+		width: 100%;
+		height: auto;
+		object-fit: cover;
+		border-radius: 12px;
+		margin-bottom: 20px;
+	}
+	video {
+		width: 100%;
+		border-radius: 16px;
+		margin: 16px 0;
+	}
+}

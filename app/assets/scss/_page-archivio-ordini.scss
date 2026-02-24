@@ -1,0 +1,78 @@
+body.page-archive-order {
+	h1 {
+		text-align: center;
+		color: $primary-color;
+		margin: 10px 0 20px;
+		font-weight: bold;
+		font-size: 20px;
+	}
+
+	#archiveContent {
+		margin-top: 20px;
+	}
+
+	.filter-row {
+		margin-bottom: 20px;
+
+		label {
+			font-size: 14px;
+			color: #6d2a93;
+			font-weight: 600;
+		}
+
+		select {
+			width: 100%;
+			padding: 8px;
+			border-radius: 6px;
+			border: 1px solid #ccc;
+			margin-top: 6px;
+			background-color: #fff;
+		}
+	}
+
+	#bookingList {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+	}
+
+	.booking-card {
+		background: #f8f8f8;
+		border-radius: 12px;
+		padding: 16px;
+		box-shadow: 0 2px 6px rgba(103, 103, 103, 0.7);
+		font-size: 14px;
+
+		pre {
+			font-family: inherit;
+			font-size: 14px;
+			white-space: pre-wrap;
+			word-break: break-word;
+			margin: 0 0 10px;
+		}
+
+		.booking-meta {
+			color: #666;
+			font-size: 13px;
+			margin-bottom: 8px;
+		}
+
+		.booking-status {
+			font-weight: bold;
+			color: #333;
+			font-size: 13px;
+		}
+
+		.container-btn {
+			margin-top: 12px;
+			display: flex;
+			flex-direction: row;
+			gap: 10px;
+
+			.btn {
+				font-size: 14px;
+				padding: 6px 12px;
+			}
+		}
+	}
+}

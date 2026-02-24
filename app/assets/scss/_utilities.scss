@@ -1,0 +1,135 @@
+a {
+	text-decoration: none;
+}
+
+.pill {
+	padding: 1rem;
+	border-radius: 1rem;
+	margin-bottom: 1rem;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+
+	&-title {
+		font-size: 16px;
+		font-weight: 600;
+	}
+
+	&-description {
+		font-size: 12px;
+	}
+}
+
+// ✅ Colorazioni tenui con contrasto leggibile
+.pill-bg {
+	&-food { background-color: #fef4ec; color: #8b3a1e; }
+	&-move { background-color: #e6f7f7; color: #207272; }
+	&-stress { background-color: #f3f0ff; color: #47388a; }
+	&-health { background-color: #fde9eb; color: #8a1f2d; }
+	&-beauty { background-color: #fff0f6; color: #c2185b; }
+	&-brain { background-color: #eef5ff; color: #1e3a8a; }
+	&-nature { background-color: #ecfdf5; color: #256d4f; }
+	&-mom { background-color: #fffde7; color: #7c6b00; }
+	&-unknown { background-color: #f2f2f2; color: #333; }
+}
+
+
+.chat-loader {
+	position: fixed;
+	inset: 0;
+	background: rgba(255,255,255,0.95);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	opacity: 0;
+	transition: opacity 0.3s ease;
+	z-index: 9999;
+}
+.chat-loader.visible { opacity: 1; }
+.chat-loader-inner { text-align: center; }
+.chat-spinner {
+	width: 32px; height: 32px;
+	border: 3px solid #ccc;
+	border-top-color: #ff5700;
+	border-radius: 50%;
+	margin: 0 auto 10px;
+	animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+body:not(.is_tester){
+	.btn-ai-wrapper {
+		display: none !important;
+	}
+}
+
+.btn-ai {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	overflow: visible;
+	margin: 0;
+	padding: 0;
+	border: 1px solid $primary-color;
+
+	&,
+	img{
+		border-radius: 50px;
+	}
+
+	&::after {
+		content: attr(aria-label);
+		position: absolute;
+		right: 100%;
+		top: 50%;
+		transform: translateY(-50%) translateX(10px);
+		background: $primary-color;
+		color: #fff;
+		font-size: 0.85rem;
+		padding: 6px 10px;
+		border-radius: 14px;
+		white-space: nowrap;
+		box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+		opacity: 0;
+		animation: balloonPop 5s ease-in-out infinite;
+	}
+
+	&::before {
+		content: "✨";
+		position: absolute;
+		right: calc(100% - 4px);
+		top: 50%;
+		transform: translate(50%, -50%) scale(0);
+		font-size: 1rem;
+		opacity: 0;
+		animation: sparkle 5s ease-in-out infinite;
+	}
+}
+
+@keyframes balloonPop {
+	0%, 60%, 100% {
+		opacity: 0;
+		transform: translateY(-50%) translateX(10px) scale(0.95);
+	}
+	10%, 50% {
+		opacity: 1;
+		transform: translateY(-50%) translateX(-8px) scale(1);
+	}
+}
+
+@keyframes sparkle {
+	0%, 60%, 100% {
+		opacity: 0;
+		transform: translate(50%, -50%) scale(0);
+	}
+	10%, 20%, 45%, 55% {
+		opacity: 1;
+		transform: translate(50%, -50%) scale(1);
+	}
+	15%, 50% {
+		opacity: 0.8;
+		transform: translate(50%, -50%) scale(1.3);
+	}
+}

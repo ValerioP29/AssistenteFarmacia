@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="it">
+	<head>
+		<!-- Google Tag Manager -->
+		<script>
+			(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+				new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+				j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+				'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+			})(window,document,'script','dataLayer','GTM-PTJCW7QX');
+		</script>
+		<!-- End Google Tag Manager -->
+
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<meta name="robots" content="noindex, nofollow" />
+		<title>Assistente Farmacia</title>
+
+		<!-- Favicon -->
+		<link rel="icon" type="image/png" href="./assets/favicon/favicon-96x96.png" sizes="96x96" />
+		<link rel="icon" type="image/svg+xml" href="./assets/favicon/favicon.svg" />
+		<link rel="shortcut icon" href="./assets/favicon/favicon.ico" />
+		<link rel="apple-touch-icon" sizes="180x180" href="./assets/favicon/apple-touch-icon.png" />
+		<meta name="apple-mobile-web-app-title" content="Assistente" />
+		<link rel="manifest" href="./assets/favicon/site.webmanifest" />
+
+		<style>
+			#cookie_banner { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 2px solid #ccc; padding: 20px 12px; display: none; z-index: 9999; font-family: sans-serif; }
+			#cookie_banner.active { display: block; }
+			.cookie_btns_wrapper { text-align: right; }
+			#cookie_banner button { margin: 0px; padding: 6px 10px; border: none; cursor: pointer; border-radius: 4px; font-size: 0.75em; font-weight: bold; }
+			#cookie_banner .btn_cookie_accept, #cookie_banner .btn_cookie_sav_custom { --color: #28a745; --color: #8031aa; background: var(--color); color: #fff; border: 2px solid var(--color); padding: 6px 20px; }
+			#cookie_banner .btn_cookie_reject { --color: #dc3545; background: #fff; color: var(--color); border: 2px solid var(--color); }
+			#cookie_banner .btn_cookie_customize { --color: #8031aa; background: #fff; color: var(--color); border: 2px solid var(--color); }
+			#cookie_custom_panel { margin-top: 15px; padding: 10px; border: 1px solid #ddd; display: none; }
+			#cookie_custom_panel label { display: block; margin: 5px 0; }
+			.btn_cookie_manage{ position: absolute; bottom: 12px; right: 12px; background-color: #8031aa; border: 0; border-radius: 0.5em; color: #fff; padding: 0 0 4px; width: 45px; height: 45px; font-size: 24px; }
+			.btn_cookie_manage:hover{ background-color: #650545; }
+			.btn_cookie_manage:focus{ border: 1px solid #fe86ef; background-color: #650545; box-shadow: 0 0 0 .725rem rgba(253, 13, 226, .25); }
+			#cookie_overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); backdrop-filter: grayscale(0.4) blur(2px); z-index: 9998; display: none; }
+			#cookie_overlay.active { display: block; }
+		</style>
+
+		<!-- Styles -->
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+		<link rel="stylesheet" href="./assets/css/style.min.css?v=1.1.1" />
+	</head>
+	<body class="page-login loading">
+		<!-- Google Tag Manager (noscript) -->
+		<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PTJCW7QX" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+		<!-- End Google Tag Manager (noscript) -->
+
+		<div id="cookie_overlay"></div>
+		<div id="cookie_banner">
+			<p>Usiamo cookie tecnici, analitici, di profilazione e pubblicitari. <a href="./cookie-policy.html" target="_blank"><u>Maggiori info</u></a></p>
+			<div class="cookie_btns_wrapper">
+				<button class="btn_cookie_reject" onclick="cc.rejectAll()">Rifiuta</button>
+				<button class="btn_cookie_customize" onclick="cc.togglePanel()">Personalizza</button>
+				<button class="btn_cookie_accept" onclick="cc.acceptAll()">Accetta tutti</button>
+			</div>
+			<div id="cookie_custom_panel">
+				<label><input type="checkbox" value="necessary" checked disabled> Necessari (sempre attivi)</label>
+				<label><input type="checkbox" value="analitico" checked> Analitici (Google Analytics)</label>
+				<label><input type="checkbox" value="profilazione" checked> Profilazione (Facebook)</label>
+				<label><input type="checkbox" value="advertising" checked> Advertising (Microsoft)</label>
+				<button class="btn_cookie_sav_custom" onclick="cc.saveCustom()">Salva preferenze</button>
+			</div>
+		</div><button class="btn_cookie_manage" onclick="cc.showBanner()" title="Gestisci preferenze cookie" aria-label="Gestisci preferenze cookie"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="1em" height="1em" fill="currentColor"><path d="M182.8 28.4l-74 39.5C89.1 78.4 73.2 94.9 63.4 115L26.7 190.6c-9.8 20.1-13 42.9-9.1 64.9l14.5 82.8c3.9 22.1 14.6 42.3 30.7 57.9l60.3 58.4c16.1 15.6 36.6 25.6 58.7 28.7l83 11.7c22.1 3.1 44.6-.9 64.4-11.4l74-39.5c19.7-10.5 35.6-27 45.4-47.2l36.7-75.5c9.8-20.1 13-42.9 9.1-64.9c-.9-5.3-5.3-9.3-10.6-10.1c-51.5-8.2-92.8-47.1-104.5-97.4c-1.8-7.6-8-13.4-15.7-14.6c-54.6-8.7-97.7-52-106.2-106.8c-.8-5.4-4.9-9.8-10.3-10.6c-22.1-3.1-44.6 .9-64.4 11.4zm34.9 37.5c19 54.5 63.9 96.7 120 111.9c17.7 50.9 58.1 91.1 109.1 108.7c-1 4.8-2.5 9.5-4.7 13.9L405.4 376c-5.4 11-14.1 20.1-24.8 25.8l-74 39.5c-10.8 5.7-23 7.9-35.1 6.2l-83-11.7c-12-1.7-23.3-7.2-32-15.7l-29.7 30.7 29.7-30.7L96.2 361.7c-8.8-8.5-14.7-19.6-16.8-31.7L64.9 247.2c-2.1-12.1-.4-24.6 5-35.6L106.6 136c5.4-11 14.1-20.1 24.8-25.8l74-39.5c3.9-2.1 8.1-3.7 12.4-4.9zM192 192a32 32 0 1 0 -64 0 32 32 0 1 0 64 0zm0 192a32 32 0 1 0 0-64 32 32 0 1 0 0 64zM320 256a32 32 0 1 0 -64 0 32 32 0 1 0 64 0zm32 128a32 32 0 1 0 0-64 32 32 0 1 0 0 64z"/></svg></button>
+
+		<script>
+			class CookieConsent {
+				constructor(options = {}) {
+					this.cookieName = options.cookieName || "jta-app-cookie_pref";
+					this.expiryDays = options.expiryDays || 365;
+					this.categories = options.categories || ["necessary","analitico","profilazione","advertising"];
+					this.banner = document.getElementById("cookie_banner");
+					this.init();
+				}
+
+				// Cookie utils
+				setCookie(name, value, days) {
+					let d = new Date();
+					d.setTime(d.getTime() + (days*24*60*60*1000));
+					document.cookie = name + "=" + JSON.stringify(value) + ";expires=" + d.toUTCString() + ";path=/";
+				}
+				getCookie(name) {
+					let match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
+					return match ? JSON.parse(match[2]) : null;
+				}
+				deleteCookie(name) {
+					document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;";
+				}
+
+				// Script management
+				unblock(category) {
+					document.querySelectorAll('script[type="text/plain"][data-cookie="'+category+'"]').forEach(el => {
+						let s = document.createElement("script");
+						if (el.src) s.src = el.src;
+						else s.innerHTML = el.innerHTML;
+						document.body.appendChild(s);
+						el.setAttribute("type","text/javascript");
+					});
+				}
+
+				// Actions
+				savePrefs(prefs) {
+					this.setCookie(this.cookieName, prefs, this.expiryDays);
+					Object.keys(prefs).forEach(cat => {
+						if (prefs[cat]) this.unblock(cat);
+					});
+					this.hideBanner();
+				}
+
+				accept(categories = this.categories) {
+					let prefs = {};
+					this.categories.forEach(cat => prefs[cat] = categories.includes(cat));
+					this.savePrefs(prefs);
+				}
+				reject(categories = this.categories.filter(c => c !== "necessary")) {
+					let prefs = {};
+					this.categories.forEach(cat => {
+						if (cat === "necessary") {
+							prefs[cat] = true;
+						} else {
+							prefs[cat] = false;
+						}
+					});
+					this.savePrefs(prefs);
+				}
+
+				acceptAll() { this.accept(this.categories); }
+				rejectAll() { this.reject(this.categories); }
+
+				// UI
+				showBanner() {
+					this.banner.classList.add("active");
+					document.getElementById("cookie_overlay").classList.add("active");
+					let prefs = this.getCookie(this.cookieName);
+					this.updateCheckboxes(prefs);
+				}
+				hideBanner() { 
+					this.banner.classList.remove("active"); 
+					document.getElementById("cookie_overlay").classList.remove("active");
+					document.getElementById("cookie_custom_panel").style.display = "none"; 
+				}
+
+				togglePanel() {
+					let panel = document.getElementById("cookie_custom_panel");
+					panel.style.display = panel.style.display === "block" ? "none" : "block";
+					this.updateCheckboxes();
+				}
+
+				saveCustom() {
+					let prefs = { necessary: true };
+					document.querySelectorAll('#cookie_custom_panel input[type="checkbox"]').forEach(cb => {
+						prefs[cb.value] = cb.checked;
+					});
+					this.savePrefs(prefs);
+					document.getElementById("cookie_custom_panel").style.display = "none";
+				}
+
+				updateCheckboxes(prefs = null) {
+					if (!prefs) {
+						prefs = this.getCookie(this.cookieName);
+					}
+					if (prefs) {
+						document.querySelectorAll('#cookie_custom_panel input[type="checkbox"]').forEach(cb => {
+							if (cb.value in prefs) {
+								cb.checked = prefs[cb.value];
+							}
+						});
+					}
+				}
+
+				init() {
+					let prefs = this.getCookie(this.cookieName);
+					if (!prefs) {
+						this.showBanner();
+					} else {
+						Object.keys(prefs).forEach(cat => {
+							if (prefs[cat]) this.unblock(cat);
+						});
+						this.updateCheckboxes(prefs);
+					}
+				}
+			}
+			const cc = new CookieConsent({ categories: [ 'necessary', 'analitico', 'profilazione', 'advertising' ] });
+		</script>
+
+		<div id="app" class="app-container">
+			<header class="header top-bar">
+				<a class="logo" href="#" onclick="goTo(AppURLs.page.dashboard()); return false;">
+					<img class="img-fluid" src="./assets/images/assistente-farmacia-logo.png" width="240" height="33" alt="AssistenteFarmacia.it" />
+				</a>
+			</header>
+
+			<app-card>
+				<div class="no-gap-t no-gap-x">
+					<!-- Tabs nav -->
+					<ul class="nav nav-tabs w-100 mb-0" id="authTab" role="tablist">
+						<li class="nav-item w-50" role="presentation">
+							<button class="nav-link w-100 active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login" type="button" role="tab">Login</button>
+						</li>
+						<li class="nav-item w-50" role="presentation">
+							<button class="nav-link w-100 " id="register-tab" data-bs-toggle="tab" data-bs-target="#register" type="button" role="tab">Registrazione</button>
+						</li>
+					</ul>
+
+					<div class="tab-content w-100 px-4" id="authTabContent">
+						<!-- Login -->
+						<div class="tab-pane fade pt-4 show active" id="login" role="tabpanel" aria-labelledby="login-tab" method="post">
+							<form id="loginForm">
+								<div class="mb-3">
+									<label for="username" class="form-label">Username</label>
+									<input type="text" class="form-control" id="username" required />
+								</div>
+								<div class="mb-3">
+									<label for="password" class="form-label">Password</label>
+									<input type="password" class="form-control" id="password" required />
+								</div>
+								<button type="submit" class="btn btn-primary w-100">Accedi</button>
+							</form>
+
+							<a href="#pwModal" id="forgotLink" data-bs-toggle="modal" data-bs-target="#pwModal">
+								Password dimenticata?
+							</a>
+
+							<div class="modal fade" id="pwModal" tabindex="-1">
+								<div class="modal-dialog">
+									<div class="modal-content p-3">
+										<div class="modal-header">
+											<h5 class="modal-title">Modifica password</h5>
+											<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+										</div>
+										<div class="modal-body">
+											<div class="slide" id="pw-slide-1">
+												<label class="form-label" for="pwEmail">Inserisci l'email scelta in fase di registrazione:</label>
+												<input type="email" class="form-control" id="pwEmail" name="pwEmail" required/>
+												<button class="btn btn-primary w-100 mt-3" id="pwStartBtn">Invia richiesta</button>
+											</div>
+
+											<div class="slide d-none" id="pw-slide-2">
+												<label class="form-label" for="pwOtp">Inserisci il codice ricevuto:</label>
+												<input type="text" class="form-control" id="pwOtp" name="pwOtp" minlength="6" maxlength="6" required />
+												<button class="btn btn-primary w-100 mt-3" id="pwVerifyBtn">Verifica</button>
+											</div>
+
+											<div class="slide d-none" id="pw-slide-3">
+												<label class="form-label" for="pwNew1">Nuova password</label>
+												<input type="password" class="form-control" id="pwNew1" name="pwNew1" required title="Almeno 6 caratteri, con 1 maiuscola, 1 minuscola, 1 numero e 1 simbolo." />
+												<p class="small text-muted">Almeno 6 caratteri, con 1 maiuscola, 1 minuscola, 1 numero e 1 simbolo.</p>
+
+												<label class="form-label mt-2" for="pwNew2">Conferma password</label>
+												<input type="password" class="form-control" id="pwNew2" name="pwNew2" required />
+
+												<button class="btn btn-primary w-100 mt-3" id="pwResetBtn">Salva password</button>
+											</div>
+
+											<div class="slide d-none text-center" id="pw-slide-4">
+												<i class="bi bi-check-circle" style="font-size:48px;"></i>
+												<p class="mt-2">Password aggiornata. Effettua di nuovo il login.</p>
+												<button class="btn btn-success w-100" data-bs-dismiss="modal">Vai al login</button>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<!-- Registrazione -->
+						<div class="tab-pane fade pt-4" id="register" role="tabpanel" aria-labelledby="register-tab">
+							<form id="registerForm" action="./questionario.html">
+								<div class="mb-3">
+									<label for="registerUsername" class="form-label">Username</label>
+									<input type="text" class="form-control" id="registerUsername" pattern="^[A-Za-z0-9]{4,}$" required />
+									<p class="text-secondary"><small>Minimo 4 caratteri. Solo lettere e numeri.</small></p>
+								</div>
+								<div class="mb-3">
+									<label for="registerFirstName" class="form-label">Nome</label>
+									<input type="text" class="form-control" id="registerFirstName" required />
+								</div>
+								<div class="mb-3">
+									<label for="registerLastName" class="form-label">Cognome</label>
+									<input type="text" class="form-control" id="registerLastName" required />
+								</div>
+								<div class="mb-3">
+									<label for="registerEmail" class="form-label">Email</label>
+									<input type="email" class="form-control" id="registerEmail" required />
+								</div>
+
+								<div class="mb-3">
+									<label for="confirmEmail" class="form-label">Conferma Email</label>
+									<input type="email" class="form-control" id="confirmEmail" required />
+								</div>
+
+								<div class="mb-3">
+									<label for="registerPassword" class="form-label">Password</label>							
+									<input type="password" class="form-control" id="registerPassword" required title="Almeno 6 caratteri, con 1 maiuscola, 1 minuscola, 1 numero e 1 carattere speciale." />
+									<p class="small text-muted">Almeno 6 caratteri, con 1 maiuscola, 1 minuscola, 1 numero e 1 simbolo.</p>
+								</div>
+
+								<div class="mb-3">
+									<label for="confirmPassword" class="form-label">Conferma Password</label>
+									<input type="password" class="form-control" id="confirmPassword" required />
+								</div>
+
+								<div class="mb-3">
+									<label for="registerWhatsapp" class="form-label">Numero WhatsApp</label>
+									<div class="input-group">
+										<span class="input-group-text">+39</span>
+										<input type="tel" class="form-control" id="registerWhatsapp" required />
+									</div>
+								</div>
+							
+								<div class="privacy-section">
+									<h6 class="text-center">Consensi & Informative</h6> 
+
+									<div class="form-check mb-2">
+										<input class="form-check-input" type="checkbox" checked id="consentPrivacy" name="consentPrivacy" disabled required />
+										<label class="form-check-label" for="consentPrivacy">* Dichiaro di aver preso visione dell'Informativa sulla <a href="./privacy-policy.html" target="_blank" rel="noopener">Privacy</a> e di averne compreso i contenuti.</label>
+									</div>
+
+									<div class="form-check mb-2">
+										<input class="form-check-input" type="checkbox" checked id="consent_term_profile" name="consent_term_profile" disabled required />
+										<label class="form-check-label" for="consent_term_profile">* Accetto <a href="./termini-di-servizio.html" target="_blank" rel="noopener">Termini e Condizioni di Servizio</a></label>
+									</div>
+
+									<div class="form-check mb-2">
+										<input class="form-check-input" type="checkbox" checked id="consent_age_profile" name="consent_age_profile" disabled required />
+										<label class="form-check-label" for="consent_age_profile">* Dichiaro di avere almeno 18 anni</label>
+									</div>
+
+									<div class="form-check mb-2">
+										<input class="form-check-input" type="checkbox" checked id="consent_marketing" name="consent_marketing"/>
+										<label class="form-check-label" for="consent_marketing">Autorizzo a inviarmi comunicazioni promozionali e aggiornamenti su prodotti, offerte o eventi, tramite email, messaggi o altri canali.</label>
+									</div>
+
+									<div class="" style="display:none;">
+										<div class="form-check mb-2">
+											<input class="form-check-input" type="checkbox" checked id="consent_health_profile" name="consent_health_profile" />
+											<label class="form-check-label" for="consent_health_profile">* Consento il trattamento dei miei <strong>dati sanitari</strong> per evadere richieste/prenotazioni</label>
+										</div>
+
+										<div class="form-check mb-2">
+											<input class="form-check-input" type="checkbox" checked id="consent_chatbot" name="consent_chatbot" />
+											<label class="form-check-label" for="consent_chatbot">Chatbot AI per assistenza (opzionale)</label>
+										</div>
+
+										<div class="form-check mb-2">
+											<input class="form-check-input" type="checkbox" checked id="consent_whatsapp" name="consent_whatsapp" />
+											<label class="form-check-label" for="consent_whatsapp">Comunicazioni su WhatsApp per gestire le richieste (opzionale)</label>
+										</div>
+									</div>
+
+								</div>
+
+								<div style="display: none;">
+									<div class="form-check mb-2">
+										<input class="form-check-input" type="checkbox" name="accept_disclaimer" id="accept_disclaimer"/>
+										<label class="form-check-label mb-0" for="accept_disclaimer"><small>Sono consapevole e accetto che:</label>
+										<p class="m-0"><small>Leggi fino alla fine per poter proseguire.</small></p>
+									</div>
+
+									<div class="diclaimer">
+										<textarea readonly name="disclaimer_text" class="form-control pt-0 mb-3" style="line-height:1.2; min-height:120px; font-size: 13px;">Questo assistente virtuale fornisce informazioni a scopo puramente informativo e non sostituisce in alcun modo il parere, la diagnosi o la prescrizione di un medico o farmacista qualificato. L’assistente può commettere errori: ti invitiamo a verificare sempre le informazioni importanti con un professionista sanitario. La farmacia e i suoi rappresentanti declinano ogni responsabilità per eventuali danni, diretti o indiretti, derivanti dall’uso improprio o dall’interpretazione delle risposte fornite. In caso di dubbi o situazioni urgenti, rivolgiti sempre a un medico o farmacista abilitato.</textarea>
+									</div>
+								</div> 
+						
+								<button type="submit" disabled class="btn btn-primary w-100">Registrati</button>
+							</form>
+						</div>
+					</div>
+				</div>
+			</app-card>
+		</div>
+
+		<!-- Scripts -->
+		<script type="module" src="./assets/components/layout.js?v=1.1.1"></script>
+		<script type="text/javascript" src="./assets/js/app.js?v=1.1.1"></script>
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+		<script>
+			document.addEventListener('DOMContentLoaded', function(){
+				const loginForm = document.querySelector('#loginForm');
+
+				loginForm.addEventListener('submit', e => {
+					e.preventDefault();
+
+					const username = document.getElementById('username').value ?? '';
+					const password = document.getElementById('password').value ?? '';
+
+					appLogin(username, password);
+				});
+
+				const regForm = document.querySelector('#registerForm');
+				const regButton = regForm.querySelector('[type="submit"]');
+
+				const requiredChecks = [
+				document.getElementById("consentPrivacy"),
+				document.getElementById("consent_term_profile"),
+				document.getElementById("consent_age_profile")
+				];
+
+				function updateRegisterButton() {
+				const allChecked = requiredChecks.every(chk => chk.checked);
+				regButton.disabled = !allChecked;
+				}
+
+				updateRegisterButton();
+
+				requiredChecks.forEach(chk => chk.addEventListener("change", updateRegisterButton));
+
+				regForm.addEventListener('submit', e => {
+					e.preventDefault();
+
+					const username = document.getElementById('registerUsername').value ?? '';
+					const password = document.getElementById('registerPassword').value ?? '';
+					const confirmPassword = document.getElementById('confirmPassword').value ?? '';
+					const phone = document.getElementById('registerWhatsapp').value ?? '';
+					const first_name = document.getElementById('registerFirstName').value ?? '';
+					const last_name  = document.getElementById('registerLastName').value ?? '';
+					const email = document.getElementById('registerEmail').value ?? '';
+					const confirmEmail = document.getElementById('confirmEmail').value ?? '';
+
+					const MIN_LEN = 6;
+					const allowedSet = /^[A-Za-z0-9!"#$%&'()*+,\-./:;<=>?@[\\\]\^_`{|}~]+$/;
+					const composition = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!"#$%&'()*+,\-./:;<=>?@[\\\]\^_`{|}~]).+$/;
+
+					if( ! password || ! confirmPassword || ! username ){
+						showToast('Compila tutti i campi', 'warning');
+						return;
+					}
+
+					if (password.length < MIN_LEN) {
+						showToast('La password deve avere almeno 6 caratteri', 'warning');
+						return;
+					}
+
+					if (!allowedSet.test(password)) {
+						showToast('Sono ammessi solo lettere, numeri e simboli standard (niente spazi o emoji)', 'warning');
+						return;
+					}
+
+					if (!composition.test(password)) {
+						showToast('Serve almeno 1 maiuscola, 1 minuscola, 1 numero e 1 simbolo', 'warning');
+						return;
+					}
+
+					if (password !== confirmPassword) {
+						showToast('Password e conferma password non coincidono', 'warning');
+						return;
+					}
+
+					if( phone.length < 9 || phone.length > 10 ){
+						showToast('Il numero di Whatsapp potrebbe non essere esatto, ricontrolla', 'warning');
+						return;
+					}
+
+					if (email !== confirmEmail) {
+						showToast('Le email non coincidono', 'warning');
+						return;
+					}
+
+					appRegistration(username, password, phone, email, first_name, last_name);
+				});
+
+				const urlParams = new URLSearchParams(window.location.search);
+
+				if (urlParams.has('ref')) {
+					const registerTab = document.getElementById('register-tab');
+					if (registerTab) {
+						const tab = new bootstrap.Tab(registerTab);
+						tab.show();
+					}
+				}
+				
+				function showSlide(n){
+					[1,2,3,4].forEach(i=>{
+						const el = document.getElementById('pw-slide-'+i);
+						if (el) el.classList.toggle('d-none', i!==n);
+					});
+				}
+
+				let pwResetToken = null;
+
+				// reset modale on open/close
+				document.getElementById('pwModal').addEventListener('shown.bs.modal', ()=>{
+					pwResetToken = null;
+					['pwEmail','pwOtp','pwNew1','pwNew2'].forEach(id=>{
+						const el = document.getElementById(id);
+						if (el) el.value = '';
+					});
+					showSlide(1);
+				});
+				document.getElementById('pwModal').addEventListener('hidden.bs.modal', ()=>{
+					pwResetToken = null;
+					showSlide(1);
+				});
+
+				// START
+				document.getElementById('pwStartBtn').addEventListener('click', async ()=>{
+					const email = (document.getElementById('pwEmail').value || '').trim().toLowerCase();
+					const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+					if (!emailOk) return showToast('Email non valida', 'warning');
+
+					const url = AppURLs.api.authPassword();
+					console.log('AUTH URL (start):', url);
+
+					const btn = document.getElementById('pwStartBtn'); btn.disabled = true;
+					try {
+						const res = await fetch(url, {
+							method:'POST',
+							headers:{'Content-Type':'application/json'},
+							body: JSON.stringify({ stage:'start', email })
+						});
+						console.log('STATUS start', res.status);
+						if (!res.ok) { showToast(`Errore server (${res.status})`, 'danger'); return; }
+						let d;
+						try { d = await res.json(); } 
+						catch(e){ const t = await res.text(); console.error('Non-JSON start:', t); showToast('Risposta non valida dal server', 'danger'); return; }
+
+						if (d?.status) { showToast(d.message || 'Codice inviato', 'success'); showSlide(2); }
+						else showToast(d?.message || 'Errore invio codice', 'danger');
+					} catch(e){ console.error(e); showToast('Errore rete', 'danger'); }
+					finally { btn.disabled = false; }
+				});
+
+				// VERIFY
+				document.getElementById('pwVerifyBtn').addEventListener('click', async ()=>{
+					const email = (document.getElementById('pwEmail').value || '').trim().toLowerCase();
+					const otp   = (document.getElementById('pwOtp').value || '').trim();
+					if (!otp) return showToast('Inserisci codice', 'warning');
+
+					const url = AppURLs.api.authPassword();
+					console.log('AUTH URL (verify):', url);
+
+					const btn = document.getElementById('pwVerifyBtn'); btn.disabled = true;
+					try {
+						const res = await fetch(url, {
+							method:'POST',
+							headers:{'Content-Type':'application/json'},
+							body: JSON.stringify({ stage:'verify', email, otp })
+						});
+						console.log('STATUS verify', res.status);
+						if (!res.ok) { showToast(`Errore server (${res.status})`, 'danger'); return; }
+						let d;
+						try { d = await res.json(); } 
+						catch(e){ const t = await res.text(); console.error('Non-JSON verify:', t); showToast('Risposta non valida dal server', 'danger'); return; }
+
+						if (d?.status) {
+							pwResetToken = d?.data?.reset_token || null;
+							if (!pwResetToken) return showToast('Token assente', 'danger');
+							showToast('Codice verificato', 'success'); showSlide(3);
+						} else showToast(d?.message || 'Codice errato', 'danger');
+					} catch(e){
+						console.error(e); showToast('Errore rete', 'danger');
+					} finally {
+						btn.disabled = false;
+					}
+				});
+
+				// RESET
+				document.getElementById('pwResetBtn').addEventListener('click', async ()=>{
+					const new1 = document.getElementById('pwNew1').value || '';
+					const new2 = document.getElementById('pwNew2').value || '';
+					const email = (document.getElementById('pwEmail').value || '').trim().toLowerCase();
+
+					const MIN_LEN = 6;
+					const allowedSet = /^[A-Za-z0-9!"#$%&'()*+,\-./:;<=>?@[\\\]\^_`{|}~]+$/;
+					const composition = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!"#$%&'()*+,\-./:;<=>?@[\\\]\^_`{|}~]).+$/;
+
+					if (!new1 || !new2) { showToast('Compila entrambi i campi', 'warning'); return; }
+					if (new1 !== new2)  { showToast('Le password non coincidono', 'warning'); return; }
+
+					if (new1.length < MIN_LEN) {
+						showToast('La password deve avere almeno 6 caratteri', 'warning');
+						return;
+					}
+					if (!allowedSet.test(new1)) {
+						showToast('Sono ammessi solo lettere, numeri e simboli standard (niente spazi o emoji)', 'warning');
+						return;
+					}
+					if (!composition.test(new1)) {
+						showToast('Serve almeno 1 maiuscola, 1 minuscola, 1 numero e 1 simbolo', 'warning');
+						return;
+					}
+
+					if (!pwResetToken) { showToast('Errore imprevisto. Riprova!', 'danger'); return; }
+
+					const url = AppURLs.api.authPassword();
+					const btn = document.getElementById('pwResetBtn'); btn.disabled = true;
+					try {
+						const res = await fetch(url, {
+							method:'POST',
+							headers:{'Content-Type':'application/json'},
+							body: JSON.stringify({ stage:'reset', reset_token: pwResetToken, new_password:new1, confirm_password:new2, email:email })
+						});
+						if (!res.ok) { showToast(`Errore server (${res.status})`, 'danger'); return; }
+						let d;
+						try { d = await res.json(); } 
+						catch(e){ const t = await res.text(); console.error('Non-JSON reset:', t); showToast('Risposta non valida dal server', 'danger'); return; }
+
+						if (d?.status) { showToast('Password cambiata', 'success'); showSlide(4); }
+						else showToast(d?.message || 'Errore cambio password', 'danger');
+					} catch(e){ console.error(e); showToast('Errore rete', 'danger'); }
+					finally { btn.disabled = false; }
+				});
+
+			});
+
+			function appRegistration(username, password, phone, email, first_name, last_name) {
+				const params = { username, password, phone, email, first_name, last_name };
+
+				params.consents = {
+					consentPrivacy: true,
+					consent_term_profile: true,
+					consent_age_profile: true,
+					accept_marketing: document.getElementById("consent_marketing")?.checked ? 1 : 0
+				};
+
+				const urlParams = new URLSearchParams(window.location.search);
+				if (urlParams.has('ref')) params.ref = urlParams.get('ref');
+
+				fetch(AppURLs.api.registration(), {
+					method: 'POST',
+					headers: {'Content-Type': 'application/json'},
+					body: JSON.stringify(params),
+				})
+					.then((res) => res.json())
+					.then((data) => {
+						if (data.status) {
+							data.username = username;
+							data.password = password;
+							data.phone = phone;
+							data.email = email;
+							data.first_name = first_name;
+							data.last_name = last_name;
+							document.dispatchEvent(new CustomEvent('registration:success', {detail: data}));
+						} else {
+							document.dispatchEvent(new CustomEvent('registration:error', {detail: data}));
+						}
+					})
+					.catch(e => {
+						document.dispatchEvent(new CustomEvent('registration:error', {detail: {message: 'Errore imprevisto, riprova'}}));
+					});
+			}
+
+			document.addEventListener('registration:success', (e) => {
+				const data = e.detail;
+				showToast(data.message, 'success');
+			});
+
+			document.addEventListener('registration:success', (e) => {
+				const data = e.detail;
+				setTimeout(function(){
+					showToast('Accesso in corso', 'success');
+
+					setTimeout(function(){
+						appLogin(data.username, data.password);
+					}, 1000);
+				}, 750);
+			});
+
+			document.addEventListener('registration:error', cbToastifyListenerError);
+		</script>
+	</body>
+</html>

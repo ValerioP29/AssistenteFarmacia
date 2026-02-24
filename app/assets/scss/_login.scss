@@ -1,0 +1,42 @@
+body.page-login .top-bar {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	padding: 0 12px;
+}
+
+body.page-login .top-bar .logo {
+	width: 400px;
+	min-height: 70px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+body.page-login .top-bar .logo img {
+	width: 240px;
+	height: 33px;
+	object-fit: contain;
+	display: block;
+}
+
+#forgotLink {
+	margin-top: 20px;
+	text-decoration: underline;
+	font-size: 14px;
+	display: block;
+	text-align: center;
+}
+
+.privacy-section {
+	// display: none;
+
+	.form-check-label{
+		opacity: 1 !important;
+	}
+}
+
+.form-check-input,
+.form-check-label{
+	cursor: pointer;
+}

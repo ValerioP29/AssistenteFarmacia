@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="it">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<title>Assistente Farmacia</title>
+
+		<!-- Favicon -->
+		<link rel="icon" type="image/png" href="./assets/favicon/favicon-96x96.png" sizes="96x96" />
+		<link rel="icon" type="image/svg+xml" href="./assets/favicon/favicon.svg" />
+		<link rel="shortcut icon" href="./assets/favicon/favicon.ico" />
+		<link rel="apple-touch-icon" sizes="180x180" href="./assets/favicon/apple-touch-icon.png" />
+		<meta name="apple-mobile-web-app-title" content="Assistente" />
+		<link rel="manifest" href="./assets/favicon/site.webmanifest" />
+
+		<!-- Styles -->
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+		<link rel="stylesheet" href="./assets/css/style.min.css?v=1.1.1" />
+	</head>
+	<body class="page-app page-dashboard loading">
+		<div id="app" class="app-container">
+			<app-header></app-header>
+			<app-goback></app-goback>
+			<app-body>
+				<div class="search-card">
+					<a class="logo-box" href="#farmacia">
+						<img src="https://api.assistentefarmacia.it/uploads/images/placeholder-logo-farmacia.jpg" alt="Logo Farmacia" width="130" height="40" />
+					</a>
+
+					<p class="ai-helper-text">Scrivi qui la tua richiesta: la nostra farmacista virtuale ti risponderà in pochi secondi.</p>
+
+					<div class="input-row">
+						<img src="https://api.assistentefarmacia.it/uploads/images/placeholder-assistente.jpg" class="avatar" alt="Avatar" width="44" height="44" />
+
+						<input id="smart-search" class="search-input" type="text" readonly placeholder="Chiedi al nostro assistente digitale AI..." onclick="goTo(AppURLs.page.chatbot())" />
+
+						<script>
+							const esempi = [
+								"Orari farmacia",
+								"Info Farmaco o equivalente",
+								"Consigli benessere",
+								"Servizi disponibili"
+							];
+							let i = 0;
+							setInterval(() => {
+								document.getElementById("smart-search").placeholder = "Chiedi: " + esempi[i];
+								i = (i + 1) % esempi.length;
+							}, 3000);
+						</script>
+					</div>
+				</div>
+				<!-- CTA Ordina Ricetta -->
+				<div class="cta-box">
+					<button class="cta-button" onclick="goTo(AppURLs.page.reservation()+'?tipo=ricetta')">
+						<i class="“cta-icon fa-solid fa-pills"></i>
+						<span class="cta-text">Ordina Ricetta</span>
+					</button>
+				</div>
+
+				<div class="show-on-pharma--1 d-none">
+				<app-card>
+					<div class="slider-promo-title">In evidenza</div>
+					<div class="slider-promo-container">
+						<button class="slider-arrow slider-arrow-left d-none">&#10094;</button>
+						<div class="slider-promo">
+							<!-- <div class="slider-promo-item">
+								<img class="slider-promo-img img-fluid" src="./assets/images/farmacia-giovinazzi-sett25-slide-promo-04.jpg" width="364" height="242" alt="CheckUp Armocromia" onclick="goTo(AppURLs.page.checkUpPage())"/>
+							</div>
+							<div class="slider-promo-item">
+								<img class="slider-promo-img img-fluid" src="./assets/images/farmacia-giovinazzi-ott25-slide-03.jpg" width="364" height="242" alt="Ottobre rosa" onclick="goTo(AppURLs.page.promotions() + '?tipo=ottobre-rosa')"/>
+							</div> -->
+							<div class="slider-promo-item">
+								<img class="slider-promo-img img-fluid" src="./assets/images/farmacia-giovinazzi-ott25-slide-01.jpg" width="364" height="242" alt="Promo 1+1 BioNike" onclick="goTo(AppURLs.page.promotions() + '?tipo=bionike-1-1')"/>
+							</div>
+							<div class="slider-promo-item">
+								<img class="slider-promo-img img-fluid" src="./assets/images/farmacia-giovinazzi-ott25-slide-02.jpg" width="364" height="242" alt="Campioni gratis" onclick="goTo(AppURLs.page.promotions())"/>
+							</div>
+							<div class="slider-promo-item">
+								<img class="slider-promo-img img-fluid" src="./assets/images/Farmacia Giovinazzi_ago25_slide promo_03.png" width="364" height="242" alt="Delivery" onclick="goTo(AppURLs.page.promotions())"/>
+							</div>
+						</div>
+						<button class="slider-arrow slider-arrow-right d-none">&#10095;</button>
+						<div class="slider-dots"></div>
+					</div>
+				</app-card>
+				</div>
+
+				<app-card>
+					<div class="card-header ">
+						<span>Il tuo percorso benessere</span>
+						<a id="wellness-points" class="wellness-points" onclick="goTo(AppURLs.page.wellnessPoints())">
+							<span class="points-label">0 punti</span>
+							<span class="svg-icon" aria-hidden="true">
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="16" height="16" fill="currentColor">
+									<path d="M320 112C434.9 112 528 205.1 528 320C528 434.9 434.9 528 320 528C205.1 528 112 434.9 112 320C112 205.1 205.1 112 320 112zM320 576C461.4 576 576 461.4 576 320C576 178.6 461.4 64 320 64C178.6 64 64 178.6 64 320C64 461.4 178.6 576 320 576zM280 400C266.7 400 256 410.7 256 424C256 437.3 266.7 448 280 448L360 448C373.3 448 384 437.3 384 424C384 410.7 373.3 400 360 400L352 400L352 312C352 298.7 341.3 288 328 288L280 288C266.7 288 256 298.7 256 312C256 325.3 266.7 336 280 336L304 336L304 400L280 400zM320 256C337.7 256 352 241.7 352 224C352 206.3 337.7 192 320 192C302.3 192 288 206.3 288 224C288 241.7 302.3 256 320 256z" />
+								</svg>
+							</span>
+						</a>
+					</div>
+					<div class="grid">
+						<!-- Quiz del Giorno -->
+						<a role="button" onclick="goTo(AppURLs.page.quiz())" class="grid-item quiz">
+							<img class="grid-img" src="./assets/images/icona_quiz_del_giorno.png" alt="Quiz del giorno" width="28" height="28" />
+							<span>Quiz del Giorno</span>
+						</a>
+
+						<!-- Check-up Istantanei -->
+						<a role="button" onclick="goTo(AppURLs.page.checkUpPage())" class="grid-item checkup">
+							<img class="grid-img" src="./assets/images/icona_checkup_istantanei.png" alt="Check-up" width="28" height="28" />
+							<span>Check-up Istantanei</span>
+						</a>
+
+						<!-- Sfida Settimanale -->
+						<a role="button" onclick="goTo(AppURLs.page.wellnessChallenge())" class="grid-item challenge">
+							<img class="grid-img" src="./assets/images/icona_sfida_settimanale.png" alt="Sfida settimanale" width="28" height="28" />
+							<span>Sfida Settimanale</span>
+						</a>
+
+						<!-- Sondaggio -->
+						<a role="button" onclick="goTo(AppURLs.page.survey())" class="grid-item survey show-on-pharma--1 d-none">
+							<img class="grid-img" src="./assets/images/icona_sondaggio_della_settimana.png" alt="Sondaggio Benessere Settimanale" width="28" height="28" />
+							<span>Sondaggio Benessere Settimanale</span>
+						</a>
+					</div>
+				</app-card>
+
+				<app-card id="featured-services-card">
+					<div class="slider-promo-title d-flex justify-content-between">
+						Servizi in evidenza
+						<a role="button" class="link-page" onclick="goTo(AppURLs.page.services())">Vedi tutti &gt;</a>
+					</div>
+					<div class="slider-promo-container slider-promo--services" id="featured-services">
+						<button class="slider-arrow slider-arrow-left d-none" aria-label="Precedente">&#10094;</button>
+
+						<div class="slider-promo" role="region" aria-roledescription="carousel" aria-label="Servizi in evidenza"></div>
+
+						<button class="slider-arrow slider-arrow-right d-none" aria-label="Successivo">&#10095;</button>
+						<div class="slider-dots" style="display:none"></div>
+					</div>
+				</app-card>
+
+				<app-card>
+					<div class="card-header ">
+						<span>Prodotti in promozione</span>
+						<a role="button" class="link-page" onclick="goTo(AppURLs.page.promotions())">Vedi tutti &gt;</a>
+					</div>
+					<div id="promo-list" class="grid-product"></div>
+				</app-card>
+
+				<app-card id="highlighted-event-card">
+					<div class="card-header ">
+						<span>Giornata in evidenza</span>
+						<a role="button" class="link-page" onclick="goTo(AppURLs.page.events())">Vedi tutte &gt;</a>
+					</div>
+					<div class="event-wrapper" id="highlighted-event-wrapper">
+						<img src="https://api.assistentefarmacia.it/uploads/images/placeholder-logo-farmacia.jpg" alt="Logo Farmacia" width="364" height="364" />
+					</div>
+				</app-card>
+
+				<app-card class="pillole-container">
+					<div class="card-header ">
+						<span>Ultime pillole informative</span>
+						<a role="button" class="link-page" onclick="goTo(AppURLs.page.pillArchive())">Vedi tutte &gt;</a>
+					</div>
+					<div id="pillole-latest" class="pillole-card"><!-- Le ultime 3 pillole appaiono qui --></div>
+				</app-card>
+
+				<div id="farmacia" aria-hidden="true"></div>
+
+				<app-card>
+					<div class="card-header ">
+						<span id="namePharmacy"></span>
+					</div>
+
+					<div class="pharmacy-box">
+						<div class="pharmacy-item" onclick="goTo(AppURLs.page.reservation())">Prenota prodotto</div>
+						<div class="pharmacy-item show-on-pharma--1 d-none" onclick="goTo(AppURLs.page.reminders())">Terapia personale</div>
+					</div>
+
+					<div class="pharmacy-box">
+						<div class="pharmacy-item" onclick="goTo(AppURLs.page.services())">Servizi</div>
+						<div class="pharmacy-item" onclick="goTo(AppURLs.page.archiveOrder())">Ordini</div>
+					</div>
+
+					<div class="pharmacy-box">
+						<div class="pharmacy-item waste-drugs" onclick="goTo(AppURLs.page.wasteDrugs())">Guida allo smaltimento</div>
+						<div class="pharmacy-item" onclick="goTo(AppURLs.page.pharmacy())">Info</div>
+					</div>
+
+					<div class="cta-buttons">
+						<a href="javascript:void(0)" id="callBtn" class="cta-call action-button" rel="noopener">
+							<i class="fas fa-phone"></i>
+							Chiama Ora
+						</a>
+						<a href="javascript:void(0)" id="chatBtn" class="cta-whatsapp action-button" rel="noopener">
+							<i class="fab fa-whatsapp"></i>
+							Chiedi Ora
+						</a>
+					</div>
+				</app-card>
+			</app-body>
+			<app-footer></app-footer>
+		</div>
+		<!-- Scripts -->
+		<script type="module" src="./assets/components/layout.js?v=1.1.1"></script>
+		<script type="text/javascript" src="./assets/js/app.js?v=1.1.1"></script>
+		<script src="./assets/js/cart.js?v=1.1.1"></script>
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+		<script src="./assets/js/page-punti-benessere.js?v=1.1.1"></script>
+		<script src="./assets/js/page-promozioni.js?v=1.1.1"></script>
+		<script src="./assets/js/page-farmacia-preferita.js?v=1.1.1"></script>
+		<script src="./assets/js/page-pillole-archivio.js?v=1.1.1"></script>
+		<script src="./assets/js/page-event.js?v=1.1.1"></script>
+		<script src="./assets/js/page-dashboard.js?v=1.1.1"></script>
+	</body>
+</html>

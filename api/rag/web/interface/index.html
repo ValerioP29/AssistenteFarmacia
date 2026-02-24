@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG AI Assistant</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <h1>RAG AI Assistant</h1>
+        </div>
+        <div class="nav-menu">
+            <a href="index.html" class="nav-link active">Chat</a>
+            <a href="documenti.html" class="nav-link">Documenti</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Layout Desktop: Chat a sinistra, Controlli a destra -->
+        <div class="chat-layout">
+            <!-- Colonna Sinistra: Chat -->
+            <div class="chat-column">
+                <div class="chat-section">
+                    <div class="chat-header">
+                        <h2>Chat con AI</h2>
+                        <p>Conversazione con l'intelligenza artificiale</p>
+                    </div>
+                    
+                    <div class="chat-area">
+                        <div class="chat-messages" id="chatMessages">
+                            <div class="welcome-message">
+                                <div class="ai-message">
+                                    <div class="message-avatar">🤖</div>
+                                    <div class="message-content">
+                                        <p>Ciao! Sono il tuo assistente AI. Puoi farmi domande e posso rispondere utilizzando i documenti che hai caricato (RAG) o solo con la mia conoscenza generale.</p>
+                                        <p><strong>Come usare:</strong></p>
+                                        <ul>
+                                            <li>✅ <strong>RAG Attivo</strong>: Usa i documenti caricati per risposte più precise</li>
+                                            <li>🔍 <strong>Debug</strong>: Mostra informazioni dettagliate sul processo</li>
+                                            <li>📊 <strong>Token</strong>: Monitora l'uso dei token in tempo reale</li>
+                                        </ul>
+                                        <p>Inizia facendo una domanda!</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="chatEnd"></div>
+                    </div>
+                    
+                    <!-- Chat Actions - Spostati qui dalla sezione controlli -->
+                    <div class="chat-actions">
+                        <button class="btn btn-secondary" onclick="clearChat()">
+                            <span class="btn-icon">🗑️</span>
+                            Pulisci Chat
+                        </button>
+                        <button class="btn btn-secondary" onclick="scrollToBottom()">
+                            <span class="btn-icon">⬇️</span>
+                            Vai in Fondo
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Colonna Destra: Controlli e Input -->
+            <div class="controls-column">
+                <div class="controls-section">
+                    <div class="controls-header">
+                        <h3>🎛️ Controlli</h3>
+                    </div>
+                    
+                    <div class="controls-content">
+                        <!-- Toggle Controls -->
+                        <div class="control-group">
+                            <label class="toggle-label">
+                                <input type="checkbox" id="ragToggle" checked>
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-text">RAG Attivo</span>
+                            </label>
+                            
+                            <label class="toggle-label">
+                                <input type="checkbox" id="debugToggle">
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-text">Modalità Debug</span>
+                            </label>
+                        </div>
+                        
+
+                        
+                        <!-- Input Area -->
+                        <div class="input-area">
+                            <textarea id="questionInput" placeholder="Scrivi la tua domanda qui..." rows="4"></textarea>
+                            <button class="btn btn-primary send-btn" onclick="sendMessage()">
+                                <span class="btn-icon">🚀</span>
+                                Invia Domanda
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div class="loading-spinner"></div>
+        <p>Elaborazione in corso...</p>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 

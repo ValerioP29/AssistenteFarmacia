@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG AI Assistant - Documenti</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Header con Menu -->
+    <header>
+        <nav class="navbar">
+            <div class="nav-brand">
+                <h1>RAG AI Assistant</h1>
+            </div>
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link">💬 Chat</a>
+                <a href="documenti.html" class="nav-link active">📄 Documenti</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container">
+        <main>
+            <!-- Sezione Caricamento Documenti -->
+            <section class="card">
+                <section class="card-header">
+                    <h3>📄 Carica Documenti</h3>
+                </section>
+                <p class="section-description">
+                    Carica i tuoi documenti per permettere all'AI di rispondere con informazioni precise e aggiornate.
+                </p>
+                
+                <div class="upload-section">
+                    <div class="upload-method">
+                        <h3>📁 Carica File</h3>
+                        <div class="file-upload-area">
+                            <input type="file" id="fileInput" accept=".txt,.csv,.pdf,.doc,.docx,.rtf,.odt" multiple />
+                            <div class="file-drop-zone" id="fileDropZone">
+                                <div class="drop-zone-content">
+                                    <div class="drop-zone-icon">📁</div>
+                                    <p>Trascina i file qui o clicca per selezionare</p>
+                                    <p class="file-types">Supportati: TXT, CSV, PDF, DOC, DOCX, RTF, ODT</p>
+                                </div>
+                            </div>
+                        </div>
+                        <button id="uploadFileBtn" class="btn btn-primary">Carica File Selezionati</button>
+                    </div>
+                    
+                    <div class="upload-method">
+                        <h3>✏️ Inserisci Testo</h3>
+                        <textarea id="textInput" placeholder="Incolla qui il testo del documento..."></textarea>
+                        <input type="text" id="filenameInput" placeholder="Nome documento (opzionale)" />
+                        <button id="uploadTextBtn" class="btn btn-primary">Carica Testo</button>
+                    </div>
+                </div>
+                
+                <div id="uploadStatus" class="status-message"></div>
+            </section>
+
+            <!-- Sezione Documenti Caricati -->
+            <section class="card">
+                <div class="card-header">
+                    <h3>📚 Documenti Disponibili</h3>
+                </div>
+                <div class="documents-header">
+                    <p>I documenti caricati vengono automaticamente processati e utilizzati per le risposte RAG.</p>
+                    <button id="refreshDocsBtn" class="btn btn-secondary">🔄 Aggiorna Lista</button>
+                </div>
+                
+                <div id="documentsList" class="documents-list">
+                    <div class="empty-state">
+                        <div class="empty-icon">📚</div>
+                        <h3>Nessun documento caricato</h3>
+                        <p>Carica i tuoi primi documenti per iniziare a utilizzare il RAG!</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sezione Statistiche -->
+            <section class="card">
+                <div class="card-header">
+                    <h3>📊 Statistiche</h3>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalDocuments">0</div>
+                        <div class="stat-label">Documenti Totali</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalChunks">0</div>
+                        <div class="stat-label">Chunk Generati</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalSize">0 KB</div>
+                        <div class="stat-label">Dimensione Totale</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="lastUpload">-</div>
+                        <div class="stat-label">Ultimo Caricamento</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p>Elaborazione in corso...</p>
+        </div>
+    </div>
+
+    <script src="documenti.js"></script>
+</body>
+</html> 

@@ -1,0 +1,21 @@
+Nome,Specie,Famiglia,Habitat,Dieta,Longevità,Peso,Dimensioni,Caratteristiche,Stato_Conservazione
+Leone,Panthera leo,Felidi,Savana africana,Carnivoro,10-14 anni,150-250 kg,1.7-2.5m,Sociale, caccia in branco,Vulnerabile
+Tigre,Panthera tigris,Felidi,Foreste asiatiche,Carnivoro,10-15 anni,100-300 kg,2.5-3.3m,Solitario, nuotatore eccellente,In Pericolo
+Elefante africano,Loxodonta africana,Elefantidi,Savana e foreste,Erbivoro,60-70 anni,4000-7000 kg,3-4m,Intelligente, memoria eccellente,Vulnerabile
+Gorilla,Gorilla gorilla,Scimmie antropomorfe,Foreste equatoriali,Erbivoro,35-40 anni,140-200 kg,1.4-1.8m,Sociale, comunicazione complessa,In Pericolo Critico
+Aquila reale,Aquila chrysaetos,Accipitridi,Montagne e praterie,Carnivoro,20-30 anni,3-7 kg,2-2.3m,Vista acutissima, volo maestoso,Preoccupazione Minore
+Delfino comune,Delphinus delphis,Delfinidi,Oceani e mari,Carnivoro,20-30 anni,80-150 kg,1.7-2.4m,Intelligente, ecolocalizzazione,Preoccupazione Minore
+Panda gigante,Ailuropoda melanoleuca,Orsi,Bambù cinesi,Erbivoro,20-30 anni,80-120 kg,1.2-1.8m,Simbolo di conservazione,Vulnerabile
+Koala,Phascolarctos cinereus,Fascolartidi,Foreste di eucalipto,Erbivoro,13-18 anni,4-15 kg,60-85cm,Dorme 20 ore al giorno,Vulnerabile
+Pinguino imperatore,Aptenodytes forsteri,Sfeniscidi,Antartide,Carnivoro,20-25 anni,22-45 kg,1.1-1.3m,Resistente al freddo estremo,Quasi Minacciato
+Giraffa,Giraffa camelopardalis,Giraffidi,Savana africana,Erbivoro,20-25 anni,800-1200 kg,4.3-5.7m,Collo lungo, vista eccellente,Vulnerabile
+Orca,Orcinus orca,Delfinidi,Oceani globali,Carnivoro,50-90 anni,3000-6000 kg,6-8m,Superpredatore, caccia coordinata,Preoccupazione Minore
+Rinoceronte bianco,Ceratotherium simum,Rinocerontidi,Savana africana,Erbivoro,40-50 anni,1800-3500 kg,3.7-4m,Corno di cheratina,Vulnerabile
+Leopardo delle nevi,Panthera uncia,Felidi,Alte montagne,Carnivoro,15-18 anni,25-75 kg,1-1.3m,Adattato al freddo,Vulnerabile
+Scimpanzé,Pan troglodytes,Scimmie antropomorfe,Foreste africane,Onnivoro,40-50 anni,40-70 kg,1.2-1.7m,Intelligente, uso strumenti,In Pericolo
+Balena blu,Balaenoptera musculus,Balenotteridi,Oceani globali,Carnivoro,80-90 anni,100000-150000 kg,25-30m,Animale più grande mai esistito,In Pericolo
+Lupo grigio,Canis lupus,Canidi,Foreste e tundra,Carnivoro,6-8 anni,25-80 kg,1-1.6m,Sociale, caccia in branco,Preoccupazione Minore
+Orso polare,Ursus maritimus,Orsi,Artico,Carnivoro,20-25 anni,300-800 kg,2-2.5m,Adattato al ghiaccio,Vulnerabile
+Tartaruga marina,Chelonia mydas,Chelonidi,Oceani tropicali,Erbivoro,80-100 anni,150-400 kg,1-1.2m,Migrazioni lunghe,In Pericolo
+Canguro rosso,Macropus rufus,Macropodidi,Australia centrale,Erbivoro,16-20 anni,25-90 kg,1.3-1.6m,Salto potente,Preoccupazione Minore
+Condor delle Ande,Vultur gryphus,Accipitridi,Ande sudamericane,Carnivoro,50-70 anni,11-15 kg,2.7-3.2m,Volo planato,In Pericolo 

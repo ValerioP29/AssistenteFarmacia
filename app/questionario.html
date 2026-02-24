@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="it">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<title>Assistente Farmacia</title>
+
+		<!-- Favicon -->
+		<link rel="icon" type="image/png" href="./assets/favicon/favicon-96x96.png" sizes="96x96" />
+		<link rel="icon" type="image/svg+xml" href="./assets/favicon/favicon.svg" />
+		<link rel="shortcut icon" href="./assets/favicon/favicon.ico" />
+		<link rel="apple-touch-icon" sizes="180x180" href="./assets/favicon/apple-touch-icon.png" />
+		<meta name="apple-mobile-web-app-title" content="Assistente" />
+		<link rel="manifest" href="./assets/favicon/site.webmanifest" />
+
+		<!-- Styles -->
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+		<link rel="stylesheet" href="./assets/css/style.min.css?v=1.1.1" />
+	</head>
+	<body class="page-app page-questionary loading">
+		<div id="app" class="app-container">
+			<app-body>
+				<app-card>
+					<h1 class="mb-4">Profilo Cliente</h1>
+
+					<form id="questionarioForm">
+						<div class="slider-wrapper overflow-hidden position-relative">
+							<div class="slider d-flex transition">
+								<!-- STEP 0 -->
+								<div class="step px-0 flex-shrink-0 w-100 text-center d-flex flex-column align-items-center">
+									<label class="form-label fw-bold">👤 Qual è il tuo genere?</label>
+									<div class="justify-content-center align-items-center mb-3">
+										<div class=" form-check">
+											<input class="form-check-input" type="radio" name="q_genere" id="genere1" value="Maschio" required />
+											<label class="form-check-label text-start" for="genere1">Maschio</label>
+										</div>
+										<div class=" form-check">
+											<input class="form-check-input" type="radio" name="q_genere" id="genere2" value="Femmina" required />
+											<label class="form-check-label text-start" for="genere2">Femmina</label>
+										</div>
+									</div>
+									<button type="button" class="mt-auto btn btn-primary w-100 next-btn" disabled>Prosegui</button>
+								</div>
+
+								<!-- STEP 1-->
+								<div class="step px-0 flex-shrink-0 w-100 text-center d-flex flex-column align-items-center">
+									<div class="back-link-wrapper me-auto mb-3">
+										<a role="button" class="back-link">← Torna indietro</a>
+									</div>
+
+									<label class="form-label fw-bold">👤 Qual è la tua fascia d'età?</label>
+									<div class="justify-content-center align-items-center mb-3">
+										<div class=" form-check">
+											<input class="form-check-input" type="radio" name="q_fascia_eta" id="eta1" value="18-30" required />
+											<label class="form-check-label text-start" for="eta1">18-34</label>
+										</div>
+										<div class=" form-check">
+											<input class="form-check-input" type="radio" name="q_fascia_eta" id="eta2" value="30-50" required />
+											<label class="form-check-label text-start" for="eta2">35-49</label>
+										</div>
+										<div class=" form-check">
+											<input class="form-check-input" type="radio" name="q_fascia_eta" id="eta3" value="50-70" required />
+											<label class="form-check-label text-start" for="eta3">50-64</label>
+										</div>
+										<div class=" form-check">
+											<input class="form-check-input" type="radio" name="q_fascia_eta" id="eta4" value="70+" required />
+											<label class="form-check-label text-start" for="eta4">65+</label>
+										</div>
+									</div>
+									<button type="button" class="mt-auto btn btn-primary w-100 next-btn" disabled>Prosegui</button>
+								</div>
+
+								<!-- STEP 2 -->
+								<div class="step px-0 flex-shrink-0 w-100 text-center d-flex flex-column align-items-center">
+									<div class="back-link-wrapper me-auto mb-3">
+										<a role="button" class="back-link">← Torna indietro</a>
+									</div>
+
+									<label class="form-label fw-bold">Come descriveresti il tuo stile di vita attuale?</label>
+									<div class="justify-content-center align-items-center mb-3">
+										<div class=" form-check">
+											<input class="form-check-input" type="radio" name="q_lifestyle" id="lifestyle1" value="Molto equilibrato" required />
+											<label class="form-check-label text-start" for="lifestyle1">Molto equilibrato</label>
+										</div>
+										<div class=" form-check">
+											<input class="form-check-input" type="radio" name="q_lifestyle" id="lifestyle2" value="Abbastanza equilibrato" required />
+											<label class="form-check-label text-start" for="lifestyle2">Abbastanza equilibrato</label>
+										</div>
+										<div class=" form-check">
+											<input class="form-check-input" type="radio" name="q_lifestyle" id="lifestyle3" value="Poco equilibrato" required />
+											<label class="form-check-label text-start" for="lifestyle3">Poco equilibrato</label>
+										</div>
+									</div>
+									<button type="button" class="mt-auto btn btn-primary w-100 next-btn" disabled>Prosegui</button>
+								</div>
+
+								<!-- STEP 3 -->
+								<div class="step px-0 flex-shrink-0 w-100 text-center d-flex flex-column align-items-center">
+									<div class="back-link-wrapper me-auto mb-3">
+										<a role="button" class="back-link">← Torna indietro</a>
+									</div>
+
+									<label class="form-label fw-bold">Quale argomento, tra quelli proposti, ti interessa maggiormente? (Seleziona un massimo di 3)</label>
+									<div class="justify-content-center align-items-center mb-3">
+										<div class="form-check">
+											<input class="form-check-input" type="checkbox" name="q_argument[]" id="argument1" value="Alimentazione e Nutrizione" />
+											<label class="form-check-label text-start" for="argument1">Alimentazione e Nutrizione</label>
+										</div>
+										<div class="form-check">
+											<input class="form-check-input" type="checkbox" name="q_argument[]" id="argument2" value="Benessere Fisico e Movimento" />
+											<label class="form-check-label text-start" for="argument2">Benessere Fisico e Movimento</label>
+										</div>
+										<div class="form-check">
+											<input class="form-check-input" type="checkbox" name="q_argument[]" id="argument3" value="Gestione dello Stress e del Sonno" />
+											<label class="form-check-label text-start" for="argument3">Gestione dello Stress e del Sonno</label>
+										</div>
+										<div class="form-check">
+											<input class="form-check-input" type="checkbox" name="q_argument[]" id="argument4" value="Salute e Prevenzione" />
+											<label class="form-check-label text-start" for="argument4">Salute e Prevenzione</label>
+										</div>
+										<div class="form-check">
+											<input class="form-check-input" type="checkbox" name="q_argument[]" id="argument5" value="Cura della Pelle e Beauty Routine" />
+											<label class="form-check-label text-start" for="argument5">Cura della Pelle e Beauty Routine</label>
+										</div>
+										<div class="form-check">
+											<input class="form-check-input" type="checkbox" name="q_argument[]" id="argument6" value="Supporto Cognitivo e Memoria" />
+											<label class="form-check-label text-start" for="argument6">Supporto Cognitivo e Memoria</label>
+										</div>
+										<div class="form-check">
+											<input class="form-check-input" type="checkbox" name="q_argument[]" id="argument7" value="Benessere Naturale" />
+											<label class="form-check-label text-start" for="argument7">Benessere Naturale</label>
+										</div>
+										<div class="form-check">
+											<input class="form-check-input" type="checkbox" name="q_argument[]" id="argument8" value="Mamma e Bambino" />
+											<label class="form-check-label text-start" for="argument8">Mamma e Bambino</label>
+										</div>
+									</div>
+
+									<button type="submit" class="mt-auto btn btn-primary w-100 btn-register" disabled>Completa Registrazione</button>
+								</div>
+							</div>
+						</div>
+					</form>
+				</app-card>
+			</app-body>
+		</div>
+		<script type="module" src="./assets/components/layout.js?v=1.1.1"></script>
+		<script type="text/javascript" src="./assets/js/app.js?v=1.1.1"></script>
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+		<script src="./assets/js/page-questionario.js?v=1.1.1"></script>
+	</body>
+</html>

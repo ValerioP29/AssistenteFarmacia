@@ -1,0 +1,51 @@
+body.page-waste {
+	h1 {
+		text-align: center;
+		color: $primary-color;
+		margin: 10px 0 20px;
+		font-weight: bold;
+		font-size: 20px;
+	}
+
+	h2 {
+		font-size: 18px;
+		margin-top: 20px;
+		color: #3a7d44;
+	}
+
+	p,
+	li {
+		font-size: 15px;
+		line-height: 1.6;
+	}
+
+	ul,
+	ol {
+		padding-left: 20px;
+	}
+
+	.note {
+		background: #e6ffe6;
+		border-left: 4px solid #3a7d44;
+		padding: 12px;
+		margin-top: 16px;
+		border-radius: 8px;
+	}
+
+	.cta {
+		background: #3a7d44;
+		color: white;
+		padding: 12px;
+		margin: 24px 0;
+		border-radius: 10px;
+		text-align: center;
+		font-weight: 600;
+		text-decoration: none;
+		display: block;
+	}
+
+	.icon-green {
+		color: #3a7d44;
+		margin-right: 6px;
+	}
+}

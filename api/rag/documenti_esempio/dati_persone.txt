@@ -1,0 +1,91 @@
+Dati Personali - Database Dipendenti
+
+Nome: Mario Rossi
+Cognome: Rossi
+Età: 35
+Città: Milano
+Professione: Ingegnere
+Dipartimento: Sviluppo Software
+Stipendio: 45000€
+Data Assunzione: 15/03/2020
+
+Nome: Anna Bianchi
+Cognome: Bianchi
+Età: 28
+Città: Roma
+Professione: Designer
+Dipartimento: UX/UI Design
+Stipendio: 38000€
+Data Assunzione: 22/07/2021
+
+Nome: Luca Verdi
+Cognome: Verdi
+Età: 42
+Città: Torino
+Professione: Medico
+Dipartimento: Cardiologia
+Stipendio: 65000€
+Data Assunzione: 10/01/2018
+
+Nome: Sofia Neri
+Cognome: Neri
+Età: 31
+Città: Napoli
+Professione: Avvocato
+Specializzazione: Diritto Commerciale
+Stipendio: 52000€
+Data Assunzione: 05/09/2019
+
+Nome: Giuseppe Gialli
+Cognome: Gialli
+Età: 39
+Città: Palermo
+Professione: Architetto
+Specializzazione: Architettura Sostenibile
+Stipendio: 48000€
+Data Assunzione: 12/06/2020
+
+Nome: Elena Rossi
+Cognome: Rossi
+Età: 26
+Città: Bologna
+Professione: Insegnante
+Materia: Matematica
+Stipendio: 32000€
+Data Assunzione: 01/09/2022
+
+Nome: Marco Bianchi
+Cognome: Bianchi
+Età: 45
+Città: Firenze
+Professione: Imprenditore
+Settore: Tecnologia
+Fatturato: 2.5M€
+Data Fondazione: 15/03/2015
+
+Nome: Laura Verdi
+Cognome: Verdi
+Età: 33
+Città: Genova
+Professione: Psicologa
+Specializzazione: Psicologia Clinica
+Stipendio: 41000€
+Data Assunzione: 20/11/2020
+
+Nome: Paolo Neri
+Cognome: Neri
+Età: 37
+Città: Bari
+Professione: Programmatore
+Linguaggi: Python, JavaScript, Java
+Stipendio: 44000€
+Data Assunzione: 08/04/2021
+
+Nome: Chiara Gialli
+Cognome: Gialli
+Età: 29
+Città: Catania
+Professione: Artista
+Specializzazione: Pittura Contemporanea
+Guadagno: 28000€
+Data Inizio Attività: 01/01/2020 

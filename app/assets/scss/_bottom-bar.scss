@@ -1,0 +1,242 @@
+/* ========== BOTTOM NAV — BASE COMUNE ========== */
+
+body.has-bottom-nav {
+	padding-bottom: 150px;
+}
+/*
+.bottom-nav {
+	--brand-1: #7c3aed; 
+	--brand-2: #ec4899; 
+	--text: #3b2a4e; 
+	--muted: #8a7ba7; 
+	--surface: #ffffff; 
+	--shadow: 0 6px 20px rgba(124, 58, 237, 0.15);
+	--bar-bg: rgba(255, 255, 255, 0.75);
+	--active-bg: linear-gradient(135deg, var(--brand-1), var(--brand-2));
+
+	@supports (backdrop-filter: blur(10px)) {
+		backdrop-filter: saturate(140%) blur(16px);
+	}
+
+	display: none;
+
+	&.is-visible {
+		display: block;
+	}
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+	background: var(--bar-bg);
+	box-shadow: var(--shadow);
+	z-index: 999;
+
+	.rail {
+		display: grid;
+		gap: 10px;
+		background: rgba(255, 255, 255, 0.55);
+		border-radius: 18px;
+		padding: 8px;
+		border: 1px solid rgba(124, 58, 237, 0.12);
+	}
+
+	.bn-item {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 6px;
+		min-height: 54px;
+		border-radius: 14px;
+		position: relative;
+		color: var(--muted);
+		text-decoration: none;
+		font-weight: 600;
+		font-stretch: normal;
+		font-size: 12px;
+		line-height: 1;
+
+		svg {
+			width: 22px;
+			height: 22px;
+			opacity: 0.9;
+		}
+
+		&.active {
+			color: #fff;
+			background: var(--active-bg);
+			box-shadow: 0 6px 14px rgba(124, 58, 237, 0.35);
+
+			svg {
+				filter: brightness(100%);
+			}
+		}
+
+		.badge {
+			position: absolute;
+			top: 6px;
+			right: 10px;
+			background: #fff;
+			color: var(--brand-1);
+			//font: 700 10px/1 Inter, system-ui;
+			padding: 3px 6px;
+			border-radius: 10px;
+			border: 1px solid rgba(124, 58, 237, 0.2);
+		}
+
+		&:focus-visible {
+			outline: 2px solid #c4b5fd;
+			outline-offset: 2px;
+		}
+	}
+
+	&.v4 {
+		.rail {
+			grid-template-columns: repeat(4, 1fr);
+		}
+	}
+
+	&.v5 {
+		.rail {
+			grid-template-columns: repeat(5, 1fr);
+		}
+
+		.bn-item {
+			.points {
+				position: absolute;
+				top: 6px;
+				right: -16px;
+				display: flex;
+				align-items: center;
+				gap: 4px;
+				background: #fff;
+				color: var(--brand-1);
+				border: 1px solid rgba(124, 58, 237, 0.2);
+				border-radius: 12px;
+				padding: 3px 6px;
+				//font: 700 10px/1 Inter, system-ui;
+				font-weight: 700;
+				font-stretch: normal;
+				font-size: 10px;
+				line-height: 1;
+
+				svg {
+					width: 12px;
+					height: 12px;
+				}
+			}
+		}
+	}
+}
+*/
+.bottom-nav {
+	&.v6 {
+		/* palette */
+		--brand-1: #7c3aed; /* violetto */
+		--brand-2: #ec4899; /* rosa */
+		--v6-bg: #fff; /* ← barra bianca */
+		--v6-text: #3b2a4e; /* testo/icone default (scuri) */
+		--v6-muted: #8a7ba7; /* testo secondario */
+		--v6-active-bg: linear-gradient(135deg, var(--brand-1), var(--brand-2)); /* ← pill viola */
+		--v6-active-text: #fff;
+		--bottom-nav-height: 72px;
+
+		position: fixed;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: var(--v6-bg);
+		padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+		border-top-left-radius: 18px;
+		border-top-right-radius: 18px;
+		box-shadow: 0 -4px 12px rgba(124, 58, 237, 0.12);
+		z-index: 50;
+
+		.rail {
+			display: grid;
+			grid-template-columns: repeat(5, 1fr);
+			gap: 0;
+			padding: 8px 0px 15px ;
+			background: transparent;
+			border: 0;
+		}
+
+		.bn-item {
+			color: var(--v6-muted);
+			cursor: pointer;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			gap: 4px;
+			text-decoration: none;
+			font: 600 12px/1 Inter, system-ui;
+			padding: 8px 4px;
+			min-height: 56px;
+			border-radius: 12px;
+			position: relative;
+			transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+
+			svg,
+			.icon {
+				width: 22px;
+				height: 22px;
+				opacity: 0.95;
+				color: var(--v6-text);
+			}
+
+			&.active {
+				background: #762ea2;
+				color: var(--v6-active-text);
+
+				svg,
+				.icon {
+					color: var(--v6-active-text);
+					opacity: 1;
+					filter: brightness(1.05);
+				}
+			}
+
+			/* badge punti (come v5, ma su barra bianca) */
+			.points {
+				position: absolute;
+				top: 6px;
+				right: 10px;
+				display: inline-flex;
+				align-items: center;
+				gap: 4px;
+				background: #fff;
+				color: var(--brand-1);
+				border: 1px solid rgba(124, 58, 237, 0.18);
+				border-radius: 12px;
+				padding: 3px 6px;
+				font: 700 10px/1 Inter, system-ui;
+
+				svg {
+					width: 12px;
+					height: 12px;
+				}
+			}
+
+			&:focus-visible {
+				outline: 2px solid #762ea2;
+				outline-offset: 2px;
+			}
+		}
+	}
+}
+
+.with-bottom-padding {
+	padding-bottom: 100px;
+}
+
+/* posizione base */
+.site-footer .btn-cart {
+	bottom: 12px;
+}
+
+body.has-bottom-nav .site-footer .btn-cart {
+	bottom: calc(12px + var(--bottom-nav-height, 68px));
+    z-index: 50;
+}

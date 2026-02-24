@@ -1,0 +1,4 @@
+#RewriteEngine On
+
+# Blocca qualunque richiesta che contenga /pharmacies/{id}/reservations/
+#RewriteRule ^pharmacies/[^/]+/reservations/ - [F,L]

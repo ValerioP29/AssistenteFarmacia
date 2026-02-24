@@ -1,0 +1,34 @@
+Test di Precisione RAG
+
+Questo documento contiene informazioni di test per verificare la precisione del sistema RAG.
+
+Dati Personali:
+- Mario Rossi: Ingegnere, Milano, 35 anni
+- Anna Bianchi: Designer, Roma, 28 anni
+- Luca Verdi: Medico, Torino, 42 anni
+- Sofia Neri: Avvocato, Napoli, 31 anni
+- Giuseppe Gialli: Architetto, Palermo, 39 anni
+
+Informazioni Generali:
+L'intelligenza artificiale è un campo dell'informatica che si occupa di creare sistemi intelligenti. Il machine learning è una sottocategoria dell'AI che utilizza algoritmi per apprendere dai dati.
+
+Tecnologie:
+- Python: Linguaggio di programmazione per AI
+- TensorFlow: Framework per deep learning
+- Scikit-learn: Libreria per machine learning
+- PyTorch: Framework alternativo per deep learning
+
+Applicazioni:
+- Riconoscimento immagini
+- Elaborazione linguaggio naturale
+- Sistemi di raccomandazione
+- Analisi predittiva
+
+Questo documento serve per testare se il sistema RAG riesce a distinguere tra:
+1. Query specifiche per persone (es: "Che professione fa Mario Rossi?")
+2. Query generali su tecnologie (es: "Cos'è il machine learning?")
+
+Il sistema dovrebbe:
+- Per query su persone: Trovare solo i dati personali
+- Per query su tecnologie: Trovare solo le informazioni tecniche
+- Non mescolare i due tipi di contenuto 
