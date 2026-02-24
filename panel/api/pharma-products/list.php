@@ -12,6 +12,47 @@ checkAccess(['pharmacist']);
 
 header('Content-Type: application/json');
 
+function normalizeTagsForResponse($rawTags): array {
+    if ($rawTags === null) {
+        return [];
+    }
+
+    $tags = [];
+    if (is_string($rawTags)) {
+        $rawTags = trim($rawTags);
+        if ($rawTags === '') {
+            return [];
+        }
+
+        $decoded = json_decode($rawTags, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            $tags = $decoded;
+        } else {
+            $tags = explode(',', $rawTags);
+        }
+    } elseif (is_array($rawTags)) {
+        $tags = $rawTags;
+    } else {
+        $tags = [$rawTags];
+    }
+
+    $normalized = [];
+    foreach ($tags as $tag) {
+        if (is_array($tag) || is_object($tag)) {
+            continue;
+        }
+
+        $value = strtolower(trim((string)$tag));
+        if ($value === '') {
+            continue;
+        }
+
+        $normalized[$value] = true;
+    }
+
+    return array_keys($normalized);
+}
+
 try {
     // Ottieni farmacia corrente
     $pharmacy = getCurrentPharmacy();
@@ -143,6 +184,21 @@ try {
         
         // Rimuovi il campo global_image per evitare confusione
         unset($product['global_image']);
+
+        // Normalizza tags in array
+        $product['id'] = (int)($product['id'] ?? 0);
+        $product['pharma_id'] = (int)($product['pharma_id'] ?? 0);
+        $product['product_id'] = array_key_exists('product_id', $product) && $product['product_id'] !== null
+            ? (int)$product['product_id']
+            : null;
+        $product['name'] = (string)($product['name'] ?? '');
+        $product['sku'] = isset($product['sku']) ? (string)$product['sku'] : null;
+        $product['price'] = isset($product['price']) ? (float)$product['price'] : null;
+        $product['sale_price'] = isset($product['sale_price']) && $product['sale_price'] !== null ? (float)$product['sale_price'] : null;
+        $product['image'] = isset($product['image']) && $product['image'] !== '' ? $product['image'] : null;
+        $product['is_active'] = (int)($product['is_active'] ?? 0);
+        $product['is_featured'] = (int)($product['is_featured'] ?? 0);
+        $product['tags'] = normalizeTagsForResponse($product['tags'] ?? null);
     }
     
     // Calcola paginazione

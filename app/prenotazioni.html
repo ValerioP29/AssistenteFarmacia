@@ -23,7 +23,37 @@
 		<!-- Tom Select CSS -->
 		<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet" />
 
-		<style></style>
+		<style>
+			.related-products {
+				border: 1px solid #eee;
+				border-radius: 12px;
+				padding: 12px;
+				background: #faf9ff;
+			}
+			.related-products__list {
+				display: grid;
+				grid-template-columns: 1fr;
+				gap: 8px;
+			}
+			.related-product-item {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				gap: 8px;
+				padding: 8px;
+				border: 1px solid #ece8ff;
+				border-radius: 10px;
+				background: #fff;
+			}
+			.related-product-item__name {
+				font-size: 0.92rem;
+				font-weight: 600;
+			}
+			.related-product-item__price {
+				font-size: 0.82rem;
+				color: #666;
+			}
+		</style>
 	</head>
 
 	<body class="page-app page-reservation loading">
@@ -63,11 +93,43 @@
 									<label for="res-prod-qty" class="form-label">Quantit&agrave;</label>
 									<input type="number" id="res-prod-qty" class="form-control" min="1" max="99" value="1" step="1" />
 								</div>
+
+								<div class="form-group mb-3 related-products" id="related-products-block">
+									<label for="related-tag-select" class="form-label mb-1">Suggerimenti rapidi</label>
+									<select id="related-tag-select" class="form-select form-select-sm mb-2">
+										<option value="">In evidenza</option>
+									</select>
+									<div id="related-products-list" class="related-products__list"></div>
+									<div id="related-products-empty" class="small text-muted d-none">Nessun suggerimento disponibile al momento.</div>
+								</div>
 							</div>
 
-							<div class="suborder-group suborder-group--1 d-none">
-								<!-- Toggle per selezionare tipo di ricetta -->
-								<div class="form-group mb-3">
+								<div class="suborder-group suborder-group--1 d-none">
+									<div class="form-group mb-3">
+										<label for="related-seed-tag-prescription" class="form-label">Categoria della richiesta <small>(opzionale)</small></label>
+										<select id="related-seed-tag-prescription" class="form-select form-select-sm">
+											<option value="">In evidenza</option>
+											<option value="dolore_febbre">Dolore/Febbre</option>
+											<option value="raffreddore_influenza">Raffreddore/Influenza</option>
+											<option value="gola">Gola</option>
+											<option value="tosse">Tosse</option>
+											<option value="gastro">Gastro</option>
+											<option value="dermocosmesi">Dermocosmesi</option>
+											<option value="vitamine_integratori">Vitamine/Integratori</option>
+											<option value="bambino">Bambino</option>
+											<option value="medicazione">Medicazione</option>
+											<option value="altro">Altro</option>
+										</select>
+									</div>
+
+									<div class="form-group mb-3 related-products" id="related-products-block-rx">
+										<label class="form-label mb-1">Suggerimenti rapidi</label>
+										<div id="related-products-list-rx" class="related-products__list"></div>
+										<div id="related-products-empty-rx" class="small text-muted d-none">Nessun suggerimento disponibile al momento.</div>
+									</div>
+
+									<!-- Toggle per selezionare tipo di ricetta -->
+									<div class="form-group mb-3">
 									<label class="form-label">Tipo di ricetta</label>
 									<div class="form-check form-switch">
 										<input class="form-check-input" type="checkbox" id="res-prod-toggle-prescription" name="res-prod-toggle-prescription" onchange="ReservationForm.togglePrescription();" />
@@ -133,9 +195,14 @@
 							<label for="urgent">&Egrave; urgente</label>
 						</div>
 
+						<div class="form-group mb-3 form-group--checkbox skip-line-toggle">
+							<input type="checkbox" id="salta-fila" name="salta_fila" />
+							<label for="salta-fila">Salta fila</label>
+						</div>
+
 						<div class="form-group mb-3 form-group--checkbox delivery-toggle">
 							<input type="checkbox" id="delivery" name="delivery" />
-							<label for="delivery">Consegna a domicilio</label>
+							<label for="delivery">Consegna a domicilio (domicilio)</label>
 						</div>
 
 						<p class="small text-muted">* La disponibilit&agrave; dei prodotti sar&agrave; verificata. Riceverai un messaggio di conferma su WhatsApp.</p>
