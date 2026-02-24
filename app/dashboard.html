@@ -25,24 +25,10 @@
 			<app-header></app-header>
 			<app-goback></app-goback>
 			<app-body>
-				<section class="dashboard-topbar-card" aria-label="Intestazione dashboard">
-					<div class="dashboard-topbar-card__left">
-						<div class="dashboard-topbar-card__logo" aria-hidden="true">
-							<img src="./assets/favicon/favicon-96x96.png" alt="" width="28" height="28" />
-						</div>
-						<div class="dashboard-topbar-card__text">
-							<h1 class="dashboard-topbar-card__title">AssistenteFarmacia.it</h1>
-							<p class="dashboard-topbar-card__subtitle">Home</p>
-						</div>
-					</div>
-					<button class="dashboard-topbar-card__menu" type="button" aria-label="Apri menu" onclick="document.querySelector('.btn-trigger-menu')?.click()">
-						<i class="fa-solid fa-bars" aria-hidden="true"></i>
-					</button>
-				</section>
 				<!-- Hero CTA Ordina Ricetta -->
 				<section class="hero-cta" aria-label="Richiedi prodotti">
 					<div class="hero-cta__content">
-						<a class="logo-box hero-cta__logo-box" href="#farmacia" aria-label="Vai alle info farmacia">
+						<a class="logo-box hero-cta__logo-box d-flex justify-content-center" href="#farmacia" aria-label="Vai alle info farmacia">
 							<img
 								id="pharmacy-logo-hero"
 								src="https://api.assistentefarmacia.it/uploads/images/placeholder-logo-farmacia.jpg"
@@ -53,8 +39,8 @@
 								decoding="async"
 							/>
 						</a>
-						<h2 class="hero-cta__title">Ordina prodotti in 30 secondi</h2>
-						<p class="hero-cta__subtitle">Invia la tua richiesta in pochi tap e ritira in farmacia senza attese.</p>
+						<h2 class="hero-cta__title mt-3 text-center">Richiedi prodotti in 30 secondi</h2>
+						<p class="hero-cta__subtitle text-center">Verifichiamo la disponibilita, prepariamo tutto scegli: <b>ritiro senza fila</b> o <b>consegna a domicilio</b> gratuita.</p>
 					</div>
 					<div class="hero-cta__steps" aria-label="Passaggi rapidi">
 						<div class="hero-cta__step">
