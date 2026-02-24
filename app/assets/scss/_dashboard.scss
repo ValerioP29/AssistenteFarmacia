@@ -331,78 +331,78 @@ body.page-dashboard {
 		cursor: pointer;
 	}
 
-	.search-card {
-		background: linear-gradient(135deg, #c299ff, #ff9dd6);
-		border-radius: 26px;
-		padding: 22px;
-		margin-bottom: 20px;
-		display: flex;
-		flex-direction: column;
-		gap: 16px;
-		align-items: center;
-		box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-	}
-
-	.logo-box {
-		padding: 6px 24px;
-		border-radius: 20px;
-		width: 100%;
-		text-align: center;
-		background: #fff;
-		cursor: pointer;
-
-		img {
-			height: 40px;
-			object-fit: contain;
-			width: auto;
-		}
-	}
-
-	.input-row {
+	.dashboard-topbar-card {
 		display: flex;
 		align-items: center;
-		width: 100%;
-		gap: 12px;
-		justify-content: center;
-	}
+		justify-content: space-between;
+		padding: 0.85rem 0.95rem;
+		margin-bottom: 0.75rem;
+		border-radius: 22px;
+		background: linear-gradient(145deg, #f7f1ff 0%, #efe4ff 100%);
+		border: 1px solid rgba(128, 49, 170, 0.14);
+		box-shadow: 0 8px 20px rgba(93, 46, 128, 0.12);
 
-	.avatar {
-		width: 48px;
-		height: 48px;
-		border-radius: 50%;
-		object-fit: cover;
-		border: 2px solid #fff;
-		background: #fff;
-	}
-
-	.search-input {
-		background: #fdf5fa;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-		flex: 1;
-		padding: 17px 16px;
-		border: none;
-		border-radius: 40px;
-		font-size: 13px;
-		cursor: pointer;
-
-		&:focus {
-			outline: 2px solid #8031aa;
+		&__left {
+			display: flex;
+			align-items: center;
+			gap: 0.7rem;
 		}
 
-		&::placeholder {
-			color: #5e278e;
-			opacity: 1;
-		}
-	}
+		&__logo {
+			width: 2.35rem;
+			height: 2.35rem;
+			border-radius: 0.8rem;
+			background: #fff;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			box-shadow: 0 4px 10px rgba(93, 46, 128, 0.15);
 
-	.ai-helper-text {
-		margin: 10px 0 -4px;
-		font-size: 14px;
-		font-weight: 600;
-		color: #5e257f;
-		text-align: center;
-		padding: 0 16px;
-		line-height: 1.4;
+			img {
+				width: 1.55rem;
+				height: 1.55rem;
+				display: block;
+			}
+		}
+
+		&__text {
+			display: flex;
+			flex-direction: column;
+			gap: 0.05rem;
+		}
+
+		&__title {
+			margin: 0;
+			font-size: 0.98rem;
+			line-height: 1.1;
+			font-weight: 700;
+			color: #352243;
+		}
+
+		&__subtitle {
+			margin: 0;
+			font-size: 0.78rem;
+			line-height: 1.2;
+			font-weight: 500;
+			color: #7a7185;
+		}
+
+		&__menu {
+			width: 2.2rem;
+			height: 2.2rem;
+			border: 0;
+			border-radius: 50%;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			background: linear-gradient(135deg, #8031aa 0%, #6a2892 100%);
+			color: #fff;
+			box-shadow: 0 8px 16px rgba(108, 47, 147, 0.25);
+
+			i {
+				font-size: 0.95rem;
+			}
+		}
 	}
 
 	.pillole-card {
