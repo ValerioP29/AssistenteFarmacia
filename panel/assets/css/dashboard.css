@@ -1,0 +1,61 @@
+@import url("color.css");
+
+
+/* Main */
+main {
+  color: var(--text-color);
+  padding: 1rem;
+  min-height: 100vh;
+}
+
+/* Cards */
+#card_container {
+  margin-top: 1rem;
+}
+#card_container .card {
+  width: 12rem;
+  border: 1px solid var(--border-color);
+  background: var(--form-bg);
+  transition: transform .2s;
+}
+#card_container .card:hover {
+  transform: translateY(-4px);
+}
+#card_container .card-body .bi {
+  width: 2rem;
+  height: 2rem;
+  color: var(--accent-color);
+}
+#card_container .card-title {
+  color: var(--primary-color);
+}
+
+/* Chart */
+#myChart {
+  max-width: 100%;
+  margin-top: 2rem;
+}
+
+/* Nascondi sprite */
+.tmpl-icons.hidden {
+  display: none !important;
+}
+
+.small {
+  height: 24px;
+  width: 24px;
+  object-fit: contain;
+}
+
+ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.card-body {
+  padding: 5px;
+}
+
+:root {
+  --spacing-lg: 0; 
+}

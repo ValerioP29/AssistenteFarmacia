@@ -1,0 +1,31 @@
+@import url(color.css);
+
+.show_table {
+    width: 100%;
+    border-collapse: collapse;
+    border:solid 5px var(--secondary-color);
+}
+
+.show_table th, .show_table td {
+    border:  solid 1px var(--primary-color);
+    padding: 5px;
+    text-align: center;
+}
+
+@media (max-width: 600px) {
+    
+    .show_table {
+        width: 100% !important;
+        font-size: 12px; /* Riduce la dimensione del testo per schermi piccoli */
+        overflow: auto; /* Aggiunge lo scroll se necessario */
+        display: block; /* Rende la tabella a blocchi per adattarsi meglio */
+        }
+
+    .show_table th, .show_table td {
+        padding: 3px; /* Riduce il padding per schermi piccoli */
+        width: 30%; /* Imposta la larghezza al 100% per ogni cella */
+
+    }
+    
+}
+

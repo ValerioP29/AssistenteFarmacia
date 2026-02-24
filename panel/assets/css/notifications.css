@@ -1,0 +1,232 @@
+/* Stili per alert di sistema */
+.system-alert {
+    position: fixed !important;
+    top: 0 !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    margin-top: 100px !important;
+    z-index: 99999 !important;
+    min-width: 300px !important;
+    max-width: 500px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+    color: white !important;
+}
+
+.system-alert .alert-body {
+    padding-right: 30px !important;
+    padding-left: 15px !important;
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+}
+
+.system-alert .btn-close {
+    position: absolute !important;
+    right: 10px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    background: none !important;
+    border: none !important;
+    font-size: 1.2rem !important;
+    opacity: 0.7 !important;
+    transition: opacity 0.2s ease !important;
+    color: white !important;
+    filter: brightness(0) invert(1) !important;
+}
+
+.system-alert .btn-close:hover {
+    opacity: 1 !important;
+}
+
+/* Responsive per alert */
+@media (max-width: 768px) {
+    .system-alert {
+        min-width: 280px !important;
+        max-width: calc(100vw - 40px) !important;
+        margin-top: 80px !important;
+        margin-left: 20px !important;
+        margin-right: 20px !important;
+        left: 0 !important;
+        transform: none !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .system-alert {
+        min-width: 260px !important;
+        max-width: calc(100vw - 20px) !important;
+        margin-left: 10px !important;
+        margin-right: 10px !important;
+    }
+    
+    .system-alert .alert-body {
+        padding: 10px 25px 10px 12px !important;
+        font-size: 0.9rem !important;
+    }
+}
+
+/* Stili specifici per tipi di alert */
+.system-alert.alert-success {
+    background-color: #28a745 !important;
+    color: white !important;
+    border-left: 4px solid #1e7e34 !important;
+}
+
+.system-alert.alert-danger {
+    background-color: #dc3545 !important;
+    color: white !important;
+    border-left: 4px solid #c82333 !important;
+}
+
+.system-alert.alert-warning {
+    background-color: #ffc107 !important;
+    color: white !important;
+    border-left: 4px solid #e0a800 !important;
+}
+
+.system-alert.alert-info {
+    background-color: #17a2b8 !important;
+    color: white !important;
+    border-left: 4px solid #138496 !important;
+}
+
+/* Toast notifications (Bootstrap) */
+.toast-container {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    z-index: 99999 !important;
+}
+
+.toast {
+    background: white !important;
+    border: none !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    margin-bottom: 10px !important;
+}
+
+/* Stili specifici per tipi di toast */
+.toast.bg-success {
+    background-color: #28a745 !important;
+    color: white !important;
+}
+
+.toast.bg-danger {
+    background-color: #dc3545 !important;
+    color: white !important;
+}
+
+.toast.bg-warning {
+    background-color: #ffc107 !important;
+    color: white !important;
+}
+
+.toast.bg-info {
+    background-color: #17a2b8 !important;
+    color: white !important;
+}
+
+/* Stili per il contenuto del toast */
+.toast .toast-body {
+    color: white !important;
+}
+
+.toast .text-white {
+    color: white !important;
+}
+
+/* Stili per il pulsante di chiusura */
+.toast .btn-close-white {
+    filter: brightness(0) invert(1) !important;
+}
+
+/* Notifiche in-app (create dal JavaScript) */
+.notification-toast {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    z-index: 99999 !important;
+    background: #28a745 !important;
+    color: white !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    padding: 15px !important;
+    max-width: 350px !important;
+    animation: slideInRight 0.3s ease-out !important;
+}
+
+.notification-content {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+}
+
+.notification-icon {
+    font-size: 1.5rem !important;
+    flex-shrink: 0 !important;
+}
+
+.notification-text {
+    flex-grow: 1 !important;
+}
+
+.notification-text strong {
+    display: block !important;
+    margin-bottom: 5px !important;
+    font-size: 1.1rem !important;
+}
+
+.notification-details {
+    font-size: 0.9rem !important;
+    opacity: 0.9 !important;
+    line-height: 1.4 !important;
+}
+
+.notification-close {
+    background: none !important;
+    border: none !important;
+    color: white !important;
+    font-size: 1.5rem !important;
+    cursor: pointer !important;
+    padding: 0 !important;
+    width: 24px !important;
+    height: 24px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+}
+
+.notification-close:hover {
+    opacity: 0.7 !important;
+}
+
+
+
+/* Animazione per le notifiche */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%) !important;
+        opacity: 0 !important;
+    }
+    to {
+        transform: translateX(0) !important;
+        opacity: 1 !important;
+    }
+}
+
+/* Responsive per toast */
+@media (max-width: 768px) {
+    .toast-container {
+        top: 10px !important;
+        right: 10px !important;
+        left: 10px !important;
+    }
+    
+    .toast {
+        width: 100% !important;
+    }
+} 

@@ -1,0 +1,281 @@
+/* Layout base */
+body{
+    background-color: #fff;
+}
+
+#main-container {
+    display: flex;
+    /* height: 100vh; */
+    margin: 0;
+    /* font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; */
+    background-color: #fff;
+}
+
+/* Colonna sinistra: info prenotazione */
+#info_prenotazione {
+    width: 50%;
+    padding: 20px;
+    overflow-y: auto;
+    box-shadow: inset -1px 0 0 #ddd;
+    border-radius: 10px;
+    margin: 20px;
+}
+
+/* Tabella dettagli prenotazione */
+#info_prenotazione table {
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: 10px;
+}
+
+#info_prenotazione td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #eee;
+    vertical-align: top;
+}
+
+#info_prenotazione tr:nth-child(even) {
+}
+
+#info_prenotazione img,
+#img_medium {
+    width: 100%;
+    max-width: 400px; /* cambia questo per regolare la grandezza */
+    height: auto;
+    display: block;
+    margin: 15px auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Colonna destra: contenitore info prodotto e chat */
+#container {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    gap: 20px;
+}
+
+/* Box info prodotto e chat */
+#info_prodotto,
+#chat {
+    flex: 1;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    overflow-y: auto;
+}
+
+/* Titoli fissi via ::before */
+#info_prodotto::before,
+#chat::before {
+    display: block;
+    font-weight: bold;
+    font-size: 1.1em;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+#info_prodotto::before {
+    content: "Info Prodotto";
+}
+
+#chat::before {
+    content: "Chat";
+}
+
+/* Tabella prodotto */
+#info_prodotto table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#info_prodotto td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #eee;
+    vertical-align: top;
+}
+
+#info_prodotto tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+#info_prodotto img {
+    max-width: 120px;
+    height: auto;
+    border-radius: 8px;
+    display: block;
+    margin: 10px auto;
+}
+
+/* Scrollbar personalizzata */
+#info_prenotazione,
+#info_prodotto,
+#chat {
+    scrollbar-width: thin;
+    scrollbar-color: #ccc transparent;
+}
+
+#info_prenotazione::-webkit-scrollbar,
+#info_prodotto::-webkit-scrollbar,
+#chat::-webkit-scrollbar {
+    width: 6px;
+}
+
+#info_prenotazione::-webkit-scrollbar-thumb,
+#info_prodotto::-webkit-scrollbar-thumb,
+#chat::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 6px;
+}
+
+#chat-container {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 15px;
+  height: 50%;
+  background-color: #fff;
+  border-radius: 6px;
+}
+
+#chatmemory {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 15px;
+  max-height: 400px;
+  overflow-y: auto;
+  background-color: #f0f2f5;
+  border-radius: 10px;
+  font-family: Arial, sans-serif;
+  border: 1px solid #ddd;
+}
+
+/* Stile messaggio */
+.messaggio {
+  max-width: 70%;
+  padding: 10px 15px;
+  border-radius: 15px;
+  font-size: 0.95em;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+.cliente{
+  align-self: flex-start;
+  background-color: gray;
+  border: 1px solid #b2ebf2;
+}
+
+.farmacista {
+  align-self: flex-end;
+  background-color: lightgreen;
+  border: 1px solid #ffeeba;
+}
+
+.timestamp {
+  font-size: 0.75em;
+  color: #666;
+  margin-top: 4px;
+  text-align: right;
+}
+
+/* Input chat */
+.chat-input {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-input textarea {
+  resize: vertical;
+  padding: 8px;
+  font-family: inherit;
+  font-size: 0.95em;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  width: 100%;
+}
+
+.chat-input button {
+  align-self: flex-end;
+  padding: 6px 16px;
+  border: none;
+  background-color: #007bff;
+  color: white;
+  font-weight: bold;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.chat-input button:hover {
+  background-color: #0056b3;
+}
+
+
+
+/* Media query per dispositivi mobili */
+@media (max-width: 768px) {
+    #main-container {
+        flex-direction: column;
+        height: auto;
+    }
+
+    #info_prenotazione,
+    #container {
+        width: 100%;
+        margin: 10px 0;
+        padding: 10px;
+    }
+
+    #info_prenotazione {
+        margin: 10px 0;
+        box-shadow: none;
+        border-radius: 0;
+    }
+
+    #container {
+        background-color: transparent;
+        padding: 0;
+        gap: 10px;
+    }
+
+    #info_prodotto,
+    #chat {
+        padding: 15px;
+        box-shadow: none;
+        border-radius: 0;
+    }
+
+    #info_prenotazione img,
+    #img_medium {
+        max-width: 100%;
+    }
+
+    #info_prodotto img {
+        max-width: 80px;
+    }
+
+    #chatmemory {
+        padding: 10px;
+        max-height: 60vh;
+    }
+
+    .messaggio {
+        font-size: 0.9em;
+        max-width: 85%;
+    }
+
+    .timestamp {
+        font-size: 0.7em;
+    }
+
+    .chat-input textarea {
+        width: 100%;
+    }
+    
+
+}

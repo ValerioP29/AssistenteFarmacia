@@ -1,0 +1,42 @@
+:root {
+    --primary-color: #2c3e50;
+    --secondary-color: #34495e;      /* Blu scuro per accenti o hover */
+
+    --accent-color: #2c3e50;         /* Blu scuro, professionale e leggibile */
+    --background-color: #f4fdf4;     /* Verde molto chiaro per sfondo */
+    --text-color: #2c3e50;           /* Grigio-blu scuro, molto leggibile */
+    --text-light: #ffffff;           /* Bianco, per testi su sfondi scuri */
+    --border-color: #cfd8dc;         /* Grigio chiarissimo per bordi delicati */
+    --form-bg: #ffffff;              /* Bianco per moduli, per chiarezza */
+}
+
+.primary_color {
+    color: var(--primary-color) !important;
+}
+.secondary_color {
+    color: var(--secondary-color) !important;
+}
+.accent_color {
+    color: var(--accent-color) !important;
+}
+.background-color {
+    background-color: var(--background-color) !important;
+}
+.text_color {
+    color: var(--text-color) !important;
+}
+.text_light {
+    color: var(--text-light) !important;
+}
+.border_color {
+    border-color: var(--border-color) !important;
+}
+.form_bg {
+    background-color: var(--form-bg) !important;
+}
+
+.hidden {
+    display: none !important;
+}
+
+

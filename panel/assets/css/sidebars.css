@@ -1,0 +1,337 @@
+@import url(color.css);
+
+:root {
+  /* larghezza sidebar desktop */
+  --sidebar-width: 250px;
+  /* larghezza offcanvas mobile */
+  --offcanvas-width: 280px; 
+}
+
+/* Override per assicurarsi che la sidebar sia visibile */
+.sidebar-left {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: fixed !important;
+    top: 60px !important;
+    left: 0 !important;
+    width: var(--sidebar-width) !important;
+    height: calc(100vh - 60px) !important;
+    background-color: var(--primary-color) !important;
+    z-index: 1000 !important;
+}
+
+/* Sidebar mobile nell'offcanvas */
+.sidebar-mobile {
+    padding: 1rem;
+}
+
+/* Stili per l'offcanvas stesso */
+.offcanvas {
+    background-color: var(--primary-color) !important;
+    color: white !important;
+}
+
+.offcanvas-header {
+    background-color: var(--primary-color) !important;
+    border-bottom: 1px solid rgba(255,255,255,0.2) !important;
+}
+
+.offcanvas-title {
+    color: white !important;
+}
+
+.offcanvas-body {
+    background-color: var(--primary-color) !important;
+}
+
+.sidebar-mobile .nav-link {
+    color: white !important;
+    padding: 0.75rem 1rem !important;
+    border-radius: 0.375rem !important;
+    margin-bottom: 0.25rem !important;
+    text-decoration: none !important;
+    display: block !important;
+    background-color: transparent !important;
+    border: 1px solid rgba(255,255,255,0.3) !important;
+    transition: all 0.2s ease !important;
+}
+
+.sidebar-mobile .nav-link:hover {
+    background-color: var(--primary-color) !important;
+    color: white !important;
+    border-color: var(--primary-color) !important;
+}
+
+.sidebar-mobile .nav-link.selected {
+    background-color: var(--primary-color) !important;
+    color: white !important;
+    border-color: var(--primary-color) !important;
+}
+
+.sidebar-mobile .nav-link.exit {
+    background-color: var(--danger-color) !important;
+    color: white !important;
+    border-color: var(--danger-color) !important;
+}
+
+.sidebar-mobile .nav-link.exit:hover {
+    background-color: #c82333 !important;
+    border-color: #c82333 !important;
+}
+
+.sidebar-mobile .return-admin-link {
+    background-color: var(--warning-color) !important;
+    color: white !important;
+    border-color: var(--warning-color) !important;
+}
+
+.sidebar-mobile .return-admin-link:hover {
+    background-color: #e0a800 !important;
+    border-color: #e0a800 !important;
+}
+
+
+
+/* Utility */
+.hidden { display: none !important; }
+
+/* Sidebar desktop */
+.sidebar-left {
+  background-color: var(--primary-color) !important;
+  color: #fff !important;
+  position: fixed !important;
+  top: 60px !important;
+  left: 0 !important;
+  height: calc(100vh - 60px) !important;
+  width: var(--sidebar-width) !important;
+  padding: 1rem 0 !important;
+  overflow-y: auto !important;
+  z-index: 1000 !important;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1) !important;
+  display: block !important;
+}
+
+.sidebar-left .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  transition: all 0.3s ease;
+  border-left: 3px solid transparent;
+}
+
+.sidebar-left .nav-link:hover {
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-left-color: rgba(255, 255, 255, 0.3);
+}
+
+.sidebar-left .nav-link.selected {
+  color: #fff;
+  background-color: var(--secondary-color, #34495e);
+  border-left-color: #fff;
+  font-weight: 600;
+}
+
+.sidebar-left .nav-link.exit {
+  color: #fff;
+  margin-top: 1rem;
+}
+
+.sidebar-left .nav-link.exit:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-left-color: #fff;
+}
+
+.sidebar-left .nav-link i {
+  width: 20px;
+  text-align: center;
+}
+
+/* Offcanvas mobile */
+.offcanvas {
+  background-color: var(--primary-color);
+}
+
+.offcanvas-header {
+  background-color: var(--primary-color);
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1rem 1.5rem;
+}
+
+.offcanvas-header .btn-close {
+  filter: invert(1);
+  opacity: 0.8;
+}
+
+.offcanvas-header .btn-close:hover {
+  opacity: 1;
+}
+
+.offcanvas.offcanvas-start {
+  width: var(--offcanvas-width);
+}
+
+.offcanvas-body {
+  padding: 0;
+}
+
+.offcanvas .sidebar-left {
+  background-color: transparent;
+  height: 100%;
+  padding: 0;
+  width: 100%;
+  position: static;
+}
+
+.offcanvas .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  transition: all 0.3s ease;
+  border-left: 3px solid transparent;
+}
+
+.offcanvas .nav-link:hover {
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-left-color: rgba(255, 255, 255, 0.3);
+}
+
+.offcanvas .nav-link.selected {
+  color: #fff;
+  background-color: var(--secondary-color, #34495e);
+  border-left-color: #fff;
+  font-weight: 600;
+}
+
+.offcanvas .nav-link.exit {
+  color: #fff;
+  margin-top: 1rem;
+}
+
+.offcanvas .nav-link.exit:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-left-color: #fff;
+}
+
+.offcanvas .nav-link i {
+  width: 20px;
+  text-align: center;
+}
+
+/* Layout principale con sidebar fissa */
+.container-fluid {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.row {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+main.col-md-9,
+main.col-lg-10 {
+  margin-left: var(--sidebar-width);
+  width: calc(100% - var(--sidebar-width));
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+/* Nascondi sidebar desktop sotto lg */
+@media (max-width: 991.98px) {
+  .sidebar-left {
+    display: none !important;
+  }
+  
+  main.col-md-9,
+  main.col-lg-10 {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+}
+
+/* Scrollbar personalizzata per sidebar */
+.sidebar-left::-webkit-scrollbar,
+.offcanvas::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-left::-webkit-scrollbar-track,
+.offcanvas::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-left::-webkit-scrollbar-thumb,
+.offcanvas::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.sidebar-left::-webkit-scrollbar-thumb:hover,
+.offcanvas::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Stili per l'indicatore di accesso come */
+.login-as-indicator .alert {
+  border: none;
+  background: rgba(52, 152, 219, 0.2);
+  color: white;
+  font-size: 0.85rem;
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+.login-as-indicator .alert strong {
+  color: white;
+  font-weight: 600;
+}
+
+.login-as-indicator .alert small {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.8rem;
+}
+
+/* Stili per il pulsante torna admin */
+.sidebar-left .nav-link.return-admin-link,
+.offcanvas .nav-link.return-admin-link {
+  color: #f39c12;
+  background-color: rgba(243, 156, 18, 0.1);
+  border-left-color: #f39c12;
+  font-weight: 600;
+}
+
+.sidebar-left .nav-link.return-admin-link:hover,
+.offcanvas .nav-link.return-admin-link:hover {
+  color: #e67e22;
+  background-color: rgba(243, 156, 18, 0.2);
+  border-left-color: #e67e22;
+}
+
+/* Responsive improvements */
+@media (min-width: 1200px) {
+  .sidebar-left {
+    width: 250px;
+  }
+}
+
+@media (min-width: 992px) and (max-width: 1199px) {
+  .sidebar-left {
+    width: 200px;
+  }
+  
+  .sidebar-left .nav-link {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+}

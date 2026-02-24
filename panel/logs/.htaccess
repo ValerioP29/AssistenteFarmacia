@@ -1,0 +1,24 @@
+# Protezione cartella logs
+# Blocca completamente l'accesso a tutti i file
+
+# Blocca tutti i file
+<FilesMatch ".*">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Blocca l'esecuzione di script
+<FilesMatch "\.(php|php3|php4|php5|phtml|pl|py|jsp|asp|sh|cgi)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Imposta header di sicurezza
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options nosniff
+    Header set X-Frame-Options DENY
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# Reindirizza tutti gli accessi a una pagina di errore
+ErrorDocument 403 "Access Denied" 

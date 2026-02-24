@@ -1,0 +1,412 @@
+/**
+ * Stili per la gestione delle richieste
+ * Assistente Farmacia Panel
+ */
+
+/* Timeline per le note */
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #e9ecef;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -22px;
+    top: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #e9ecef;
+}
+
+.timeline-content {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    border-left: 4px solid #007bff;
+}
+
+.timeline-content p {
+    margin-bottom: 5px;
+}
+
+/* Stili per i badge di stato */
+.badge.bg-warning {
+    background-color: #ffc107 !important;
+    color: #000 !important;
+}
+
+.badge.bg-info {
+    background-color: #17a2b8 !important;
+    color: #fff !important;
+}
+
+.badge.bg-success {
+    background-color: #28a745 !important;
+    color: #fff !important;
+}
+
+.badge.bg-danger {
+    background-color: #dc3545 !important;
+    color: #fff !important;
+}
+
+.badge.bg-secondary {
+    background-color: #6c757d !important;
+    color: #fff !important;
+}
+
+/* Stili per la tabella */
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+}
+
+/* Stili per i filtri */
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.card-body {
+    padding: 1.25rem;
+}
+
+/* Stili per le statistiche */
+.card.text-center .card-title {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.card.text-center .card-text {
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin-bottom: 0;
+}
+
+/* Stili per i pulsanti */
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* Stili per i modal */
+.modal-lg .modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+/* Stili per i toast */
+.toast-container {
+    z-index: 1055;
+}
+
+/* Stili per la paginazione */
+.pagination .page-link {
+    color: #007bff;
+    border-color: #dee2e6;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.pagination .page-link:hover {
+    color: #0056b3;
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+}
+
+/* Stili per il messaggio vuoto */
+.text-muted i {
+    opacity: 0.5;
+}
+
+/* Stili per il caricamento */
+.spinner-border {
+    width: 2rem;
+    height: 2rem;
+}
+
+
+/* Animazioni */
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Stili per il testo troncato */
+.text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Stili per i tooltip personalizzati */
+[title] {
+    cursor: help;
+}
+
+/* Stili per i form nei modal */
+.modal-body .form-label {
+    font-weight: 500;
+    color: #495057;
+}
+
+.modal-body .form-control:focus,
+.modal-body .form-select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Stili per il pulsante reset filtri */
+#resetFilters {
+    transition: all 0.3s ease;
+}
+
+#resetFilters:hover {
+    transform: scale(1.05);
+}
+
+#resetFilters.btn-warning {
+    border-color: #ffc107;
+    color: #000;
+}
+
+#resetFilters.btn-warning:hover {
+    background-color: #e0a800;
+    border-color: #d39e00;
+    color: #000;
+}
+
+#filterCount {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
+}
+
+/* Animazione per il badge */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+#filterCount {
+    animation: pulse 0.3s ease-in-out;
+}
+
+/* Stili per il modal di eliminazione */
+#deleteRequestModal .modal-header {
+    border-bottom: 2px solid #dc3545;
+}
+
+#deleteRequestModal .alert-warning {
+    border-left: 4px solid #ffc107;
+    background-color: #fff3cd;
+    border-color: #ffeaa7;
+}
+
+#deleteRequestModal .btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+#deleteRequestModal .btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+/* Animazione per il pulsante elimina */
+#confirmDeleteBtn {
+    transition: all 0.3s ease;
+}
+
+#confirmDeleteBtn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+}
+
+/* Stili per il modal WhatsApp */
+#whatsappModal .modal-header {
+    border-bottom: 2px solid #25d366;
+}
+
+#whatsappModal .btn-success {
+    background-color: #25d366;
+    border-color: #25d366;
+}
+
+#whatsappModal .btn-success:hover {
+    background-color: #128c7e;
+    border-color: #128c7e;
+}
+
+#whatsappModal .input-group-text {
+    background-color: #f8f9fa;
+    border-color: #ced4da;
+    color: #6c757d;
+}
+
+#whatsappModal .form-control:read-only {
+    background-color: #e9ecef;
+}
+
+#messageLength {
+    font-weight: 600;
+    color: #007bff;
+}
+
+/* Animazione per il pulsante WhatsApp */
+.btn-outline-success:hover {
+    transform: scale(1.05);
+    transition: transform 0.2s ease;
+}
+
+/* Stili per le informazioni del cliente */
+.modal-body h6 {
+    color: #495057;
+    font-weight: 600;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.modal-body h6 i {
+    color: #007bff;
+}
+
+.modal-body .table-sm th,
+.modal-body .table-sm td {
+    padding: 0.5rem 0.75rem;
+    vertical-align: middle;
+}
+
+.modal-body .table-sm td:first-child {
+    font-weight: 500;
+    color: #6c757d;
+    width: 40%;
+}
+
+.modal-body .badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+} 
+
+/* Responsive */
+@media (max-width: 768px) {
+    .timeline {
+        padding-left: 20px;
+    }
+    
+    .timeline-marker {
+        left: -15px;
+        width: 10px;
+        height: 10px;
+    }
+    
+    .timeline-content {
+        padding: 10px;
+    }
+    
+    .card.text-center .card-title {
+        font-size: 1.5rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .btn-group-sm .btn {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.8rem;
+    }
+    .btn-action {
+        min-height: 60px !important;
+    }
+}
+
+@media (max-width: 900px) {
+  table thead { 
+    display: none; 
+    }
+  table tbody tr {
+    display: block;
+    margin-bottom: 1rem;
+    border: 1px solid #ddd; 
+    border-radius: .5rem; 
+    }
+  table td {
+    display: flex; 
+    justify-content: center;
+    padding: .5rem;
+    }
+  table td::before { 
+    content: attr(data-label); 
+    font-weight: bold; 
+    }
+}
+
+@media (min-width:768px) and (max-width:1286px) {
+
+  /* Cards statistiche tutte alla stessa altezza */
+  .stats-row > [class*="col"] { display:flex; }
+  .stats-row .card { display:flex; flex-direction:column; width:100%; }
+  .stats-row .card-body { flex:1 1 auto; display:flex; flex-direction:column; justify-content:center; }
+
+  /* Barra filtri: controlli allineati e bottoni non quadrati */
+  .filter-bar .form-control,
+  .filter-bar .form-select { height:42px; }
+
+  .filter-bar .btn {
+    height:42px;
+    line-height:42px;
+    padding:0 16px;
+    border-radius:.5rem;
+    aspect-ratio:auto;
+    white-space:nowrap;
+  }
+  .filter-bar .btn i { line-height:1; }
+
+  /* Se avevi “cardificato” la tabella per mobile, disattivalo qui */
+  .table.cardified thead { display:table-header-group !important; }
+  .table.cardified tbody tr { display:table-row !important; }
+  .table.cardified td { display:table-cell !important; }
+  .table-responsive { overflow-x:visible; }
+}
+
+/* Ritocchi generali che non rompono sopra 1286 */
+.filter-bar .badge { transform: translateY(-2px); }
+
