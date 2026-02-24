@@ -1,4 +1,6 @@
 document.addEventListener('appLoaded', () => {
+	const PHARMACY_LOGO_PLACEHOLDER = 'https://api.assistentefarmacia.it/uploads/images/placeholder-logo-farmacia.jpg';
+
 	document.addEventListener('pharma:dataReady', function (event) {
 		const pharma = event.detail;
 
@@ -16,18 +18,16 @@ document.addEventListener('appLoaded', () => {
 			}
 		}
 
-		// Logo Img
-		const logoImg = document.querySelector('.logo-box img');
-		if (logoImg) {
-			if (pharma?.image_logo) {
-				logoImg.src = pharma.image_logo;
-				const altText = pharma.business_name ? `Logo ${pharma.business_name}` : 'Logo Farmacia';
-				logoImg.alt = altText;
-				logoImg.title = altText;
-				logoImg.style.display = '';
-			} else {
-				logoImg.style.display = 'none';
-			}
+		// Logo hero CTA
+		const heroLogo = document.getElementById('pharmacy-logo-hero');
+		if (heroLogo) {
+			const altText = pharma?.business_name ? `Logo ${pharma.business_name}` : 'Logo Farmacia';
+			heroLogo.alt = altText;
+			heroLogo.title = altText;
+			heroLogo.src = pharma?.image_logo || PHARMACY_LOGO_PLACEHOLDER;
+			heroLogo.onerror = () => {
+				heroLogo.src = PHARMACY_LOGO_PLACEHOLDER;
+			};
 		}
 
 		// Nome farmacia
@@ -298,4 +298,3 @@ window.addEventListener('pageshow', function(e){
         return;
     }
 });
-
