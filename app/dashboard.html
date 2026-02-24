@@ -52,13 +52,31 @@
 						</script>
 					</div>
 				</div>
-				<!-- CTA Ordina Ricetta -->
-				<div class="cta-box">
-					<button class="cta-button" onclick="goTo(AppURLs.page.reservation()+'?tipo=ricetta')">
-						<i class="“cta-icon fa-solid fa-pills"></i>
-						<span class="cta-text">Ordina Ricetta</span>
+				<!-- Hero CTA Ordina Ricetta -->
+				<section class="hero-cta" aria-label="Richiedi prodotti">
+					<div class="hero-cta__content">
+						<h2 class="hero-cta__title">Ordina prodotti in 30 secondi</h2>
+						<p class="hero-cta__subtitle">Invia la tua richiesta in pochi tap e ritira in farmacia senza attese.</p>
+					</div>
+					<div class="hero-cta__steps" aria-label="Passaggi rapidi">
+						<div class="hero-cta__step">
+							<span class="hero-cta__step-number">1</span>
+							<span class="hero-cta__step-text">Carica ricetta o prodotti</span>
+						</div>
+						<div class="hero-cta__step">
+							<span class="hero-cta__step-number">2</span>
+							<span class="hero-cta__step-text">Conferma quantità richieste</span>
+						</div>
+						<div class="hero-cta__step">
+							<span class="hero-cta__step-number">3</span>
+							<span class="hero-cta__step-text">Ricevi conferma e ritiro</span>
+						</div>
+					</div>
+					<button class="hero-cta__button" onclick="goTo(AppURLs.page.reservation()+'?tipo=ricetta')">
+						<i class="cta-icon fa-solid fa-plus"></i>
+						<span>Richiedi prodotti ora</span>
 					</button>
-				</div>
+				</section>
 
 				<div class="show-on-pharma--1 d-none">
 				<app-card>
