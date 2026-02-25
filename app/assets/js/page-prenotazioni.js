@@ -173,13 +173,25 @@ const ReservationForm = {
 			return {
 				listEl: document.querySelector('#related-products-list-rx'),
 				emptyEl: document.querySelector('#related-products-empty-rx'),
+				blockEl: document.querySelector('#related-products-block-rx'),
 			};
 		}
 
 		return {
 			listEl: document.querySelector('#related-products-list'),
 			emptyEl: document.querySelector('#related-products-empty'),
+			blockEl: document.querySelector('#related-products-block'),
 		};
+	},
+	setRelatedLoading(mode = 0, isLoading = false) {
+		const {blockEl, listEl, emptyEl} = this.getRelatedElementsByMode(mode);
+		if (!blockEl || !listEl || !emptyEl) return;
+
+		blockEl.classList.toggle('is-loading', !!isLoading);
+		if (isLoading) {
+			emptyEl.classList.add('d-none');
+			listEl.innerHTML = '';
+		}
 	},
 	getSelectedProductIdsForRelated() {
 		if (!this.cart?.products?.length) return [];
@@ -191,9 +203,77 @@ const ReservationForm = {
 	formatRelatedPrice(item) {
 		const sale = item.sale_price !== null && item.sale_price !== undefined && item.sale_price !== '';
 		const price = item.price !== null && item.price !== undefined && item.price !== '';
-		if (!sale && !price) return 'Prezzo su richiesta';
-		if (sale) return `€${parseFloat(item.sale_price).toFixed(2)}`;
-		return `€${parseFloat(item.price).toFixed(2)}`;
+		if (!sale && !price) return '';
+		const value = sale ? parseFloat(item.sale_price) : parseFloat(item.price);
+		if (Number.isNaN(value)) return '';
+		return new Intl.NumberFormat('it-IT', {style: 'currency', currency: 'EUR'}).format(value);
+	},
+	getRelatedPlaceholderImage() {
+		return AppURLs.api.base + '/uploads/images/placeholder-product.jpg';
+	},
+	resolveRelatedProductImage(imagePath) {
+		if (!imagePath) return this.getRelatedPlaceholderImage();
+		if (imagePath.startsWith('http')) return imagePath;
+		if (imagePath.startsWith('/')) return imagePath;
+		if (imagePath.startsWith('api/')) return `../${imagePath}`;
+
+		const panelBase = `${AppURLs.panel?.base || window.location.origin}/`;
+		return new URL(imagePath, panelBase).toString();
+	},
+	getRelatedProductImage(item) {
+		return this.resolveRelatedProductImage(item?.image || '');
+	},
+	createRelatedProductCard(item) {
+		const card = document.createElement('article');
+		card.className = 'related-product-card';
+
+		const formattedPrice = this.formatRelatedPrice(item);
+		const imageSrc = this.getRelatedProductImage(item);
+
+		card.innerHTML = `
+			<div class="related-product-card__image-wrap">
+				<img class="related-product-card__image" src="${escapeHtml(imageSrc)}" alt="${escapeHtml(item.name || 'Prodotto suggerito')}" loading="lazy" />
+			</div>
+			<div class="related-product-card__content">
+				<div class="related-product-card__name">${escapeHtml(item.name || 'Prodotto')}</div>
+				${formattedPrice ? `<div class="related-product-card__price">${escapeHtml(formattedPrice)}</div>` : ''}
+				<button class="btn btn-outline-primary btn-sm related-product-card__cta" type="button">Aggiungi</button>
+			</div>
+		`;
+
+		const imgEl = card.querySelector('.related-product-card__image');
+		imgEl?.addEventListener('error', () => {
+			if (imgEl.dataset.fallbackApplied === '1') return;
+			imgEl.dataset.fallbackApplied = '1';
+			imgEl.onerror = null;
+			imgEl.src = this.getRelatedPlaceholderImage();
+		});
+
+		card.querySelector('button')?.addEventListener('click', () => {
+			const hasSalePrice = item.sale_price !== null && item.sale_price !== undefined && item.sale_price !== '';
+			const hasPrice = item.price !== null && item.price !== undefined && item.price !== '';
+			const relatedData = {
+				type: 0,
+				product: {
+					id: item.id,
+					name: item.name,
+					code: item.sku || 'N/A',
+					price: item.price ?? null,
+					sale_price: item.sale_price ?? null,
+					thumbnail: imageSrc,
+				},
+				name: item.name,
+				code: item.sku || 'N/A',
+				price: hasSalePrice ? item.sale_price : hasPrice ? item.price : null,
+				qty: 1,
+			};
+
+			if (!this.currProductIsValid(relatedData, true)) return;
+			this.addProduct(relatedData);
+			showToast?.('Suggerimento aggiunto', 'success');
+		});
+
+		return card;
 	},
 	renderRelatedProducts(products = [], mode = 0) {
 		const {listEl, emptyEl} = this.getRelatedElementsByMode(mode);
@@ -207,47 +287,19 @@ const ReservationForm = {
 
 		emptyEl.classList.add('d-none');
 		products.forEach((item) => {
-			const row = document.createElement('div');
-			row.className = 'related-product-item';
-			row.innerHTML = `
-				<div>
-					<div class="related-product-item__name">${escapeHtml(item.name || 'Prodotto')}</div>
-					<div class="related-product-item__price">${this.formatRelatedPrice(item)}</div>
-				</div>
-				<button class="btn btn-outline-primary btn-sm" type="button">Aggiungi</button>
-			`;
-
-			row.querySelector('button')?.addEventListener('click', () => {
-				const relatedData = {
-					type: 0,
-					product: {
-						id: item.id,
-						name: item.name,
-						code: item.sku || 'N/A',
-						price: item.price ?? null,
-						sale_price: item.sale_price ?? null,
-						thumbnail: item.image ? (item.image.startsWith('http') ? item.image : `https://app.assistentefarmacia.it/panel/${item.image}`) : null,
-					},
-					name: item.name,
-					code: item.sku || 'N/A',
-					price: item.sale_price ? item.sale_price : item.price,
-					qty: 1,
-				};
-
-				if (!this.currProductIsValid(relatedData, true)) return;
-				this.addProduct(relatedData);
-				showToast?.('Suggerimento aggiunto', 'success');
-			});
-
-			listEl.appendChild(row);
+			listEl.appendChild(this.createRelatedProductCard(item));
 		});
 	},
-	loadRelatedProducts(tag = '', mode = null) {
+	loadRelatedProducts(tag = '', mode = null, options = {}) {
 		if (mode === null) mode = this.getSubOrderChecked();
 		if (![0, 1].includes(mode)) return;
+		this.setRelatedLoading(mode, true);
 
 		const pharmaId = dataStore.pharma?.id;
-		if (!pharmaId) return;
+		if (!pharmaId) {
+			this.setRelatedLoading(mode, false);
+			return;
+		}
 
 		const url = new URL(AppURLs.api.productSuggestions());
 		url.searchParams.set('pharma_id', pharmaId);
@@ -262,13 +314,31 @@ const ReservationForm = {
 
 		appFetchWithToken(url.toString(), {method: 'GET'})
 			.then((data) => {
+				this.setRelatedLoading(mode, false);
 				if (data?.status && Array.isArray(data?.data?.products)) {
-					this.renderRelatedProducts(data.data.products, mode);
+					const products = data.data.products;
+					if (tag && products.length === 0 && !options?.fallbackTriggered) {
+						this.loadRelatedProducts('', mode, {fallbackTriggered: true, fallbackFromTag: tag});
+						return;
+					}
+					this.renderRelatedProducts(products, mode);
+					if (options?.fallbackTriggered) {
+						showToast?.('Nessun prodotto nella categoria selezionata: mostrati suggerimenti generici.', 'info');
+					}
 				} else {
+					if (tag && !options?.fallbackTriggered) {
+						this.loadRelatedProducts('', mode, {fallbackTriggered: true, fallbackFromTag: tag});
+						return;
+					}
 					this.renderRelatedProducts([], mode);
 				}
 			})
 			.catch(() => {
+				this.setRelatedLoading(mode, false);
+				if (tag && !options?.fallbackTriggered) {
+					this.loadRelatedProducts('', mode, {fallbackTriggered: true, fallbackFromTag: tag});
+					return;
+				}
 				this.renderRelatedProducts([], mode);
 			});
 	},
@@ -377,7 +447,7 @@ const ReservationForm = {
 								price: p.price || 'N/A',
 								sale_price: p.sale_price || null,
 								quantity: p.num_items || '',
-								thumbnail: p.image ? (p.image.startsWith('http') ? p.image : `https://app.assistentefarmacia.it/panel/${p.image}`) : null,
+								thumbnail: this.resolveRelatedProductImage(p.image || ''),
 							}));
 							callback(results);
 						} else {
