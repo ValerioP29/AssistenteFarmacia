@@ -25,11 +25,11 @@
 
 		<style>
 			.related-products {
-				border: 1px solid #ece8ff;
+				border: 1px solid #e5e2f3;
 				border-radius: 16px;
-				padding: 10px;
-				background: linear-gradient(180deg, #fcfbff 0%, #f8f5ff 100%);
-				box-shadow: 0 10px 24px rgba(86, 37, 153, 0.06);
+				padding: 12px;
+				background: #fff;
+				box-shadow: 0 6px 16px rgba(28, 25, 56, 0.06);
 			}
 			.related-products__header {
 				display: flex;
@@ -51,14 +51,18 @@
 			}
 			.related-products .form-select {
 				border-radius: 12px;
-				border-color: #ddd5fb;
+				border-color: #d8d4ea;
 				font-size: 0.82rem;
 				padding-top: 0.4rem;
 				padding-bottom: 0.4rem;
 			}
+			.related-products .form-select,
+			.related-products .form-control {
+				font-weight: 500;
+			}
 			.related-products .form-select:focus {
-				border-color: #8f73d9;
-				box-shadow: 0 0 0 0.18rem rgba(143, 115, 217, 0.2);
+				border-color: #6f42c1;
+				box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.2);
 			}
 			.related-products__list {
 				display: grid;
@@ -155,9 +159,20 @@
 			.related-product-card__cta {
 				margin-top: auto;
 				border-radius: 999px;
-				font-size: 0.76rem;
+				font-size: 0.78rem;
 				font-weight: 600;
-				padding-block: 0.34rem;
+				padding: 0.36rem 0.8rem;
+			}
+			.related-product-card__cta:focus-visible,
+			.related-products .form-select:focus-visible,
+			.related-products .btn:focus-visible {
+				outline: 2px solid rgba(111, 66, 193, 0.35);
+				outline-offset: 2px;
+			}
+			.related-products .btn,
+			.related-products .form-select,
+			.related-products .form-control {
+				transition: all 0.2s ease;
 			}
 			.related-products__empty {
 				display: flex;
