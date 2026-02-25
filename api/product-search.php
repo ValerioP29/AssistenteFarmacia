@@ -81,10 +81,12 @@ function related_debug_log($enabled, $message, $context = []){
 }
 
 function build_related_order_by($nameExpr, $imageExpr, $priceExpr){
-	$hasImageExpr = "CASE WHEN {$imageExpr} IS NOT NULL AND {$imageExpr} != '' THEN 1 ELSE 0 END";
+	$imageTextExpr = "CONVERT({$imageExpr} USING utf8mb4) COLLATE utf8mb4_unicode_ci";
+	$nameTextExpr = "CONVERT({$nameExpr} USING utf8mb4) COLLATE utf8mb4_unicode_ci";
+	$hasImageExpr = "CASE WHEN {$imageExpr} IS NOT NULL AND TRIM({$imageTextExpr}) <> '' THEN 1 ELSE 0 END";
 	$hasPriceExpr = "CASE WHEN {$priceExpr} IS NOT NULL AND {$priceExpr} > 0 THEN 1 ELSE 0 END";
 	$isAllCapsExpr = "CASE
-		WHEN {$nameExpr} IS NULL OR TRIM({$nameExpr}) = '' THEN 1
+		WHEN {$nameExpr} IS NULL OR TRIM({$nameTextExpr}) = '' THEN 1
 		WHEN BINARY {$nameExpr} = BINARY UPPER({$nameExpr})
 			AND BINARY {$nameExpr} <> BINARY LOWER({$nameExpr}) THEN 1
 		ELSE 0
@@ -101,6 +103,24 @@ function build_related_order_by($nameExpr, $imageExpr, $priceExpr){
 			pp.updated_at DESC,
 			{$nameExpr} ASC",
 	];
+}
+
+function build_tags_search_expr(){
+	return "CONVERT((
+		CASE
+			WHEN pp.tags IS NULL THEN NULL
+			WHEN JSON_VALID(pp.tags) THEN
+				CASE
+					WHEN JSON_TYPE(pp.tags) = 'ARRAY' AND JSON_LENGTH(pp.tags) = 0 THEN NULL
+					ELSE JSON_UNQUOTE(JSON_EXTRACT(pp.tags, '$'))
+				END
+			ELSE CAST(pp.tags AS CHAR)
+		END
+	) USING utf8mb4) COLLATE utf8mb4_unicode_ci";
+}
+
+function build_utf8_unicode_expr($expr){
+	return "CONVERT({$expr} USING utf8mb4) COLLATE utf8mb4_unicode_ci";
 }
 
 // Validazione input
@@ -207,25 +227,29 @@ try {
 
 		// 1) related_tag su tags
 		$products = [];
-		if (!empty($related_tag)) {
-			$tagConditions = [];
-			$paramsTag = [];
+			if (!empty($related_tag)) {
+				$tagConditions = [];
+				$paramsTag = [];
+				$tagsSearchExpr = build_tags_search_expr();
+				$categorySearchExpr = $global_table_exists
+					? build_utf8_unicode_expr("COALESCE(gp.category, '')")
+					: null;
 
-			if ($tags_column_exists) {
-				$tagConditions[] = "LOWER(COALESCE(pp.tags, '')) LIKE LOWER(:related_tag_json)";
-				$tagConditions[] = "LOWER(COALESCE(pp.tags, '')) LIKE LOWER(:related_tag_plain)";
-				$paramsTag[':related_tag_json'] = '%"' . strtolower($related_tag) . '"%';
-				$paramsTag[':related_tag_plain'] = '%' . strtolower($related_tag) . '%';
-			}
+				if ($tags_column_exists) {
+					$tagConditions[] = "({$tagsSearchExpr} IS NOT NULL AND TRIM({$tagsSearchExpr}) <> '' AND LOWER({$tagsSearchExpr}) LIKE LOWER(:related_tag_json))";
+					$tagConditions[] = "({$tagsSearchExpr} IS NOT NULL AND TRIM({$tagsSearchExpr}) <> '' AND LOWER({$tagsSearchExpr}) LIKE LOWER(:related_tag_plain))";
+					$paramsTag[':related_tag_json'] = '%"' . strtolower($related_tag) . '"%';
+					$paramsTag[':related_tag_plain'] = '%' . strtolower($related_tag) . '%';
+				}
 
 			$categoryKeywords = get_related_category_keywords($related_tag);
-			if ($global_table_exists && !empty($categoryKeywords)) {
-				$catParts = [];
-				foreach ($categoryKeywords as $kIdx => $keyword) {
-					$key = ':related_cat_' . $kIdx;
-					$catParts[] = "LOWER(COALESCE(gp.category, '')) LIKE LOWER({$key})";
-					$paramsTag[$key] = '%' . strtolower($keyword) . '%';
-				}
+				if ($global_table_exists && !empty($categoryKeywords)) {
+					$catParts = [];
+					foreach ($categoryKeywords as $kIdx => $keyword) {
+						$key = ':related_cat_' . $kIdx;
+						$catParts[] = "LOWER({$categorySearchExpr}) LIKE LOWER({$key})";
+						$paramsTag[$key] = '%' . strtolower($keyword) . '%';
+					}
 				if (!empty($catParts)) {
 					$tagConditions[] = '(' . implode(' OR ', $catParts) . ')';
 				}
@@ -290,7 +314,8 @@ try {
 			$needed = $limit - count($products);
 			$exclude = array_column($products, 'id');
 			$allEx = array_unique(array_merge($exclude_ids, array_map('intval', $exclude)));
-			$sql_img = $select_base . " AND pp.image IS NOT NULL AND pp.image != ''";
+			$imageNotEmptyExpr = build_utf8_unicode_expr('pp.image');
+			$sql_img = $select_base . " AND pp.image IS NOT NULL AND TRIM({$imageNotEmptyExpr}) <> ''";
 			if (!empty($allEx)) {
 				$ph = [];
 				foreach ($allEx as $idx => $id) {
@@ -387,10 +412,16 @@ try {
 	]);
 	
 } catch (Exception $e) {
+	$sqlState = $e->getCode();
+	if ($e instanceof PDOException && isset($e->errorInfo[0])) {
+		$sqlState = $e->errorInfo[0];
+	}
+	error_log('[product-search] SQL error: ' . $e->getMessage() . ' | SQLSTATE: ' . $sqlState);
+
 	echo json_encode([
 		'code'    => 500,
 		'status'  => FALSE,
 		'error'   => 'Internal Server Error',
-		'message' => 'Errore durante la ricerca dei prodotti: ' . $e->getMessage(),
+		'message' => 'Errore durante la ricerca dei prodotti: ' . $e->getMessage() . ' (SQLSTATE: ' . $sqlState . ')',
 	]);
 } 
