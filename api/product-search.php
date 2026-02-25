@@ -1,5 +1,6 @@
 <?php
 require_once('_api_bootstrap.php');
+require_once(__DIR__ . '/helpers/_related_tags.php');
 setHeadersAPI();
 $decoded = protectFileWithJWT();
 
@@ -24,6 +25,9 @@ $related_tag = trim($input['related_tag'] ?? '');
 $related_debug = in_array(strtolower(trim((string)($input['related_debug'] ?? ''))), ['1', 'true', 'yes', 'on'], true);
 $limit = (int)($input['limit'] ?? ($related_mode ? 3 : 100));
 $limit = max(1, min(50, $limit));
+if ($related_mode) {
+	$limit = 3;
+}
 $exclude_ids_raw = trim($input['exclude_ids'] ?? '');
 $exclude_ids = [];
 if ($exclude_ids_raw !== '') {
@@ -55,29 +59,12 @@ function normalize_related_text($value){
 	return $value;
 }
 
-
 function is_featured_related_tag($tag){
 	$normalized = normalize_related_text($tag);
 	return $normalized === '' || in_array($normalized, ['in_evidenza', 'featured', 'evidenza'], true);
 }
 function get_related_category_keywords($relatedTag){
-	$tag = normalize_related_text($relatedTag);
-	$map = [
-		'dolore_febbre' => ['dolore', 'febbre', 'antidolorifici', 'analgesici', 'antinfiammatori'],
-		'raffreddore_influenza' => ['raffreddore', 'influenza', 'decongestionanti', 'respiratorio'],
-		'gola' => ['gola', 'faringe', 'orofaringeo'],
-		'tosse' => ['tosse', 'espettoranti', 'sciroppi'],
-		'gastro' => ['gastro', 'digestione', 'reflusso', 'intestino'],
-		'dermocosmesi' => ['dermocosmesi', 'pelle', 'viso', 'beauty'],
-		'vitamine_integratori' => ['vitamine', 'integratori', 'benessere', 'minerali'],
-		'bambino' => ['bambino', 'infanzia', 'baby', 'pediatrico'],
-		'medicazione' => ['medicazione', 'cerotti', 'disinfettanti', 'garze'],
-		'igiene_orale' => ['igiene orale', 'orale', 'dentifricio', 'collutorio', 'gengive'],
-		'naso' => ['naso', 'nasale', 'rinite', 'sinusite'],
-		'occhi' => ['occhi', 'oculare', 'colliri'],
-	];
-
-	return $map[$tag] ?? [];
+	return related_tags_get_category_keywords($relatedTag);
 }
 
 function related_debug_log($enabled, $message, $context = []){
@@ -85,7 +72,35 @@ function related_debug_log($enabled, $message, $context = []){
 	error_log('[related-products] ' . $message . ' ' . json_encode($context, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
 }
 
+function build_related_discount_expr($priceExpr){
+	$percentageDiscountExpr = "CASE
+		WHEN pp.percentage_discount IS NULL THEN NULL
+		WHEN pp.percentage_discount > 0 AND pp.percentage_discount <= 100 THEN pp.percentage_discount
+		ELSE NULL
+	END";
+
+	$discountedPriceExpr = "CASE
+		WHEN ({$priceExpr}) IS NULL OR ({$priceExpr}) <= 0 THEN NULL
+		WHEN {$percentageDiscountExpr} IS NOT NULL THEN ROUND(({$priceExpr}) * (1 - ({$percentageDiscountExpr} / 100)), 2)
+		ELSE NULL
+	END";
+
+	$hasDiscountExpr = "CASE
+		WHEN pp.is_on_sale = 1 THEN 1
+		WHEN ({$discountedPriceExpr}) IS NOT NULL AND ({$discountedPriceExpr}) < ({$priceExpr}) THEN 1
+		WHEN pp.discount_type IS NOT NULL AND TRIM(CONVERT(pp.discount_type USING utf8mb4) COLLATE utf8mb4_unicode_ci) <> ''
+			AND pp.percentage_discount IS NOT NULL AND pp.percentage_discount > 0 THEN 1
+		ELSE 0
+	END";
+
+	return [
+		'has_discount' => $hasDiscountExpr,
+		'price_discounted' => $discountedPriceExpr,
+	];
+}
+
 function build_related_order_by($nameExpr, $imageExpr, $priceExpr){
+	$discountConfig = build_related_discount_expr($priceExpr);
 	$imageTextExpr = "CONVERT({$imageExpr} USING utf8mb4) COLLATE utf8mb4_unicode_ci";
 	$nameTextExpr = "CONVERT({$nameExpr} USING utf8mb4) COLLATE utf8mb4_unicode_ci";
 	$hasImageExpr = "CASE WHEN {$imageExpr} IS NOT NULL AND TRIM({$imageTextExpr}) <> '' THEN 1 ELSE 0 END";
@@ -98,15 +113,16 @@ function build_related_order_by($nameExpr, $imageExpr, $priceExpr){
 	END";
 
 	return [
+		'has_discount' => $discountConfig['has_discount'],
+		'price_discounted' => $discountConfig['price_discounted'],
 		'has_image' => $hasImageExpr,
 		'has_price' => $hasPriceExpr,
 		'is_all_caps' => $isAllCapsExpr,
-		'order_sql' => "{$hasImageExpr} DESC,
-			{$hasPriceExpr} DESC,
+		'order_sql' => "{$discountConfig['has_discount']} DESC,
+			{$hasImageExpr} DESC,
 			{$isAllCapsExpr} ASC,
-			pp.is_featured DESC,
-			pp.updated_at DESC,
-			{$nameExpr} ASC",
+			{$hasPriceExpr} DESC,
+			pp.id DESC",
 	];
 }
 
@@ -199,6 +215,8 @@ try {
 							COALESCE(pp.image, gp.image) as image,
 							COALESCE(pp.sku, gp.sku) as sku,
 							gp.requires_prescription,
+							{$orderConfig['has_discount']} AS related_has_discount,
+							{$orderConfig['price_discounted']} AS related_price_discounted,
 							{$orderConfig['has_image']} AS related_has_image,
 							{$orderConfig['has_price']} AS related_has_price,
 							{$orderConfig['is_all_caps']} AS related_is_all_caps_name
@@ -214,6 +232,8 @@ try {
 							pp.image as image,
 							pp.sku as sku,
 							0 AS requires_prescription,
+							{$orderConfig['has_discount']} AS related_has_discount,
+							{$orderConfig['price_discounted']} AS related_price_discounted,
 							{$orderConfig['has_image']} AS related_has_image,
 							{$orderConfig['has_price']} AS related_has_price,
 							{$orderConfig['is_all_caps']} AS related_is_all_caps_name
@@ -235,7 +255,7 @@ try {
 			$params[':exclude_' . $idx] = $id;
 		}
 
-		// 1) related_tag su tags/categoria (solo se non "In evidenza")
+		// 1) related_tag su categoria e fallback testuale (anche quando pp.tags è NULL)
 		$products = [];
 		if (!$is_featured_tag && !empty($related_tag_normalized)) {
 			$tagConditions = [];
@@ -244,15 +264,32 @@ try {
 			$categorySearchExpr = $global_table_exists
 				? build_utf8_unicode_expr("COALESCE(gp.category, '')")
 				: null;
+			$nameSearchExpr = build_utf8_unicode_expr("COALESCE(pp.name, '')");
+			$descriptionSearchExpr = build_utf8_unicode_expr("COALESCE(pp.description, '')");
+			$categoryContext = get_related_category_keywords($related_tag_normalized);
+			$categoryKeywords = $categoryContext['keywords'] ?? [];
+			$relatedTagCanonical = $categoryContext['canonical_tag'] ?? $related_tag_normalized;
+
+			related_debug_log($related_debug, 'category_branch_start', [
+				'branch' => 'tag_or_category',
+				'related_tag' => $related_tag,
+				'related_tag_normalized' => $related_tag_normalized,
+				'related_tag_canonical' => $relatedTagCanonical,
+				'categoryKeywords' => $categoryKeywords,
+			]);
 
 			if ($tags_column_exists) {
-				$tagConditions[] = "({$tagsSearchExpr} IS NOT NULL AND TRIM({$tagsSearchExpr}) <> '' AND LOWER({$tagsSearchExpr}) LIKE LOWER(:related_tag_json))";
-				$tagConditions[] = "({$tagsSearchExpr} IS NOT NULL AND TRIM({$tagsSearchExpr}) <> '' AND LOWER({$tagsSearchExpr}) LIKE LOWER(:related_tag_plain))";
-				$paramsTag[':related_tag_json'] = '%"' . strtolower($related_tag_normalized) . '"%';
-				$paramsTag[':related_tag_plain'] = '%' . strtolower($related_tag_normalized) . '%';
+				$tagParts = [];
+				foreach ($categoryKeywords as $kIdx => $keyword) {
+					$likeKey = ':related_tag_kw_' . $kIdx;
+					$tagParts[] = "LOWER({$tagsSearchExpr}) LIKE LOWER({$likeKey})";
+					$paramsTag[$likeKey] = '%' . strtolower($keyword) . '%';
+				}
+				if (!empty($tagParts)) {
+					$tagConditions[] = "({$tagsSearchExpr} IS NOT NULL AND TRIM({$tagsSearchExpr}) <> '' AND (" . implode(' OR ', $tagParts) . '))';
+				}
 			}
 
-			$categoryKeywords = get_related_category_keywords($related_tag_normalized);
 			if ($global_table_exists && !empty($categoryKeywords)) {
 				$catParts = [];
 				foreach ($categoryKeywords as $kIdx => $keyword) {
@@ -262,6 +299,21 @@ try {
 				}
 				if (!empty($catParts)) {
 					$tagConditions[] = '(' . implode(' OR ', $catParts) . ')';
+				}
+			}
+
+			if (!empty($categoryKeywords)) {
+				$nameDescParts = [];
+				foreach ($categoryKeywords as $kIdx => $keyword) {
+					$nameKey = ':related_name_' . $kIdx;
+					$descKey = ':related_desc_' . $kIdx;
+					$nameDescParts[] = "LOWER({$nameSearchExpr}) LIKE LOWER({$nameKey})";
+					$nameDescParts[] = "LOWER({$descriptionSearchExpr}) LIKE LOWER({$descKey})";
+					$paramsTag[$nameKey] = '%' . strtolower($keyword) . '%';
+					$paramsTag[$descKey] = '%' . strtolower($keyword) . '%';
+				}
+				if (!empty($nameDescParts)) {
+					$tagConditions[] = '(' . implode(' OR ', $nameDescParts) . ')';
 				}
 			}
 
@@ -284,7 +336,10 @@ try {
 				$stmt->execute();
 				$products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 				related_debug_log($related_debug, 'category_filtered_result', [
+					'branch' => 'tag_or_category',
+					'related_tag_original' => $related_tag,
 					'related_tag' => $related_tag_normalized,
+					'related_tag_canonical' => $relatedTagCanonical,
 					'keywords' => $categoryKeywords,
 					'result_count' => count($products),
 					'query_branch' => 'tag_or_category',
@@ -295,7 +350,7 @@ try {
 		// 2) In evidenza: solo prodotti featured
 		if ($is_featured_tag) {
 			related_debug_log($related_debug, 'featured_only_start', ['limit' => $limit]);
-			$sql_featured = $select_base . " AND pp.is_featured = 1 ORDER BY {$orderConfig['order_sql']} LIMIT :limit";
+			$sql_featured = $select_base . " AND pp.is_featured = 1 ORDER BY RAND() LIMIT :limit";
 			$stmt = $pdo->prepare($sql_featured);
 			$stmt->bindValue(':pharma_id', $pharma_id, PDO::PARAM_INT);
 			$stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
@@ -305,6 +360,10 @@ try {
 			$stmt->execute();
 			$products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 			related_debug_log($related_debug, 'featured_only_result', [
+				'branch' => 'featured_only',
+				'related_tag_original' => $related_tag,
+				'related_tag_normalized' => $related_tag_normalized,
+				'categoryKeywords' => [],
 				'result_count' => count($products),
 				'query_branch' => 'featured_only',
 			]);
@@ -319,8 +378,22 @@ try {
 
 
 		$products = array_map(function($p){
+			$priceOriginal = isset($p['price']) ? (float)$p['price'] : 0.0;
+			$priceDiscounted = isset($p['related_price_discounted']) && $p['related_price_discounted'] !== null
+				? (float)$p['related_price_discounted']
+				: null;
+			$hasDiscount = (int)($p['related_has_discount'] ?? 0) === 1
+				&& $priceDiscounted !== null
+				&& $priceOriginal > 0
+				&& $priceDiscounted > 0
+				&& $priceDiscounted < $priceOriginal;
+
 			$p['tags'] = decode_tags_array($p['tags'] ?? null);
 			$p['is_featured'] = (int)($p['is_featured'] ?? 0);
+			$p['price_original'] = $priceOriginal > 0 ? round($priceOriginal, 2) : null;
+			$p['has_discount'] = $hasDiscount;
+			$p['price_discounted'] = $hasDiscount ? round($priceDiscounted, 2) : null;
+			$p['related_has_discount'] = (int)($p['related_has_discount'] ?? 0);
 			$p['related_has_image'] = (int)($p['related_has_image'] ?? 0);
 			$p['related_has_price'] = (int)($p['related_has_price'] ?? 0);
 			$p['related_is_all_caps_name'] = (int)($p['related_is_all_caps_name'] ?? 0);
