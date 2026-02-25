@@ -21,6 +21,7 @@ $search_term = trim($input['search'] ?? '');
 $pharma_id = (int)($input['pharma_id'] ?? ($input['pharmacy_id'] ?? 0));
 $related_mode = (int)($input['related_mode'] ?? 0) === 1;
 $related_tag = trim($input['related_tag'] ?? '');
+$related_debug = in_array(strtolower(trim((string)($input['related_debug'] ?? ''))), ['1', 'true', 'yes', 'on'], true);
 $limit = (int)($input['limit'] ?? ($related_mode ? 8 : 100));
 $limit = max(1, min(50, $limit));
 $exclude_ids_raw = trim($input['exclude_ids'] ?? '');
@@ -48,6 +49,60 @@ function decode_tags_array($rawTags){
 	}, explode(',', $rawTags))));
 }
 
+function normalize_related_text($value){
+	$value = strtolower(trim((string)$value));
+	$value = str_replace(['-', ' '], '_', $value);
+	return $value;
+}
+
+function get_related_category_keywords($relatedTag){
+	$tag = normalize_related_text($relatedTag);
+	$map = [
+		'dolore_febbre' => ['dolore', 'febbre', 'antidolorifici', 'analgesici', 'antinfiammatori'],
+		'raffreddore_influenza' => ['raffreddore', 'influenza', 'decongestionanti', 'respiratorio'],
+		'gola' => ['gola', 'faringe', 'orofaringeo'],
+		'tosse' => ['tosse', 'espettoranti', 'sciroppi'],
+		'gastro' => ['gastro', 'digestione', 'reflusso', 'intestino'],
+		'dermocosmesi' => ['dermocosmesi', 'pelle', 'viso', 'beauty'],
+		'vitamine_integratori' => ['vitamine', 'integratori', 'benessere', 'minerali'],
+		'bambino' => ['bambino', 'infanzia', 'baby', 'pediatrico'],
+		'medicazione' => ['medicazione', 'cerotti', 'disinfettanti', 'garze'],
+		'igiene_orale' => ['igiene orale', 'orale', 'dentifricio', 'collutorio', 'gengive'],
+		'naso' => ['naso', 'nasale', 'rinite', 'sinusite'],
+		'occhi' => ['occhi', 'oculare', 'colliri'],
+	];
+
+	return $map[$tag] ?? [];
+}
+
+function related_debug_log($enabled, $message, $context = []){
+	if (!$enabled) return;
+	error_log('[related-products] ' . $message . ' ' . json_encode($context, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+}
+
+function build_related_order_by($nameExpr, $imageExpr, $priceExpr){
+	$hasImageExpr = "CASE WHEN {$imageExpr} IS NOT NULL AND {$imageExpr} != '' THEN 1 ELSE 0 END";
+	$hasPriceExpr = "CASE WHEN {$priceExpr} IS NOT NULL AND {$priceExpr} > 0 THEN 1 ELSE 0 END";
+	$isAllCapsExpr = "CASE
+		WHEN {$nameExpr} IS NULL OR TRIM({$nameExpr}) = '' THEN 1
+		WHEN BINARY {$nameExpr} = BINARY UPPER({$nameExpr})
+			AND BINARY {$nameExpr} <> BINARY LOWER({$nameExpr}) THEN 1
+		ELSE 0
+	END";
+
+	return [
+		'has_image' => $hasImageExpr,
+		'has_price' => $hasPriceExpr,
+		'is_all_caps' => $isAllCapsExpr,
+		'order_sql' => "{$hasImageExpr} DESC,
+			{$hasPriceExpr} DESC,
+			{$isAllCapsExpr} ASC,
+			pp.is_featured DESC,
+			pp.updated_at DESC,
+			{$nameExpr} ASC",
+	];
+}
+
 // Validazione input
 if( $pharma_id <= 0 || (!$related_mode && empty($search_term)) ){
 	echo json_encode([
@@ -68,6 +123,7 @@ try {
 	
 	// Prima verifichiamo se esiste la tabella globale dei prodotti
 	$global_table_exists = false;
+	$tags_column_exists = false;
 	try {
 		$stmt = $pdo->prepare("SHOW TABLES LIKE 'jta_global_prods'");
 		$stmt->execute();
@@ -76,9 +132,35 @@ try {
 		// Tabella non esiste, continuiamo senza
 		$global_table_exists = false;
 	}
+
+	try {
+		$stmt = $pdo->prepare("SHOW COLUMNS FROM jta_pharma_prods LIKE 'tags'");
+		$stmt->execute();
+		$tags_column_exists = $stmt->rowCount() > 0;
+	} catch (Exception $e) {
+		$tags_column_exists = false;
+	}
+
+	related_debug_log($related_debug, 'init', [
+		'pharma_id' => $pharma_id,
+		'related_tag' => $related_tag,
+		'related_mode' => $related_mode,
+		'tags_column_exists' => $tags_column_exists,
+		'global_table_exists' => $global_table_exists,
+		'exclude_ids_count' => count($exclude_ids),
+	]);
 	
 	// Query correlati
 	if ($related_mode) {
+		$nameExpr = $global_table_exists ? "COALESCE(pp.name, gp.name)" : "pp.name";
+		$imageExpr = $global_table_exists ? "COALESCE(pp.image, gp.image)" : "pp.image";
+		$priceExpr = "COALESCE(pp.sale_price, pp.price)";
+		$orderConfig = build_related_order_by($nameExpr, $imageExpr, $priceExpr);
+
+		related_debug_log($related_debug, 'ranking_order', [
+			'order_sql' => $orderConfig['order_sql'],
+		]);
+
 		if ($global_table_exists) {
 			$select_base = "SELECT 
 							pp.*,
@@ -86,7 +168,10 @@ try {
 							COALESCE(pp.description, gp.description) as description,
 							COALESCE(pp.image, gp.image) as image,
 							COALESCE(pp.sku, gp.sku) as sku,
-							gp.requires_prescription
+							gp.requires_prescription,
+							{$orderConfig['has_image']} AS related_has_image,
+							{$orderConfig['has_price']} AS related_has_price,
+							{$orderConfig['is_all_caps']} AS related_is_all_caps_name
 						FROM jta_pharma_prods pp
 						LEFT JOIN jta_global_prods gp ON pp.product_id = gp.id
 						WHERE pp.pharma_id = :pharma_id
@@ -98,7 +183,10 @@ try {
 							pp.description as description,
 							pp.image as image,
 							pp.sku as sku,
-							0 AS requires_prescription
+							0 AS requires_prescription,
+							{$orderConfig['has_image']} AS related_has_image,
+							{$orderConfig['has_price']} AS related_has_price,
+							{$orderConfig['is_all_caps']} AS related_is_all_caps_name
 						FROM jta_pharma_prods pp
 						WHERE pp.pharma_id = :pharma_id
 							AND pp.is_active = 1";
@@ -120,22 +208,58 @@ try {
 		// 1) related_tag su tags
 		$products = [];
 		if (!empty($related_tag)) {
-			$sql_tag = $select_base . " AND LOWER(COALESCE(pp.tags, '')) LIKE LOWER(:related_tag)
-										ORDER BY pp.is_featured DESC, (pp.image IS NULL OR pp.image = ''), pp.name ASC
-										LIMIT :limit";
-			$stmt = $pdo->prepare($sql_tag);
-			$stmt->bindValue(':pharma_id', $pharma_id, PDO::PARAM_INT);
-			$stmt->bindValue(':related_tag', '%"' . strtolower($related_tag) . '"%', PDO::PARAM_STR);
-			$stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-			foreach ($exclude_ids as $idx => $id) {
-				$stmt->bindValue(':exclude_' . $idx, $id, PDO::PARAM_INT);
+			$tagConditions = [];
+			$paramsTag = [];
+
+			if ($tags_column_exists) {
+				$tagConditions[] = "LOWER(COALESCE(pp.tags, '')) LIKE LOWER(:related_tag_json)";
+				$tagConditions[] = "LOWER(COALESCE(pp.tags, '')) LIKE LOWER(:related_tag_plain)";
+				$paramsTag[':related_tag_json'] = '%"' . strtolower($related_tag) . '"%';
+				$paramsTag[':related_tag_plain'] = '%' . strtolower($related_tag) . '%';
 			}
-			$stmt->execute();
-			$products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+			$categoryKeywords = get_related_category_keywords($related_tag);
+			if ($global_table_exists && !empty($categoryKeywords)) {
+				$catParts = [];
+				foreach ($categoryKeywords as $kIdx => $keyword) {
+					$key = ':related_cat_' . $kIdx;
+					$catParts[] = "LOWER(COALESCE(gp.category, '')) LIKE LOWER({$key})";
+					$paramsTag[$key] = '%' . strtolower($keyword) . '%';
+				}
+				if (!empty($catParts)) {
+					$tagConditions[] = '(' . implode(' OR ', $catParts) . ')';
+				}
+			}
+
+			if (empty($tagConditions)) {
+				related_debug_log($related_debug, 'no_tag_conditions_available', ['related_tag' => $related_tag]);
+				$products = [];
+			} else {
+				$sql_tag = $select_base . " AND (" . implode(' OR ', $tagConditions) . ")
+									ORDER BY {$orderConfig['order_sql']}
+									LIMIT :limit";
+				$stmt = $pdo->prepare($sql_tag);
+				$stmt->bindValue(':pharma_id', $pharma_id, PDO::PARAM_INT);
+				$stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+				foreach ($exclude_ids as $idx => $id) {
+					$stmt->bindValue(':exclude_' . $idx, $id, PDO::PARAM_INT);
+				}
+				foreach ($paramsTag as $pKey => $pVal) {
+					$stmt->bindValue($pKey, $pVal, PDO::PARAM_STR);
+				}
+				$stmt->execute();
+				$products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+				related_debug_log($related_debug, 'category_filtered_result', [
+					'related_tag' => $related_tag,
+					'keywords' => $categoryKeywords,
+					'result_count' => count($products),
+				]);
+			}
 		}
 
 		// 2) fallback featured
 		if (count($products) < $limit) {
+			related_debug_log($related_debug, 'fallback_featured_start', ['already_found' => count($products), 'limit' => $limit]);
 			$needed = $limit - count($products);
 			$exclude = array_column($products, 'id');
 			$allEx = array_unique(array_merge($exclude_ids, array_map('intval', $exclude)));
@@ -147,7 +271,7 @@ try {
 				}
 				$sql_featured .= " AND pp.id NOT IN (" . implode(',', $ph) . ")";
 			}
-			$sql_featured .= " ORDER BY (pp.image IS NULL OR pp.image = ''), pp.name ASC LIMIT :limit";
+			$sql_featured .= " ORDER BY {$orderConfig['order_sql']} LIMIT :limit";
 			$stmt = $pdo->prepare($sql_featured);
 			$stmt->bindValue(':pharma_id', $pharma_id, PDO::PARAM_INT);
 			$stmt->bindValue(':limit', $needed, PDO::PARAM_INT);
@@ -162,6 +286,7 @@ try {
 
 		// 3) fallback attivi con immagine
 		if (count($products) < $limit) {
+			related_debug_log($related_debug, 'fallback_image_start', ['already_found' => count($products), 'limit' => $limit]);
 			$needed = $limit - count($products);
 			$exclude = array_column($products, 'id');
 			$allEx = array_unique(array_merge($exclude_ids, array_map('intval', $exclude)));
@@ -173,7 +298,7 @@ try {
 				}
 				$sql_img .= " AND pp.id NOT IN (" . implode(',', $ph) . ")";
 			}
-			$sql_img .= " ORDER BY pp.name ASC LIMIT :limit";
+			$sql_img .= " ORDER BY {$orderConfig['order_sql']} LIMIT :limit";
 			$stmt = $pdo->prepare($sql_img);
 			$stmt->bindValue(':pharma_id', $pharma_id, PDO::PARAM_INT);
 			$stmt->bindValue(':limit', $needed, PDO::PARAM_INT);
@@ -189,6 +314,9 @@ try {
 		$products = array_map(function($p){
 			$p['tags'] = decode_tags_array($p['tags'] ?? null);
 			$p['is_featured'] = (int)($p['is_featured'] ?? 0);
+			$p['related_has_image'] = (int)($p['related_has_image'] ?? 0);
+			$p['related_has_price'] = (int)($p['related_has_price'] ?? 0);
+			$p['related_is_all_caps_name'] = (int)($p['related_is_all_caps_name'] ?? 0);
 			return $p;
 		}, $products);
 
@@ -202,6 +330,10 @@ try {
 				'pharma_id' => $pharma_id,
 				'related_mode' => 1,
 				'related_tag' => $related_tag,
+				'debug' => $related_debug ? [
+					'tags_column_exists' => $tags_column_exists,
+					'global_table_exists' => $global_table_exists,
+				] : null,
 			]
 		]);
 		exit();

@@ -25,33 +25,156 @@
 
 		<style>
 			.related-products {
-				border: 1px solid #eee;
+				border: 1px solid #ece8ff;
+				border-radius: 16px;
+				padding: 10px;
+				background: linear-gradient(180deg, #fcfbff 0%, #f8f5ff 100%);
+				box-shadow: 0 10px 24px rgba(86, 37, 153, 0.06);
+			}
+			.related-products__header {
+				display: flex;
+				align-items: baseline;
+				justify-content: space-between;
+				gap: 8px;
+				margin-bottom: 8px;
+			}
+			.related-products__title {
+				margin: 0;
+				font-size: 0.92rem;
+				font-weight: 700;
+				color: #3a2665;
+			}
+			.related-products__subtitle {
+				font-size: 0.75rem;
+				color: #7d719d;
+				white-space: nowrap;
+			}
+			.related-products .form-select {
 				border-radius: 12px;
-				padding: 12px;
-				background: #faf9ff;
+				border-color: #ddd5fb;
+				font-size: 0.82rem;
+				padding-top: 0.4rem;
+				padding-bottom: 0.4rem;
+			}
+			.related-products .form-select:focus {
+				border-color: #8f73d9;
+				box-shadow: 0 0 0 0.18rem rgba(143, 115, 217, 0.2);
 			}
 			.related-products__list {
 				display: grid;
-				grid-template-columns: 1fr;
+				grid-auto-flow: column;
+				grid-auto-columns: calc((100% - 16px) / 3);
 				gap: 8px;
+				overflow-x: auto;
+				padding-bottom: 4px;
+				min-height: 168px;
+				scroll-snap-type: x proximity;
+				-webkit-overflow-scrolling: touch;
 			}
-			.related-product-item {
+			.related-products.is-loading .related-products__list {
+				opacity: 0.74;
+			}
+			.related-products.is-loading .related-products__list::before {
+				content: '';
+				display: block;
+				width: 100%;
+				height: 100%;
+				min-height: 120px;
+				border-radius: 12px;
+				background: linear-gradient(90deg, #f2edff 25%, #ffffff 37%, #f2edff 63%);
+				background-size: 300% 100%;
+				animation: relatedShimmer 1.2s infinite;
+			}
+			@keyframes relatedShimmer {
+				0% { background-position: 100% 0; }
+				100% { background-position: 0 0; }
+			}
+			.related-products__list::-webkit-scrollbar {
+				height: 5px;
+			}
+			.related-products__list::-webkit-scrollbar-thumb {
+				background: #d8cfff;
+				border-radius: 999px;
+			}
+			.related-product-card {
+				display: flex;
+				flex-direction: column;
+				min-height: 100%;
+				scroll-snap-align: start;
+				padding: 8px;
+				border: 1px solid #ebe6ff;
+				border-radius: 12px;
+				background: #fff;
+				box-shadow: 0 6px 16px rgba(28, 25, 56, 0.06);
+				transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+			}
+			.related-product-card:hover,
+			.related-product-card:focus-within {
+				transform: translateY(-1px);
+				border-color: #dacfff;
+				box-shadow: 0 10px 20px rgba(62, 36, 115, 0.11);
+			}
+			.related-product-card__image-wrap {
+				position: relative;
+				width: 100%;
+				aspect-ratio: 1 / 1;
+				margin-bottom: 6px;
+				border-radius: 8px;
+				overflow: hidden;
+				background: radial-gradient(circle at 30% 20%, #f3efff 0%, #eee8ff 100%);
+			}
+			.related-product-card__image {
+				width: 100%;
+				height: 100%;
+				object-fit: contain;
+				display: block;
+				padding: 4px;
+			}
+			.related-product-card__content {
+				display: flex;
+				flex-direction: column;
+				gap: 4px;
+				flex: 1;
+			}
+			.related-product-card__name {
+				font-size: 0.8rem;
+				font-weight: 600;
+				line-height: 1.3;
+				display: -webkit-box;
+				-webkit-line-clamp: 2;
+				-webkit-box-orient: vertical;
+				overflow: hidden;
+				color: #3f345a;
+			}
+			.related-product-card__price {
+				font-size: 0.9rem;
+				font-weight: 700;
+				color: #462a7a;
+				margin-bottom: 6px;
+			}
+			.related-product-card__cta {
+				margin-top: auto;
+				border-radius: 999px;
+				font-size: 0.76rem;
+				font-weight: 600;
+				padding-block: 0.34rem;
+			}
+			.related-products__empty {
 				display: flex;
 				align-items: center;
-				justify-content: space-between;
-				gap: 8px;
-				padding: 8px;
-				border: 1px solid #ece8ff;
+				gap: 6px;
+				margin-top: 6px;
+				color: #7c7494;
+				font-size: 0.78rem;
+				padding: 6px 8px;
+				background: rgba(255, 255, 255, 0.65);
+				border: 1px dashed #ddd3ff;
 				border-radius: 10px;
-				background: #fff;
 			}
-			.related-product-item__name {
-				font-size: 0.92rem;
-				font-weight: 600;
-			}
-			.related-product-item__price {
-				font-size: 0.82rem;
-				color: #666;
+			@media (min-width: 992px) {
+				.related-products__list {
+					grid-auto-columns: minmax(120px, 1fr);
+				}
 			}
 		</style>
 	</head>
@@ -94,14 +217,18 @@
 									<input type="number" id="res-prod-qty" class="form-control" min="1" max="99" value="1" step="1" />
 								</div>
 
-								<div class="form-group mb-3 related-products" id="related-products-block">
-									<label for="related-tag-select" class="form-label mb-1">Suggerimenti rapidi</label>
-									<select id="related-tag-select" class="form-select form-select-sm mb-2">
-										<option value="">In evidenza</option>
-									</select>
-									<div id="related-products-list" class="related-products__list"></div>
-									<div id="related-products-empty" class="small text-muted d-none">Nessun suggerimento disponibile al momento.</div>
-								</div>
+				<div class="form-group mb-3 related-products" id="related-products-block">
+					<div class="related-products__header">
+						<p class="related-products__title">Suggerimenti rapidi</p>
+						<span class="related-products__subtitle">3 consigli per te</span>
+					</div>
+					<label for="related-tag-select" class="form-label mb-1 small text-muted">Categoria</label>
+					<select id="related-tag-select" class="form-select form-select-sm mb-2">
+						<option value="">In evidenza</option>
+					</select>
+					<div id="related-products-list" class="related-products__list"></div>
+					<div id="related-products-empty" class="related-products__empty d-none"><i class="fa-regular fa-lightbulb"></i><span>Nessun suggerimento disponibile al momento.</span></div>
+				</div>
 							</div>
 
 								<div class="suborder-group suborder-group--1 d-none">
@@ -122,11 +249,14 @@
 										</select>
 									</div>
 
-									<div class="form-group mb-3 related-products" id="related-products-block-rx">
-										<label class="form-label mb-1">Suggerimenti rapidi</label>
-										<div id="related-products-list-rx" class="related-products__list"></div>
-										<div id="related-products-empty-rx" class="small text-muted d-none">Nessun suggerimento disponibile al momento.</div>
-									</div>
+					<div class="form-group mb-3 related-products" id="related-products-block-rx">
+						<div class="related-products__header">
+							<p class="related-products__title">Suggerimenti rapidi</p>
+							<span class="related-products__subtitle">in base alla categoria</span>
+						</div>
+						<div id="related-products-list-rx" class="related-products__list"></div>
+						<div id="related-products-empty-rx" class="related-products__empty d-none"><i class="fa-regular fa-lightbulb"></i><span>Nessun suggerimento disponibile al momento.</span></div>
+					</div>
 
 									<!-- Toggle per selezionare tipo di ricetta -->
 									<div class="form-group mb-3">

@@ -87,6 +87,9 @@ const AppURLs = {
 		saveSurvey: () => AppURLs.api.base + '/survey-post.php',
 		getSurvey: (id) => AppURLs.api.base + `/survey-get.php?id=${id ?? ''}`,
 	},
+	panel: {
+		base: 'https://panel.assistentefarmacia.it',
+	},
 };
 
 const dataStore = {};
@@ -860,9 +863,11 @@ window.isLocalEnv = function isLocalEnv() {
 if( isLocalEnv() ){
 	AppURLs.page.root = () => 'http://127.0.0.1:8000';
 	AppURLs.api.base = 'http://127.0.0.1:8002';
+	AppURLs.panel.base = 'http://127.0.0.1:8001';
 
 	if( window.location.pathname.includes(decodeBase64('anRhZi1yZXBv')) ){
 		AppURLs.page.root = () => decodeBase64('aHR0cDovLzEyNy4wLjAuMS9qdW5nbGV0ZWFtL2FsdmluL2p0YWYtcmVwby9hc3Npc3RlbnRlX2Zhcm1hY2lhX2FwcA==');
 		AppURLs.api.base = decodeBase64('aHR0cDovLzEyNy4wLjAuMS9qdW5nbGV0ZWFtL2FsdmluL2p0YWYtcmVwby9hc3Npc3RlbnRlX2Zhcm1hY2lhX2FwaQ==');
+		AppURLs.panel.base = decodeBase64('aHR0cDovLzEyNy4wLjAuMS9qdW5nbGV0ZWFtL2FsdmluL2p0YWYtcmVwby9hc3Npc3RlbnRlX2Zhcm1hY2lhX3BhbmVs');
 	}
 }
