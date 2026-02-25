@@ -156,12 +156,38 @@
 				color: #462a7a;
 				margin-bottom: 6px;
 			}
+			.related-product-card__price-row {
+				display: flex;
+				align-items: baseline;
+				gap: 6px;
+				flex-wrap: nowrap;
+				margin-bottom: 6px;
+			}
+			.related-product-card__price--original {
+				font-size: 0.74rem;
+				color: #8c82a8;
+				text-decoration: line-through;
+			}
+			.related-product-card__price--discounted {
+				font-size: 0.9rem;
+				font-weight: 700;
+				color: #462a7a;
+			}
 			.related-product-card__cta {
 				margin-top: auto;
 				border-radius: 999px;
-				font-size: 0.78rem;
+				font-size: 0.74rem;
 				font-weight: 600;
-				padding: 0.36rem 0.8rem;
+				padding: 0.25rem 0.62rem;
+				line-height: 1.1;
+				white-space: nowrap;
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				align-self: flex-start;
+				min-width: 0;
+				max-width: 100%;
+				flex: 0 0 auto;
 			}
 			.related-product-card__cta:focus-visible,
 			.related-products .form-select:focus-visible,
@@ -232,18 +258,6 @@
 									<input type="number" id="res-prod-qty" class="form-control" min="1" max="99" value="1" step="1" />
 								</div>
 
-				<div class="form-group mb-3 related-products" id="related-products-block">
-					<div class="related-products__header">
-						<p class="related-products__title">Suggerimenti rapidi</p>
-						<span class="related-products__subtitle">3 consigli per te</span>
-					</div>
-					<label for="related-tag-select" class="form-label mb-1 small text-muted">Categoria</label>
-					<select id="related-tag-select" class="form-select form-select-sm mb-2">
-						<option value="">In evidenza</option>
-					</select>
-					<div id="related-products-list" class="related-products__list"></div>
-					<div id="related-products-empty" class="related-products__empty d-none"><i class="fa-regular fa-lightbulb"></i><span>Nessun suggerimento disponibile al momento.</span></div>
-				</div>
 							</div>
 
 								<div class="suborder-group suborder-group--1 d-none">
@@ -255,23 +269,14 @@
 											<option value="raffreddore_influenza">Raffreddore/Influenza</option>
 											<option value="gola">Gola</option>
 											<option value="tosse">Tosse</option>
+											<option value="naso">Naso</option>
 											<option value="gastro">Gastro</option>
 											<option value="dermocosmesi">Dermocosmesi</option>
 											<option value="vitamine_integratori">Vitamine/Integratori</option>
 											<option value="bambino">Bambino</option>
 											<option value="medicazione">Medicazione</option>
-											<option value="altro">Altro</option>
 										</select>
 									</div>
-
-					<div class="form-group mb-3 related-products" id="related-products-block-rx">
-						<div class="related-products__header">
-							<p class="related-products__title">Suggerimenti rapidi</p>
-							<span class="related-products__subtitle">in base alla categoria</span>
-						</div>
-						<div id="related-products-list-rx" class="related-products__list"></div>
-						<div id="related-products-empty-rx" class="related-products__empty d-none"><i class="fa-regular fa-lightbulb"></i><span>Nessun suggerimento disponibile al momento.</span></div>
-					</div>
 
 									<!-- Toggle per selezionare tipo di ricetta -->
 									<div class="form-group mb-3">
@@ -308,6 +313,28 @@
 									</div>
 								</div>
 							</div>
+						</div>
+
+						<div class="form-group mb-3 related-products" id="related-products-block">
+							<div class="related-products__header">
+								<p class="related-products__title">Prodotti utili scelti per te</p>
+								<span class="related-products__subtitle">Piccoli consigli, subito pronti</span>
+							</div>
+							<label for="related-tag-select" class="form-label mb-1 small text-muted">Categoria</label>
+							<select id="related-tag-select" class="form-select form-select-sm mb-2">
+								<option value="">In evidenza</option>
+							</select>
+							<div id="related-products-list" class="related-products__list"></div>
+							<div id="related-products-empty" class="related-products__empty d-none"><i class="fa-regular fa-lightbulb"></i><span>Nessun suggerimento disponibile al momento.</span></div>
+						</div>
+
+						<div class="form-group mb-3 related-products d-none" id="related-products-block-rx">
+							<div class="related-products__header">
+								<p class="related-products__title">Prodotti utili scelti per te</p>
+								<span class="related-products__subtitle">Piccoli consigli, subito pronti</span>
+							</div>
+							<div id="related-products-list-rx" class="related-products__list"></div>
+							<div id="related-products-empty-rx" class="related-products__empty d-none"><i class="fa-regular fa-lightbulb"></i><span>Nessun suggerimento disponibile al momento.</span></div>
 						</div>
 
 						<button type="button" class="btn btn-primary btn-add mb-4 w-100" onclick="ReservationForm.insertProduct()">+ Aggiungi al carrello</button>

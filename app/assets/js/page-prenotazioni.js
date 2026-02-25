@@ -210,13 +210,31 @@ const ReservationForm = {
 			.filter((id) => Number.isInteger(id) || (!Number.isNaN(parseInt(id, 10)) && parseInt(id, 10) > 0))
 			.map((id) => parseInt(id, 10));
 	},
+	formatCurrency(value) {
+		const parsed = parseFloat(value);
+		if (Number.isNaN(parsed) || parsed <= 0) return '';
+		return new Intl.NumberFormat('it-IT', {style: 'currency', currency: 'EUR'}).format(parsed);
+	},
 	formatRelatedPrice(item) {
-		const sale = item.sale_price !== null && item.sale_price !== undefined && item.sale_price !== '';
-		const price = item.price !== null && item.price !== undefined && item.price !== '';
-		if (!sale && !price) return '';
-		const value = sale ? parseFloat(item.sale_price) : parseFloat(item.price);
-		if (Number.isNaN(value)) return '';
-		return new Intl.NumberFormat('it-IT', {style: 'currency', currency: 'EUR'}).format(value);
+		const originalValue = item?.price_original ?? item?.price;
+		const discountedValue = item?.price_discounted ?? item?.sale_price;
+		const hasDiscount = !!item?.has_discount && discountedValue !== null && discountedValue !== undefined && discountedValue !== '';
+
+		const originalFormatted = this.formatCurrency(originalValue);
+		const discountedFormatted = this.formatCurrency(discountedValue);
+
+		if (hasDiscount && originalFormatted && discountedFormatted) {
+			return {
+				hasDiscount: true,
+				original: originalFormatted,
+				discounted: discountedFormatted,
+			};
+		}
+
+		return {
+			hasDiscount: false,
+			single: discountedFormatted || originalFormatted,
+		};
 	},
 	getRelatedPlaceholderImage() {
 		return AppURLs.api.base + '/uploads/images/placeholder-product.jpg';
@@ -246,8 +264,10 @@ const ReservationForm = {
 			</div>
 			<div class="related-product-card__content">
 				<div class="related-product-card__name">${escapeHtml(item.name || 'Prodotto')}</div>
-				${formattedPrice ? `<div class="related-product-card__price">${escapeHtml(formattedPrice)}</div>` : ''}
-				<button class="btn btn-primary btn-sm related-product-card__cta" type="button">Aggiungi</button>
+				${formattedPrice?.hasDiscount
+					? `<div class="related-product-card__price-row"><span class="related-product-card__price--original">${escapeHtml(formattedPrice.original)}</span><span class="related-product-card__price--discounted">${escapeHtml(formattedPrice.discounted)}</span></div>`
+					: (formattedPrice?.single ? `<div class="related-product-card__price">${escapeHtml(formattedPrice.single)}</div>` : '')}
+				<button class="btn btn-primary related-product-card__cta" type="button">Aggiungi</button>
 			</div>
 		`;
 
@@ -260,21 +280,22 @@ const ReservationForm = {
 		});
 
 		card.querySelector('button')?.addEventListener('click', () => {
-			const hasSalePrice = item.sale_price !== null && item.sale_price !== undefined && item.sale_price !== '';
-			const hasPrice = item.price !== null && item.price !== undefined && item.price !== '';
+			const basePrice = item.price_original ?? item.price;
+			const hasPrice = basePrice !== null && basePrice !== undefined && basePrice !== '';
+			const hasDiscountPrice = item.has_discount && item.price_discounted !== null && item.price_discounted !== undefined && item.price_discounted !== '';
 			const relatedData = {
 				type: 0,
 				product: {
 					id: item.id,
 					name: item.name,
 					code: item.sku || 'N/A',
-					price: item.price ?? null,
-					sale_price: item.sale_price ?? null,
+					price: item.price_original ?? item.price ?? null,
+					sale_price: item.price_discounted ?? item.sale_price ?? null,
 					thumbnail: imageSrc,
 				},
 				name: item.name,
 				code: item.sku || 'N/A',
-				price: hasSalePrice ? item.sale_price : hasPrice ? item.price : null,
+				price: hasDiscountPrice ? item.price_discounted : hasPrice ? basePrice : null,
 				qty: 1,
 			};
 
@@ -320,7 +341,7 @@ const ReservationForm = {
 		url.searchParams.set('pharma_id', pharmaId);
 		url.searchParams.set('related_mode', '1');
 		url.searchParams.set('limit', '3');
-		if (normalizedTag && normalizedTag !== 'altro') url.searchParams.set('related_tag', normalizedTag);
+		if (normalizedTag) url.searchParams.set('related_tag', normalizedTag);
 
 		const selectedIds = this.getSelectedProductIdsForRelated();
 		if (selectedIds.length > 0) {

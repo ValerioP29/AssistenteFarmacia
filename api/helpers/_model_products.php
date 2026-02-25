@@ -1,6 +1,71 @@
 <?php
 
+require_once(__DIR__ . '/_related_tags.php');
+
 class ProductsModel {
+
+	private static function getColumnAvailability(){
+		global $pdo;
+		static $cache = null;
+		if ($cache !== null) return $cache;
+
+		$columns = [
+			'category' => false,
+		];
+
+		try {
+			$stmt = $pdo->prepare("SHOW COLUMNS FROM jta_pharma_prods LIKE 'category'");
+			$stmt->execute();
+			$columns['category'] = $stmt->rowCount() > 0;
+		} catch (Exception $e) {
+			$columns['category'] = false;
+		}
+
+		$cache = $columns;
+		return $cache;
+	}
+
+	private static function shouldAutoTag($incomingTags, $existingTags, $forceAutotag = false){
+		if ($forceAutotag) return true;
+
+		$incoming = trim((string)$incomingTags);
+		if ($incoming !== '') return false;
+
+		$existing = trim((string)$existingTags);
+		return $existing === '';
+	}
+
+	private static function prepareAutoTagsForUpdate($id, array &$params){
+		global $pdo;
+
+		if (isset($params['tags']) && is_array($params['tags'])) {
+			$params['tags'] = json_encode(array_values(array_unique(array_filter(array_map('strval', $params['tags'])))), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+		}
+
+		$forceAutotag = !empty($params['force_autotag']);
+		unset($params['force_autotag']);
+
+		$columns = self::getColumnAvailability();
+		$selectCategory = $columns['category'] ? "category" : "'' AS category";
+
+		$stmt = $pdo->prepare("SELECT id, name, description, {$selectCategory}, tags FROM jta_pharma_prods WHERE id = :id LIMIT 1");
+		$stmt->execute([':id' => $id]);
+		$current = $stmt->fetch(PDO::FETCH_ASSOC);
+		if (!$current) return;
+
+		$incomingTags = $params['tags'] ?? '';
+		$existingTags = $current['tags'] ?? '';
+		if (!self::shouldAutoTag($incomingTags, $existingTags, $forceAutotag)) return;
+
+		$name = $params['name'] ?? $current['name'] ?? '';
+		$description = $params['description'] ?? $current['description'] ?? '';
+		$category = ($columns['category'] ? ($params['category'] ?? $current['category'] ?? '') : '');
+		$autoTags = related_tags_infer_from_product($name, $description, $category);
+
+		if (!empty($autoTags)) {
+			$params['tags'] = json_encode($autoTags, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+		}
+	}
 
 	/**
 	 * Inserisce un nuovo prodotto
@@ -47,6 +112,7 @@ class ProductsModel {
 
 		try {
 			if (empty($params)) return false;
+			self::prepareAutoTagsForUpdate($id, $params);
 
 			$fields = [];
 			$values = [];
