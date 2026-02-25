@@ -22,7 +22,7 @@ $pharma_id = (int)($input['pharma_id'] ?? ($input['pharmacy_id'] ?? 0));
 $related_mode = (int)($input['related_mode'] ?? 0) === 1;
 $related_tag = trim($input['related_tag'] ?? '');
 $related_debug = in_array(strtolower(trim((string)($input['related_debug'] ?? ''))), ['1', 'true', 'yes', 'on'], true);
-$limit = (int)($input['limit'] ?? ($related_mode ? 8 : 100));
+$limit = (int)($input['limit'] ?? ($related_mode ? 3 : 100));
 $limit = max(1, min(50, $limit));
 $exclude_ids_raw = trim($input['exclude_ids'] ?? '');
 $exclude_ids = [];
@@ -55,6 +55,11 @@ function normalize_related_text($value){
 	return $value;
 }
 
+
+function is_featured_related_tag($tag){
+	$normalized = normalize_related_text($tag);
+	return $normalized === '' || in_array($normalized, ['in_evidenza', 'featured', 'evidenza'], true);
+}
 function get_related_category_keywords($relatedTag){
 	$tag = normalize_related_text($relatedTag);
 	$map = [
@@ -123,6 +128,9 @@ function build_utf8_unicode_expr($expr){
 	return "CONVERT({$expr} USING utf8mb4) COLLATE utf8mb4_unicode_ci";
 }
 
+$related_tag_normalized = normalize_related_text($related_tag);
+$is_featured_tag = is_featured_related_tag($related_tag_normalized);
+
 // Validazione input
 if( $pharma_id <= 0 || (!$related_mode && empty($search_term)) ){
 	echo json_encode([
@@ -164,6 +172,8 @@ try {
 	related_debug_log($related_debug, 'init', [
 		'pharma_id' => $pharma_id,
 		'related_tag' => $related_tag,
+		'related_tag_normalized' => $related_tag_normalized,
+		'is_featured_tag' => $is_featured_tag,
 		'related_mode' => $related_mode,
 		'tags_column_exists' => $tags_column_exists,
 		'global_table_exists' => $global_table_exists,
@@ -225,38 +235,38 @@ try {
 			$params[':exclude_' . $idx] = $id;
 		}
 
-		// 1) related_tag su tags
+		// 1) related_tag su tags/categoria (solo se non "In evidenza")
 		$products = [];
-			if (!empty($related_tag)) {
-				$tagConditions = [];
-				$paramsTag = [];
-				$tagsSearchExpr = build_tags_search_expr();
-				$categorySearchExpr = $global_table_exists
-					? build_utf8_unicode_expr("COALESCE(gp.category, '')")
-					: null;
+		if (!$is_featured_tag && !empty($related_tag_normalized)) {
+			$tagConditions = [];
+			$paramsTag = [];
+			$tagsSearchExpr = build_tags_search_expr();
+			$categorySearchExpr = $global_table_exists
+				? build_utf8_unicode_expr("COALESCE(gp.category, '')")
+				: null;
 
-				if ($tags_column_exists) {
-					$tagConditions[] = "({$tagsSearchExpr} IS NOT NULL AND TRIM({$tagsSearchExpr}) <> '' AND LOWER({$tagsSearchExpr}) LIKE LOWER(:related_tag_json))";
-					$tagConditions[] = "({$tagsSearchExpr} IS NOT NULL AND TRIM({$tagsSearchExpr}) <> '' AND LOWER({$tagsSearchExpr}) LIKE LOWER(:related_tag_plain))";
-					$paramsTag[':related_tag_json'] = '%"' . strtolower($related_tag) . '"%';
-					$paramsTag[':related_tag_plain'] = '%' . strtolower($related_tag) . '%';
+			if ($tags_column_exists) {
+				$tagConditions[] = "({$tagsSearchExpr} IS NOT NULL AND TRIM({$tagsSearchExpr}) <> '' AND LOWER({$tagsSearchExpr}) LIKE LOWER(:related_tag_json))";
+				$tagConditions[] = "({$tagsSearchExpr} IS NOT NULL AND TRIM({$tagsSearchExpr}) <> '' AND LOWER({$tagsSearchExpr}) LIKE LOWER(:related_tag_plain))";
+				$paramsTag[':related_tag_json'] = '%"' . strtolower($related_tag_normalized) . '"%';
+				$paramsTag[':related_tag_plain'] = '%' . strtolower($related_tag_normalized) . '%';
+			}
+
+			$categoryKeywords = get_related_category_keywords($related_tag_normalized);
+			if ($global_table_exists && !empty($categoryKeywords)) {
+				$catParts = [];
+				foreach ($categoryKeywords as $kIdx => $keyword) {
+					$key = ':related_cat_' . $kIdx;
+					$catParts[] = "LOWER({$categorySearchExpr}) LIKE LOWER({$key})";
+					$paramsTag[$key] = '%' . strtolower($keyword) . '%';
 				}
-
-			$categoryKeywords = get_related_category_keywords($related_tag);
-				if ($global_table_exists && !empty($categoryKeywords)) {
-					$catParts = [];
-					foreach ($categoryKeywords as $kIdx => $keyword) {
-						$key = ':related_cat_' . $kIdx;
-						$catParts[] = "LOWER({$categorySearchExpr}) LIKE LOWER({$key})";
-						$paramsTag[$key] = '%' . strtolower($keyword) . '%';
-					}
 				if (!empty($catParts)) {
 					$tagConditions[] = '(' . implode(' OR ', $catParts) . ')';
 				}
 			}
 
 			if (empty($tagConditions)) {
-				related_debug_log($related_debug, 'no_tag_conditions_available', ['related_tag' => $related_tag]);
+				related_debug_log($related_debug, 'no_tag_conditions_available', ['related_tag' => $related_tag_normalized]);
 				$products = [];
 			} else {
 				$sql_tag = $select_base . " AND (" . implode(' OR ', $tagConditions) . ")
@@ -274,67 +284,39 @@ try {
 				$stmt->execute();
 				$products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 				related_debug_log($related_debug, 'category_filtered_result', [
-					'related_tag' => $related_tag,
+					'related_tag' => $related_tag_normalized,
 					'keywords' => $categoryKeywords,
 					'result_count' => count($products),
+					'query_branch' => 'tag_or_category',
 				]);
 			}
 		}
 
-		// 2) fallback featured
-		if (count($products) < $limit) {
-			related_debug_log($related_debug, 'fallback_featured_start', ['already_found' => count($products), 'limit' => $limit]);
-			$needed = $limit - count($products);
-			$exclude = array_column($products, 'id');
-			$allEx = array_unique(array_merge($exclude_ids, array_map('intval', $exclude)));
-			$sql_featured = $select_base . " AND pp.is_featured = 1";
-			if (!empty($allEx)) {
-				$ph = [];
-				foreach ($allEx as $idx => $id) {
-					$ph[] = ':fexclude_' . $idx;
-				}
-				$sql_featured .= " AND pp.id NOT IN (" . implode(',', $ph) . ")";
-			}
-			$sql_featured .= " ORDER BY {$orderConfig['order_sql']} LIMIT :limit";
+		// 2) In evidenza: solo prodotti featured
+		if ($is_featured_tag) {
+			related_debug_log($related_debug, 'featured_only_start', ['limit' => $limit]);
+			$sql_featured = $select_base . " AND pp.is_featured = 1 ORDER BY {$orderConfig['order_sql']} LIMIT :limit";
 			$stmt = $pdo->prepare($sql_featured);
 			$stmt->bindValue(':pharma_id', $pharma_id, PDO::PARAM_INT);
-			$stmt->bindValue(':limit', $needed, PDO::PARAM_INT);
-			if (!empty($allEx)) {
-				foreach ($allEx as $idx => $id) {
-					$stmt->bindValue(':fexclude_' . $idx, $id, PDO::PARAM_INT);
-				}
+			$stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+			foreach ($exclude_ids as $idx => $id) {
+				$stmt->bindValue(':exclude_' . $idx, $id, PDO::PARAM_INT);
 			}
 			$stmt->execute();
-			$products = array_merge($products, $stmt->fetchAll(PDO::FETCH_ASSOC));
+			$products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+			related_debug_log($related_debug, 'featured_only_result', [
+				'result_count' => count($products),
+				'query_branch' => 'featured_only',
+			]);
 		}
 
-		// 3) fallback attivi con immagine
-		if (count($products) < $limit) {
-			related_debug_log($related_debug, 'fallback_image_start', ['already_found' => count($products), 'limit' => $limit]);
-			$needed = $limit - count($products);
-			$exclude = array_column($products, 'id');
-			$allEx = array_unique(array_merge($exclude_ids, array_map('intval', $exclude)));
-			$imageNotEmptyExpr = build_utf8_unicode_expr('pp.image');
-			$sql_img = $select_base . " AND pp.image IS NOT NULL AND TRIM({$imageNotEmptyExpr}) <> ''";
-			if (!empty($allEx)) {
-				$ph = [];
-				foreach ($allEx as $idx => $id) {
-					$ph[] = ':iexclude_' . $idx;
-				}
-				$sql_img .= " AND pp.id NOT IN (" . implode(',', $ph) . ")";
-			}
-			$sql_img .= " ORDER BY {$orderConfig['order_sql']} LIMIT :limit";
-			$stmt = $pdo->prepare($sql_img);
-			$stmt->bindValue(':pharma_id', $pharma_id, PDO::PARAM_INT);
-			$stmt->bindValue(':limit', $needed, PDO::PARAM_INT);
-			if (!empty($allEx)) {
-				foreach ($allEx as $idx => $id) {
-					$stmt->bindValue(':iexclude_' . $idx, $id, PDO::PARAM_INT);
-				}
-			}
-			$stmt->execute();
-			$products = array_merge($products, $stmt->fetchAll(PDO::FETCH_ASSOC));
-		}
+		$products = array_slice($products, 0, $limit);
+		related_debug_log($related_debug, 'final_result', [
+			'related_tag' => $related_tag_normalized,
+			'is_featured_tag' => $is_featured_tag,
+			'result_count' => count($products),
+		]);
+
 
 		$products = array_map(function($p){
 			$p['tags'] = decode_tags_array($p['tags'] ?? null);
@@ -355,6 +337,7 @@ try {
 				'pharma_id' => $pharma_id,
 				'related_mode' => 1,
 				'related_tag' => $related_tag,
+				'related_tag_normalized' => $related_tag_normalized,
 				'debug' => $related_debug ? [
 					'tags_column_exists' => $tags_column_exists,
 					'global_table_exists' => $global_table_exists,

@@ -18,6 +18,16 @@ const ReservationForm = {
 		{value: 'naso', label: 'Naso'},
 		{value: 'occhi', label: 'Occhi'},
 	],
+	relatedState: {
+		0: {
+			lastTag: '',
+			products: [],
+		},
+		1: {
+			lastTag: '',
+			products: [],
+		},
+	},
 
 	init() {
 		this.form = document.querySelector('#form-reservation');
@@ -237,7 +247,7 @@ const ReservationForm = {
 			<div class="related-product-card__content">
 				<div class="related-product-card__name">${escapeHtml(item.name || 'Prodotto')}</div>
 				${formattedPrice ? `<div class="related-product-card__price">${escapeHtml(formattedPrice)}</div>` : ''}
-				<button class="btn btn-outline-primary btn-sm related-product-card__cta" type="button">Aggiungi</button>
+				<button class="btn btn-primary btn-sm related-product-card__cta" type="button">Aggiungi</button>
 			</div>
 		`;
 
@@ -279,20 +289,25 @@ const ReservationForm = {
 		const {listEl, emptyEl} = this.getRelatedElementsByMode(mode);
 		if (!listEl || !emptyEl) return;
 
+		const safeProducts = Array.isArray(products) ? products.slice(0, 3) : [];
+		this.relatedState[mode].products = safeProducts;
+
 		listEl.innerHTML = '';
-		if (!Array.isArray(products) || products.length === 0) {
+		if (safeProducts.length === 0) {
 			emptyEl.classList.remove('d-none');
 			return;
 		}
 
 		emptyEl.classList.add('d-none');
-		products.forEach((item) => {
+		safeProducts.forEach((item) => {
 			listEl.appendChild(this.createRelatedProductCard(item));
 		});
 	},
-	loadRelatedProducts(tag = '', mode = null, options = {}) {
+	loadRelatedProducts(tag = '', mode = null) {
 		if (mode === null) mode = this.getSubOrderChecked();
 		if (![0, 1].includes(mode)) return;
+		const normalizedTag = typeof tag === 'string' ? tag.trim().toLowerCase() : '';
+		this.relatedState[mode].lastTag = normalizedTag;
 		this.setRelatedLoading(mode, true);
 
 		const pharmaId = dataStore.pharma?.id;
@@ -304,8 +319,8 @@ const ReservationForm = {
 		const url = new URL(AppURLs.api.productSuggestions());
 		url.searchParams.set('pharma_id', pharmaId);
 		url.searchParams.set('related_mode', '1');
-		url.searchParams.set('limit', '8');
-		if (tag && tag !== 'altro') url.searchParams.set('related_tag', tag);
+		url.searchParams.set('limit', '3');
+		if (normalizedTag && normalizedTag !== 'altro') url.searchParams.set('related_tag', normalizedTag);
 
 		const selectedIds = this.getSelectedProductIdsForRelated();
 		if (selectedIds.length > 0) {
@@ -316,29 +331,14 @@ const ReservationForm = {
 			.then((data) => {
 				this.setRelatedLoading(mode, false);
 				if (data?.status && Array.isArray(data?.data?.products)) {
-					const products = data.data.products;
-					if (tag && products.length === 0 && !options?.fallbackTriggered) {
-						this.loadRelatedProducts('', mode, {fallbackTriggered: true, fallbackFromTag: tag});
-						return;
-					}
+					const products = data.data.products.slice(0, 3);
 					this.renderRelatedProducts(products, mode);
-					if (options?.fallbackTriggered) {
-						showToast?.('Nessun prodotto nella categoria selezionata: mostrati suggerimenti generici.', 'info');
-					}
 				} else {
-					if (tag && !options?.fallbackTriggered) {
-						this.loadRelatedProducts('', mode, {fallbackTriggered: true, fallbackFromTag: tag});
-						return;
-					}
 					this.renderRelatedProducts([], mode);
 				}
 			})
 			.catch(() => {
 				this.setRelatedLoading(mode, false);
-				if (tag && !options?.fallbackTriggered) {
-					this.loadRelatedProducts('', mode, {fallbackTriggered: true, fallbackFromTag: tag});
-					return;
-				}
 				this.renderRelatedProducts([], mode);
 			});
 	},
@@ -638,22 +638,12 @@ const ReservationForm = {
 		this.addProductToTable(data);
 		this.setVisProductsTable(this.countCartItems() > 0);
 		this.resetSubFormProduct();
-		const mode = this.getSubOrderChecked();
-		const selectedTag = mode === 1
-			? document.querySelector('#related-seed-tag-prescription')?.value || ''
-			: document.querySelector('#related-tag-select')?.value || '';
-		this.loadRelatedProducts(selectedTag, mode);
 	},
 
 	removeProduct(uuid) {
 		this.removeProductFromCart(uuid);
 		this.removeProductFromTable(uuid);
 		this.setVisProductsTable(this.countCartItems() > 0);
-		const mode = this.getSubOrderChecked();
-		const selectedTag = mode === 1
-			? document.querySelector('#related-seed-tag-prescription')?.value || ''
-			: document.querySelector('#related-tag-select')?.value || '';
-		this.loadRelatedProducts(selectedTag, mode);
 	},
 
 	insertProduct() {
