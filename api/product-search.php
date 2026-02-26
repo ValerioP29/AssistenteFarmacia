@@ -22,6 +22,7 @@ $search_term = trim($input['search'] ?? '');
 $pharma_id = (int)($input['pharma_id'] ?? ($input['pharmacy_id'] ?? 0));
 $related_mode = (int)($input['related_mode'] ?? 0) === 1;
 $related_tag = trim($input['related_tag'] ?? '');
+$related_seed = trim($input['related_seed'] ?? '');
 $related_debug = in_array(strtolower(trim((string)($input['related_debug'] ?? ''))), ['1', 'true', 'yes', 'on'], true);
 $limit = (int)($input['limit'] ?? ($related_mode ? 3 : 100));
 $limit = max(1, min(50, $limit));
@@ -99,30 +100,43 @@ function build_related_discount_expr($priceExpr){
 	];
 }
 
-function build_related_order_by($nameExpr, $imageExpr, $priceExpr){
+function build_related_order_by($nameExpr, $imageExpr, $priceExpr, $scoreExpr = null){
 	$discountConfig = build_related_discount_expr($priceExpr);
 	$imageTextExpr = "CONVERT({$imageExpr} USING utf8mb4) COLLATE utf8mb4_unicode_ci";
 	$nameTextExpr = "CONVERT({$nameExpr} USING utf8mb4) COLLATE utf8mb4_unicode_ci";
-	$hasImageExpr = "CASE WHEN {$imageExpr} IS NOT NULL AND TRIM({$imageTextExpr}) <> '' THEN 1 ELSE 0 END";
+	$hasImageExpr = "CASE
+		WHEN {$imageExpr} IS NOT NULL
+			AND TRIM({$imageTextExpr}) <> ''
+			AND LOWER(TRIM({$imageTextExpr})) NOT LIKE '%placeholder%'
+		THEN 1 ELSE 0 END";
 	$hasPriceExpr = "CASE WHEN {$priceExpr} IS NOT NULL AND {$priceExpr} > 0 THEN 1 ELSE 0 END";
-	$isAllCapsExpr = "CASE
-		WHEN {$nameExpr} IS NULL OR TRIM({$nameTextExpr}) = '' THEN 1
-		WHEN BINARY {$nameExpr} = BINARY UPPER({$nameExpr})
-			AND BINARY {$nameExpr} <> BINARY LOWER({$nameExpr}) THEN 1
+	$isSentenceCaseExpr = "CASE
+		WHEN {$nameExpr} IS NULL OR TRIM({$nameTextExpr}) = '' THEN 0
+		WHEN BINARY {$nameExpr} = BINARY CONCAT(UPPER(LEFT({$nameExpr}, 1)), LOWER(SUBSTRING({$nameExpr}, 2))) THEN 1
 		ELSE 0
 	END";
+	$isLowercaseExpr = "CASE
+		WHEN {$nameExpr} IS NULL OR TRIM({$nameTextExpr}) = '' THEN 0
+		WHEN BINARY {$nameExpr} = BINARY LOWER({$nameExpr}) THEN 1
+		ELSE 0
+	END";
+	$relevanceExpr = $scoreExpr ? $scoreExpr : '0';
 
 	return [
 		'has_discount' => $discountConfig['has_discount'],
 		'price_discounted' => $discountConfig['price_discounted'],
 		'has_image' => $hasImageExpr,
 		'has_price' => $hasPriceExpr,
-		'is_all_caps' => $isAllCapsExpr,
-		'order_sql' => "{$discountConfig['has_discount']} DESC,
-			{$hasImageExpr} DESC,
-			{$isAllCapsExpr} ASC,
+		'is_sentence_case' => $isSentenceCaseExpr,
+		'is_lowercase' => $isLowercaseExpr,
+		'relevance' => $relevanceExpr,
+		'order_sql' => "{$hasImageExpr} DESC,
+			{$isLowercaseExpr} DESC,
+			{$isSentenceCaseExpr} DESC,
+			{$relevanceExpr} DESC,
 			{$hasPriceExpr} DESC,
-			pp.id DESC",
+			{$discountConfig['has_discount']} DESC,
+			{$nameExpr} ASC",
 	];
 }
 
@@ -145,6 +159,7 @@ function build_utf8_unicode_expr($expr){
 }
 
 $related_tag_normalized = normalize_related_text($related_tag);
+$related_seed_normalized = trim(mb_strtolower((string)$related_seed, 'UTF-8'));
 $is_featured_tag = is_featured_related_tag($related_tag_normalized);
 
 // Validazione input
@@ -189,6 +204,7 @@ try {
 		'pharma_id' => $pharma_id,
 		'related_tag' => $related_tag,
 		'related_tag_normalized' => $related_tag_normalized,
+		'related_seed' => $related_seed_normalized,
 		'is_featured_tag' => $is_featured_tag,
 		'related_mode' => $related_mode,
 		'tags_column_exists' => $tags_column_exists,
@@ -201,11 +217,8 @@ try {
 		$nameExpr = $global_table_exists ? "COALESCE(pp.name, gp.name)" : "pp.name";
 		$imageExpr = $global_table_exists ? "COALESCE(pp.image, gp.image)" : "pp.image";
 		$priceExpr = "COALESCE(pp.sale_price, pp.price)";
-		$orderConfig = build_related_order_by($nameExpr, $imageExpr, $priceExpr);
-
-		related_debug_log($related_debug, 'ranking_order', [
-			'order_sql' => $orderConfig['order_sql'],
-		]);
+		$descriptionExpr = $global_table_exists ? "COALESCE(pp.description, gp.description, '')" : "COALESCE(pp.description, '')";
+		$categoryExpr = $global_table_exists ? "COALESCE(gp.category, '')" : "''";
 
 		if ($global_table_exists) {
 			$select_base = "SELECT 
@@ -214,12 +227,8 @@ try {
 							COALESCE(pp.description, gp.description) as description,
 							COALESCE(pp.image, gp.image) as image,
 							COALESCE(pp.sku, gp.sku) as sku,
-							gp.requires_prescription,
-							{$orderConfig['has_discount']} AS related_has_discount,
-							{$orderConfig['price_discounted']} AS related_price_discounted,
-							{$orderConfig['has_image']} AS related_has_image,
-							{$orderConfig['has_price']} AS related_has_price,
-							{$orderConfig['is_all_caps']} AS related_is_all_caps_name
+							gp.category as category,
+							gp.requires_prescription
 						FROM jta_pharma_prods pp
 						LEFT JOIN jta_global_prods gp ON pp.product_id = gp.id
 						WHERE pp.pharma_id = :pharma_id
@@ -231,12 +240,8 @@ try {
 							pp.description as description,
 							pp.image as image,
 							pp.sku as sku,
-							0 AS requires_prescription,
-							{$orderConfig['has_discount']} AS related_has_discount,
-							{$orderConfig['price_discounted']} AS related_price_discounted,
-							{$orderConfig['has_image']} AS related_has_image,
-							{$orderConfig['has_price']} AS related_has_price,
-							{$orderConfig['is_all_caps']} AS related_is_all_caps_name
+							NULL as category,
+							0 AS requires_prescription
 						FROM jta_pharma_prods pp
 						WHERE pp.pharma_id = :pharma_id
 							AND pp.is_active = 1";
@@ -250,132 +255,138 @@ try {
 			$select_base .= " AND pp.id NOT IN (" . implode(',', $placeholders) . ")";
 		}
 
+		$scoreExpr = "0";
+		$whereExtra = '';
+		$paramsBranch = [];
+		$branch = 'generic';
+
+		if (!$is_featured_tag && !empty($related_tag_normalized)) {
+			$tagConditions = [];
+			$tagsSearchExpr = "CONVERT((
+				CASE
+					WHEN base.tags IS NULL THEN NULL
+					WHEN JSON_VALID(base.tags) THEN
+						CASE
+							WHEN JSON_TYPE(base.tags) = 'ARRAY' AND JSON_LENGTH(base.tags) = 0 THEN NULL
+							ELSE JSON_UNQUOTE(JSON_EXTRACT(base.tags, '$'))
+						END
+					ELSE CAST(base.tags AS CHAR)
+				END
+			) USING utf8mb4) COLLATE utf8mb4_unicode_ci";
+			$nameSearchExpr = build_utf8_unicode_expr('base.name');
+			$descriptionSearchExpr = build_utf8_unicode_expr('base.description');
+			$categorySearchExpr = build_utf8_unicode_expr('base.category');
+			$categoryContext = get_related_category_keywords($related_tag_normalized);
+			$categoryKeywords = $categoryContext['keywords'] ?? [];
+
+			if ($tags_column_exists) {
+				foreach ($categoryKeywords as $kIdx => $keyword) {
+					$likeKey = ':related_tag_kw_' . $kIdx;
+					$tagConditions[] = "LOWER({$tagsSearchExpr}) LIKE LOWER({$likeKey})";
+					$paramsBranch[$likeKey] = '%' . strtolower($keyword) . '%';
+				}
+			}
+
+			foreach ($categoryKeywords as $kIdx => $keyword) {
+				$nameKey = ':related_name_' . $kIdx;
+				$descKey = ':related_desc_' . $kIdx;
+				$catKey = ':related_cat_' . $kIdx;
+				$tagConditions[] = "LOWER({$nameSearchExpr}) LIKE LOWER({$nameKey})";
+				$tagConditions[] = "LOWER({$descriptionSearchExpr}) LIKE LOWER({$descKey})";
+				$tagConditions[] = "LOWER({$categorySearchExpr}) LIKE LOWER({$catKey})";
+				$paramsBranch[$nameKey] = '%' . strtolower($keyword) . '%';
+				$paramsBranch[$descKey] = '%' . strtolower($keyword) . '%';
+				$paramsBranch[$catKey] = '%' . strtolower($keyword) . '%';
+			}
+
+			if (!empty($tagConditions)) {
+				$branch = 'tag';
+				$whereExtra = ' AND (' . implode(' OR ', $tagConditions) . ')';
+				$scoreExpr = 'CASE WHEN (' . implode(' OR ', $tagConditions) . ') THEN 1 ELSE 0 END';
+			}
+		}
+
+		if ($branch === 'generic' && !empty($related_seed_normalized)) {
+			$seedLike = '%' . $related_seed_normalized . '%';
+			$nameSearchExpr = build_utf8_unicode_expr('base.name');
+			$descriptionSearchExpr = build_utf8_unicode_expr('base.description');
+			$categorySearchExpr = build_utf8_unicode_expr('base.category');
+			$seedCondition = "(LOWER({$nameSearchExpr}) LIKE LOWER(:seed_like)
+				OR LOWER({$descriptionSearchExpr}) LIKE LOWER(:seed_like)
+				OR LOWER({$categorySearchExpr}) LIKE LOWER(:seed_like))";
+			$branch = 'seed';
+			$whereExtra = " AND {$seedCondition}";
+			$paramsBranch[':seed_like'] = $seedLike;
+			$scoreExpr = "CASE
+				WHEN LOWER({$nameSearchExpr}) LIKE LOWER(:seed_like) THEN 3
+				WHEN LOWER({$descriptionSearchExpr}) LIKE LOWER(:seed_like) THEN 2
+				WHEN LOWER({$categorySearchExpr}) LIKE LOWER(:seed_like) THEN 1
+				ELSE 0 END";
+		}
+
+		$orderConfig = build_related_order_by('base.name', 'base.image', 'COALESCE(base.sale_price, base.price)', $scoreExpr);
+		$select_sql = "SELECT base.*,
+			{$orderConfig['has_discount']} AS related_has_discount,
+			{$orderConfig['price_discounted']} AS related_price_discounted,
+			{$orderConfig['has_image']} AS related_has_image,
+			{$orderConfig['has_price']} AS related_has_price,
+			{$orderConfig['is_sentence_case']} AS related_is_sentence_case_name,
+			{$orderConfig['is_lowercase']} AS related_is_lowercase_name,
+			{$scoreExpr} AS related_relevance_score
+			FROM ({$select_base}) base";
+		$whereExtraSql = $whereExtra;
+		$orderSql = $orderConfig['order_sql'];
+
 		$params = [':pharma_id' => $pharma_id];
 		foreach ($exclude_ids as $idx => $id) {
 			$params[':exclude_' . $idx] = $id;
 		}
 
-		// 1) related_tag su categoria e fallback testuale (anche quando pp.tags è NULL)
 		$products = [];
-		if (!$is_featured_tag && !empty($related_tag_normalized)) {
-			$tagConditions = [];
-			$paramsTag = [];
-			$tagsSearchExpr = build_tags_search_expr();
-			$categorySearchExpr = $global_table_exists
-				? build_utf8_unicode_expr("COALESCE(gp.category, '')")
-				: null;
-			$nameSearchExpr = build_utf8_unicode_expr("COALESCE(pp.name, '')");
-			$descriptionSearchExpr = build_utf8_unicode_expr("COALESCE(pp.description, '')");
-			$categoryContext = get_related_category_keywords($related_tag_normalized);
-			$categoryKeywords = $categoryContext['keywords'] ?? [];
-			$relatedTagCanonical = $categoryContext['canonical_tag'] ?? $related_tag_normalized;
-
-			related_debug_log($related_debug, 'category_branch_start', [
-				'branch' => 'tag_or_category',
-				'related_tag' => $related_tag,
-				'related_tag_normalized' => $related_tag_normalized,
-				'related_tag_canonical' => $relatedTagCanonical,
-				'categoryKeywords' => $categoryKeywords,
-			]);
-
-			if ($tags_column_exists) {
-				$tagParts = [];
-				foreach ($categoryKeywords as $kIdx => $keyword) {
-					$likeKey = ':related_tag_kw_' . $kIdx;
-					$tagParts[] = "LOWER({$tagsSearchExpr}) LIKE LOWER({$likeKey})";
-					$paramsTag[$likeKey] = '%' . strtolower($keyword) . '%';
-				}
-				if (!empty($tagParts)) {
-					$tagConditions[] = "({$tagsSearchExpr} IS NOT NULL AND TRIM({$tagsSearchExpr}) <> '' AND (" . implode(' OR ', $tagParts) . '))';
-				}
+		if ($branch !== 'generic') {
+			$sql_branch = $select_sql . $whereExtraSql . " ORDER BY {$orderSql} LIMIT :limit";
+			$stmt = $pdo->prepare($sql_branch);
+			foreach ($params as $k => $v) {
+				$stmt->bindValue($k, $v, PDO::PARAM_INT);
 			}
-
-			if ($global_table_exists && !empty($categoryKeywords)) {
-				$catParts = [];
-				foreach ($categoryKeywords as $kIdx => $keyword) {
-					$key = ':related_cat_' . $kIdx;
-					$catParts[] = "LOWER({$categorySearchExpr}) LIKE LOWER({$key})";
-					$paramsTag[$key] = '%' . strtolower($keyword) . '%';
-				}
-				if (!empty($catParts)) {
-					$tagConditions[] = '(' . implode(' OR ', $catParts) . ')';
-				}
+			foreach ($paramsBranch as $k => $v) {
+				$stmt->bindValue($k, $v, PDO::PARAM_STR);
 			}
-
-			if (!empty($categoryKeywords)) {
-				$nameDescParts = [];
-				foreach ($categoryKeywords as $kIdx => $keyword) {
-					$nameKey = ':related_name_' . $kIdx;
-					$descKey = ':related_desc_' . $kIdx;
-					$nameDescParts[] = "LOWER({$nameSearchExpr}) LIKE LOWER({$nameKey})";
-					$nameDescParts[] = "LOWER({$descriptionSearchExpr}) LIKE LOWER({$descKey})";
-					$paramsTag[$nameKey] = '%' . strtolower($keyword) . '%';
-					$paramsTag[$descKey] = '%' . strtolower($keyword) . '%';
-				}
-				if (!empty($nameDescParts)) {
-					$tagConditions[] = '(' . implode(' OR ', $nameDescParts) . ')';
-				}
-			}
-
-			if (empty($tagConditions)) {
-				related_debug_log($related_debug, 'no_tag_conditions_available', ['related_tag' => $related_tag_normalized]);
-				$products = [];
-			} else {
-				$sql_tag = $select_base . " AND (" . implode(' OR ', $tagConditions) . ")
-									ORDER BY {$orderConfig['order_sql']}
-									LIMIT :limit";
-				$stmt = $pdo->prepare($sql_tag);
-				$stmt->bindValue(':pharma_id', $pharma_id, PDO::PARAM_INT);
-				$stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-				foreach ($exclude_ids as $idx => $id) {
-					$stmt->bindValue(':exclude_' . $idx, $id, PDO::PARAM_INT);
-				}
-				foreach ($paramsTag as $pKey => $pVal) {
-					$stmt->bindValue($pKey, $pVal, PDO::PARAM_STR);
-				}
-				$stmt->execute();
-				$products = $stmt->fetchAll(PDO::FETCH_ASSOC);
-				related_debug_log($related_debug, 'category_filtered_result', [
-					'branch' => 'tag_or_category',
-					'related_tag_original' => $related_tag,
-					'related_tag' => $related_tag_normalized,
-					'related_tag_canonical' => $relatedTagCanonical,
-					'keywords' => $categoryKeywords,
-					'result_count' => count($products),
-					'query_branch' => 'tag_or_category',
-				]);
-			}
-		}
-
-		// 2) In evidenza: solo prodotti featured
-		if ($is_featured_tag) {
-			related_debug_log($related_debug, 'featured_only_start', ['limit' => $limit]);
-			$sql_featured = $select_base . " AND pp.is_featured = 1 ORDER BY RAND() LIMIT :limit";
-			$stmt = $pdo->prepare($sql_featured);
-			$stmt->bindValue(':pharma_id', $pharma_id, PDO::PARAM_INT);
 			$stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-			foreach ($exclude_ids as $idx => $id) {
-				$stmt->bindValue(':exclude_' . $idx, $id, PDO::PARAM_INT);
-			}
 			$stmt->execute();
 			$products = $stmt->fetchAll(PDO::FETCH_ASSOC);
-			related_debug_log($related_debug, 'featured_only_result', [
-				'branch' => 'featured_only',
-				'related_tag_original' => $related_tag,
-				'related_tag_normalized' => $related_tag_normalized,
-				'categoryKeywords' => [],
-				'result_count' => count($products),
-				'query_branch' => 'featured_only',
-			]);
 		}
 
-		$products = array_slice($products, 0, $limit);
+		if (count($products) === 0) {
+			$branch = 'generic';
+			$genericScore = "CASE WHEN ranked.is_featured = 1 THEN 2 ELSE 1 END";
+			$orderGeneric = build_related_order_by('ranked.name', 'ranked.image', 'COALESCE(ranked.sale_price, ranked.price)', $genericScore);
+			$sql_generic = "SELECT ranked.*,
+				{$orderGeneric['has_discount']} AS related_has_discount,
+				{$orderGeneric['price_discounted']} AS related_price_discounted,
+				{$orderGeneric['has_image']} AS related_has_image,
+				{$orderGeneric['has_price']} AS related_has_price,
+				{$orderGeneric['is_sentence_case']} AS related_is_sentence_case_name,
+				{$orderGeneric['is_lowercase']} AS related_is_lowercase_name,
+				{$genericScore} AS related_relevance_score
+				FROM ({$select_base}) ranked
+				ORDER BY {$orderGeneric['order_sql']}
+				LIMIT :limit";
+			$stmt = $pdo->prepare($sql_generic);
+			foreach ($params as $k => $v) {
+				$stmt->bindValue($k, $v, PDO::PARAM_INT);
+			}
+			$stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+			$stmt->execute();
+			$products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+		}
+
 		related_debug_log($related_debug, 'final_result', [
 			'related_tag' => $related_tag_normalized,
-			'is_featured_tag' => $is_featured_tag,
+			'related_seed' => $related_seed_normalized,
+			'branch' => $branch,
 			'result_count' => count($products),
 		]);
-
 
 		$products = array_map(function($p){
 			$priceOriginal = isset($p['price']) ? (float)$p['price'] : 0.0;
@@ -396,7 +407,9 @@ try {
 			$p['related_has_discount'] = (int)($p['related_has_discount'] ?? 0);
 			$p['related_has_image'] = (int)($p['related_has_image'] ?? 0);
 			$p['related_has_price'] = (int)($p['related_has_price'] ?? 0);
-			$p['related_is_all_caps_name'] = (int)($p['related_is_all_caps_name'] ?? 0);
+			$p['related_is_sentence_case_name'] = (int)($p['related_is_sentence_case_name'] ?? 0);
+			$p['related_is_lowercase_name'] = (int)($p['related_is_lowercase_name'] ?? 0);
+			$p['related_relevance_score'] = (float)($p['related_relevance_score'] ?? 0);
 			return $p;
 		}, $products);
 
@@ -405,15 +418,17 @@ try {
 			'status'  => TRUE,
 			'message' => 'Correlati caricati con successo',
 			'data'    => [
-				'products' => $products,
+				'products' => array_slice($products, 0, $limit),
 				'total' => count($products),
 				'pharma_id' => $pharma_id,
 				'related_mode' => 1,
 				'related_tag' => $related_tag,
 				'related_tag_normalized' => $related_tag_normalized,
+				'related_seed' => $related_seed_normalized,
 				'debug' => $related_debug ? [
 					'tags_column_exists' => $tags_column_exists,
 					'global_table_exists' => $global_table_exists,
+					'branch' => $branch,
 				] : null,
 			]
 		]);
@@ -421,39 +436,72 @@ try {
 	}
 
 	// Query di ricerca classica
+	$searchLike = '%' . $search_term . '%';
 	if ($global_table_exists) {
-		// Query con JOIN alla tabella globale per completare i dati mancanti
-		$sql = "SELECT 
+		$sql = "SELECT base.*,
+			CASE
+				WHEN LOWER(CONVERT(base.name USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_prefix) THEN 3
+				WHEN LOWER(CONVERT(base.name USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term) THEN 2
+				WHEN LOWER(CONVERT(base.description USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term) THEN 1
+				ELSE 0 END AS search_relevance
+			FROM (
+				SELECT 
 					pp.*,
 					COALESCE(pp.name, gp.name) as name,
 					COALESCE(pp.description, gp.description) as description,
 					COALESCE(pp.image, gp.image) as image,
-					COALESCE(pp.sku, gp.sku) as sku
+					COALESCE(pp.sku, gp.sku) as sku,
+					gp.category as category
 				FROM jta_pharma_prods pp
 				LEFT JOIN jta_global_prods gp ON pp.product_id = gp.id
-				WHERE pp.pharma_id = :pharma_id 
+				WHERE pp.pharma_id = :pharma_id
 					AND pp.is_active = 1
 					AND (
-						LOWER(pp.name) LIKE LOWER(:search_term) 
+						LOWER(pp.name) LIKE LOWER(:search_term)
 						OR LOWER(COALESCE(gp.name, '')) LIKE LOWER(:search_term)
 					)
-				ORDER BY pp.name ASC";
+			) base
+			ORDER BY
+				CASE WHEN base.image IS NOT NULL AND TRIM(CONVERT(base.image USING utf8mb4) COLLATE utf8mb4_unicode_ci) <> '' AND LOWER(TRIM(CONVERT(base.image USING utf8mb4) COLLATE utf8mb4_unicode_ci)) NOT LIKE '%placeholder%' THEN 1 ELSE 0 END DESC,
+				CASE WHEN base.name IS NOT NULL AND TRIM(CONVERT(base.name USING utf8mb4) COLLATE utf8mb4_unicode_ci) <> '' AND BINARY base.name = BINARY LOWER(base.name) THEN 1 ELSE 0 END DESC,
+				CASE WHEN base.name IS NOT NULL AND TRIM(CONVERT(base.name USING utf8mb4) COLLATE utf8mb4_unicode_ci) <> '' AND BINARY base.name = BINARY CONCAT(UPPER(LEFT(base.name, 1)), LOWER(SUBSTRING(base.name, 2))) THEN 1 ELSE 0 END DESC,
+				search_relevance DESC,
+				base.name ASC
+			LIMIT :limit";
 	} else {
-		// Query solo sulla tabella pharma_prods
-		$sql = "SELECT * FROM jta_pharma_prods 
-				WHERE pharma_id = :pharma_id 
+		$sql = "SELECT base.*,
+			CASE
+				WHEN LOWER(CONVERT(base.name USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_prefix) THEN 3
+				WHEN LOWER(CONVERT(base.name USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term) THEN 2
+				WHEN LOWER(CONVERT(base.description USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term) THEN 1
+				ELSE 0 END AS search_relevance
+			FROM (
+				SELECT * FROM jta_pharma_prods 
+				WHERE pharma_id = :pharma_id
 					AND is_active = 1
 					AND LOWER(name) LIKE LOWER(:search_term)
-				ORDER BY name ASC";
+			) base
+			ORDER BY
+				CASE WHEN base.image IS NOT NULL AND TRIM(CONVERT(base.image USING utf8mb4) COLLATE utf8mb4_unicode_ci) <> '' AND LOWER(TRIM(CONVERT(base.image USING utf8mb4) COLLATE utf8mb4_unicode_ci)) NOT LIKE '%placeholder%' THEN 1 ELSE 0 END DESC,
+				CASE WHEN base.name IS NOT NULL AND TRIM(CONVERT(base.name USING utf8mb4) COLLATE utf8mb4_unicode_ci) <> '' AND BINARY base.name = BINARY LOWER(base.name) THEN 1 ELSE 0 END DESC,
+				CASE WHEN base.name IS NOT NULL AND TRIM(CONVERT(base.name USING utf8mb4) COLLATE utf8mb4_unicode_ci) <> '' AND BINARY base.name = BINARY CONCAT(UPPER(LEFT(base.name, 1)), LOWER(SUBSTRING(base.name, 2))) THEN 1 ELSE 0 END DESC,
+				search_relevance DESC,
+				base.name ASC
+			LIMIT :limit";
 	}
-	
+
 	$stmt = $pdo->prepare($sql);
-	$stmt->execute([
-		':pharma_id' => $pharma_id,
-		':search_term' => '%' . $search_term . '%'
-	]);
-	
+	$stmt->bindValue(':pharma_id', $pharma_id, PDO::PARAM_INT);
+	$stmt->bindValue(':search_term', $searchLike, PDO::PARAM_STR);
+	$stmt->bindValue(':search_prefix', mb_strtolower($search_term, 'UTF-8') . '%', PDO::PARAM_STR);
+	$stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+	$stmt->execute();
+
 	$products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+	$products = array_map(function($p){
+		$p['tags'] = decode_tags_array($p['tags'] ?? null);
+		return $p;
+	}, $products);
 	
 	echo json_encode([
 		'code'    => 200,
