@@ -19,6 +19,39 @@
 		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
 		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
 		<link rel="stylesheet" href="./assets/css/style.min.css?v=1.1.1" />
+		<style>
+			.hero-cta__split {
+				display: grid;
+				grid-template-columns: 1fr;
+				gap: 12px;
+				align-items: center;
+			}
+			.hero-cta__copy {
+				text-align: center;
+			}
+			.hero-cta__media {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			}
+			.hero-cta__placeholder {
+				width: 100%;
+				max-width: 130px;
+				aspect-ratio: 4 / 3;
+				object-fit: cover;
+				border-radius: 12px;
+				border: 1px dashed #d7c8ff;
+				background: #f7f3ff;
+			}
+			@media (min-width: 640px) {
+				.hero-cta__split {
+					grid-template-columns: 1fr 1fr;
+				}
+				.hero-cta__copy {
+					text-align: left;
+				}
+			}
+		</style>
 	</head>
 	<body class="page-app page-dashboard loading">
 		<div id="app" class="app-container">
@@ -39,8 +72,15 @@
 								decoding="async"
 							/>
 						</a>
-						<h2 class="hero-cta__title mt-3 text-center">Richiedi prodotti in 30 secondi</h2>
-						<p class="hero-cta__subtitle text-center">Verifichiamo la disponibilita, prepariamo tutto scegli: <b>ritiro senza fila</b> o <b>consegna a domicilio</b> gratuita.</p>
+						<div class="hero-cta__split mt-3">
+							<div class="hero-cta__copy">
+								<h2 class="hero-cta__title mb-2">Richiedi prodotto in 30 sec</h2>
+								<p class="hero-cta__subtitle mb-0">Verifichiamo la disponibilita, prepariamo tutto scegli: <b>ritiro senza fila</b> o <b>consegna a domicilio</b> gratuita.</p>
+							</div>
+							<div class="hero-cta__media">
+								<img class="hero-cta__placeholder" src="https://api.assistentefarmacia.it/uploads/images/placeholder-product.jpg" alt="Placeholder prodotto" loading="lazy" decoding="async" />
+							</div>
+						</div>
 					</div>
 					<div class="hero-cta__steps" aria-label="Passaggi rapidi">
 						<div class="hero-cta__step">

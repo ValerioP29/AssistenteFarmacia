@@ -22,10 +22,12 @@ const ReservationForm = {
 		0: {
 			lastTag: '',
 			products: [],
+			rotatorInterval: null,
 		},
 		1: {
 			lastTag: '',
 			products: [],
+			rotatorInterval: null,
 		},
 	},
 
@@ -34,12 +36,23 @@ const ReservationForm = {
 		this.picker = document.querySelector('#pickup');
 		this.table = document.querySelector('#product-summary');
 
+		window.addEventListener('beforeunload', () => this.stopAllRelatedRotators());
+
 		this.initRelatedProducts();
 		this.initTomSelect();
 		// this.resetCartData();
 		this.resetForm();
 
 		document.dispatchEvent(new CustomEvent('reservationFormLoaded'));
+	},
+
+	stopAllRelatedRotators() {
+		[0, 1].forEach((mode) => {
+			if (this.relatedState[mode]?.rotatorInterval) {
+				clearInterval(this.relatedState[mode].rotatorInterval);
+				this.relatedState[mode].rotatorInterval = null;
+			}
+		});
 	},
 
 	openCalendarPicker() {
@@ -310,6 +323,11 @@ const ReservationForm = {
 		const {listEl, emptyEl} = this.getRelatedElementsByMode(mode);
 		if (!listEl || !emptyEl) return;
 
+		if (this.relatedState[mode]?.rotatorInterval) {
+			clearInterval(this.relatedState[mode].rotatorInterval);
+			this.relatedState[mode].rotatorInterval = null;
+		}
+
 		const safeProducts = Array.isArray(products) ? products.slice(0, 3) : [];
 		this.relatedState[mode].products = safeProducts;
 
@@ -323,6 +341,20 @@ const ReservationForm = {
 		safeProducts.forEach((item) => {
 			listEl.appendChild(this.createRelatedProductCard(item));
 		});
+
+		const cards = Array.from(listEl.querySelectorAll('.related-product-card'));
+		if (cards.length <= 1) {
+			cards[0]?.classList.add('is-active');
+			return;
+		}
+
+		let activeIndex = 0;
+		cards.forEach((card, index) => card.classList.toggle('is-active', index === activeIndex));
+		this.relatedState[mode].rotatorInterval = setInterval(() => {
+			cards[activeIndex]?.classList.remove('is-active');
+			activeIndex = (activeIndex + 1) % cards.length;
+			cards[activeIndex]?.classList.add('is-active');
+		}, 1000);
 	},
 	loadRelatedProducts(tag = '', mode = null) {
 		if (mode === null) mode = this.getSubOrderChecked();
@@ -446,7 +478,7 @@ const ReservationForm = {
 				return nuovoProdotto;
 			},
 			load(query, callback) {
-				if (query.length < 3) return callback();
+				if (query.length < 2) return callback();
 				const pharmaId = dataStore.pharma.id;
 				if (!pharmaId) {
 					console.warn('Abort. Nessuna ID Farmacia trovato.');
@@ -460,15 +492,23 @@ const ReservationForm = {
 				appFetchWithToken(url.toString(), {method: 'GET'})
 					.then((data) => {
 						if (data.status) {
-							if (!Array.isArray(data.data.products)) return callback([]);
-							const results = data.data.products.map((p) => ({
-								id: p.id,
-								name: p.name,
+							// Base search: mantiene il mapping storico Tom Select (id/name/code) anche con payload alternativi.
+							const rawList = Array.isArray(data?.data?.products)
+								? data.data.products
+								: Array.isArray(data?.data?.items)
+									? data.data.items
+									: Array.isArray(data?.data)
+										? data.data
+										: [];
+							if (!Array.isArray(rawList)) return callback([]);
+							const results = rawList.map((p) => ({
+								id: p.id || p.product_id,
+								name: p.name || p.label || p.product_name || '',
 								code: p.sku || 'N/A',
 								price: p.price || 'N/A',
 								sale_price: p.sale_price || null,
 								quantity: p.num_items || '',
-								thumbnail: this.resolveRelatedProductImage(p.image || ''),
+								thumbnail: ReservationForm.resolveRelatedProductImage(p.image || ''),
 							}));
 							callback(results);
 						} else {
