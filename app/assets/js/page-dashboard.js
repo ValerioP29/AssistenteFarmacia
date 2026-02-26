@@ -261,10 +261,55 @@ document.addEventListener('appLoaded', () => {
 		}
 	})();
 
+	function initHeroStepsRotator() {
+		const stepsRoot = document.querySelector('[data-hero-rotator]');
+		if (!stepsRoot) return;
+
+		const steps = Array.from(stepsRoot.querySelectorAll('.hero-cta__step'));
+		if (steps.length < 2) return;
+
+		const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		const fadeDuration = reducedMotion ? 0 : 250;
+		const intervalDuration = reducedMotion ? 1200 : 1000;
+		let currentIndex = steps.findIndex((step) => step.classList.contains('is-visible'));
+		if (currentIndex < 0) currentIndex = 0;
+
+		const setVisibility = (index) => {
+			steps.forEach((step, i) => {
+				const isCurrent = i === index;
+				step.classList.toggle('is-visible', isCurrent);
+				step.classList.toggle('is-hidden', !isCurrent);
+			});
+		};
+
+		setVisibility(currentIndex);
+		stepsRoot.classList.add('is-rotating');
+
+		setInterval(() => {
+			const nextIndex = (currentIndex + 1) % steps.length;
+
+			if (fadeDuration === 0) {
+				currentIndex = nextIndex;
+				setVisibility(currentIndex);
+				return;
+			}
+
+			steps[currentIndex].classList.remove('is-visible');
+			steps[currentIndex].classList.add('is-hidden');
+
+			window.setTimeout(() => {
+				currentIndex = nextIndex;
+				setVisibility(currentIndex);
+			}, fadeDuration);
+		}, intervalDuration);
+	}
+
 	(function promoSliderModule() {
 		const promoRoot = document.querySelector('.slider-promo-container:not(#featured-services)');
 		if (promoRoot) initSimpleSlider(promoRoot);
 	})();
+
+	initHeroStepsRotator();
 
 	ScrollToInfoCard();
 

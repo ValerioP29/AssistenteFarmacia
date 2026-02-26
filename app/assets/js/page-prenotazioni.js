@@ -22,12 +22,10 @@ const ReservationForm = {
 		0: {
 			lastTag: '',
 			products: [],
-			rotatorInterval: null,
 		},
 		1: {
 			lastTag: '',
 			products: [],
-			rotatorInterval: null,
 		},
 	},
 
@@ -36,23 +34,12 @@ const ReservationForm = {
 		this.picker = document.querySelector('#pickup');
 		this.table = document.querySelector('#product-summary');
 
-		window.addEventListener('beforeunload', () => this.stopAllRelatedRotators());
-
 		this.initRelatedProducts();
 		this.initTomSelect();
 		// this.resetCartData();
 		this.resetForm();
 
 		document.dispatchEvent(new CustomEvent('reservationFormLoaded'));
-	},
-
-	stopAllRelatedRotators() {
-		[0, 1].forEach((mode) => {
-			if (this.relatedState[mode]?.rotatorInterval) {
-				clearInterval(this.relatedState[mode].rotatorInterval);
-				this.relatedState[mode].rotatorInterval = null;
-			}
-		});
 	},
 
 	openCalendarPicker() {
@@ -323,11 +310,6 @@ const ReservationForm = {
 		const {listEl, emptyEl} = this.getRelatedElementsByMode(mode);
 		if (!listEl || !emptyEl) return;
 
-		if (this.relatedState[mode]?.rotatorInterval) {
-			clearInterval(this.relatedState[mode].rotatorInterval);
-			this.relatedState[mode].rotatorInterval = null;
-		}
-
 		const safeProducts = Array.isArray(products) ? products.slice(0, 3) : [];
 		this.relatedState[mode].products = safeProducts;
 
@@ -341,20 +323,6 @@ const ReservationForm = {
 		safeProducts.forEach((item) => {
 			listEl.appendChild(this.createRelatedProductCard(item));
 		});
-
-		const cards = Array.from(listEl.querySelectorAll('.related-product-card'));
-		if (cards.length <= 1) {
-			cards[0]?.classList.add('is-active');
-			return;
-		}
-
-		let activeIndex = 0;
-		cards.forEach((card, index) => card.classList.toggle('is-active', index === activeIndex));
-		this.relatedState[mode].rotatorInterval = setInterval(() => {
-			cards[activeIndex]?.classList.remove('is-active');
-			activeIndex = (activeIndex + 1) % cards.length;
-			cards[activeIndex]?.classList.add('is-active');
-		}, 1000);
 	},
 	loadRelatedProducts(tag = '', mode = null) {
 		if (mode === null) mode = this.getSubOrderChecked();
