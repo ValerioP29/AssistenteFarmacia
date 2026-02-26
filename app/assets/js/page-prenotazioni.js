@@ -28,6 +28,7 @@ const ReservationForm = {
 			products: [],
 		},
 	},
+	relatedProductAddedListenerAttached: false,
 
 	init() {
 		this.form = document.querySelector('#form-reservation');
@@ -35,6 +36,7 @@ const ReservationForm = {
 		this.table = document.querySelector('#product-summary');
 
 		this.initRelatedProducts();
+		this.attachReservationProductAddedListener();
 		this.initTomSelect();
 		// this.resetCartData();
 		this.resetForm();
@@ -144,19 +146,10 @@ const ReservationForm = {
 		});
 
 		const relatedBlock = document.querySelector('#related-products-block');
-		if (relatedBlock) {
-			relatedBlock.classList.toggle('d-none', val !== 0);
-		}
-		const relatedBlockRx = document.querySelector('#related-products-block-rx');
-		if (relatedBlockRx) {
-			relatedBlockRx.classList.toggle('d-none', val !== 1);
-		}
+		if (relatedBlock) relatedBlock.classList.add('d-none');
 
-		if (val === 0) {
-			this.loadRelatedProducts(document.querySelector('#related-tag-select')?.value || '', 0);
-		} else if (val === 1) {
-			this.loadRelatedProducts(document.querySelector('#related-seed-tag-prescription')?.value || '', 1);
-		}
+		const relatedBlockRx = document.querySelector('#related-products-block-rx');
+		if (relatedBlockRx) relatedBlockRx.classList.add('d-none');
 	},
 	initRelatedProducts() {
 		const selectNoRx = document.querySelector('#related-tag-select');
@@ -170,13 +163,69 @@ const ReservationForm = {
 		}
 
 		selectNoRx?.addEventListener('change', () => {
-			this.loadRelatedProducts(selectNoRx.value || '', 0);
+			this.showRelatedSection(0);
+			this.loadRelatedProducts({tag: selectNoRx.value || '', seedName: ''}, 0);
 		});
 
 		const selectRx = document.querySelector('#related-seed-tag-prescription');
 		selectRx?.addEventListener('change', () => {
-			this.loadRelatedProducts(selectRx.value || '', 1);
+			this.showRelatedSection(1);
+			this.loadRelatedProducts({tag: selectRx.value || '', seedName: ''}, 1);
 		});
+	},
+	attachReservationProductAddedListener() {
+		if (this.relatedProductAddedListenerAttached) return;
+
+		document.addEventListener('reservationProductAdded', (e) => {
+			const p = e?.detail || {};
+			const mode = ReservationForm.getSubOrderChecked();
+			ReservationForm.showRelatedSection(mode);
+			const tag = ReservationForm.pickRelatedTagFromProduct(p);
+			ReservationForm.loadRelatedProducts({tag, seedName: p?.name || ''}, mode);
+		});
+
+		this.relatedProductAddedListenerAttached = true;
+	},
+	showRelatedSection(mode = 0) {
+		const {rootEl} = this.getRelatedElementsByMode(mode);
+		rootEl?.classList.remove('d-none');
+	},
+	pickRelatedTagFromProduct(product = {}) {
+		if (Array.isArray(product?.tags) && product.tags.length) {
+			return String(product.tags[0] || '').trim().toLowerCase();
+		}
+
+		if (typeof product?.tags === 'string' && product.tags.trim()) {
+			return product.tags.trim().toLowerCase();
+		}
+
+		const name = String(product?.name || '').trim().toLowerCase();
+		return this.inferRelatedTagFromName(name) || '';
+	},
+	inferRelatedTagFromName(name = '') {
+		const normalizedName = String(name || '').toLowerCase();
+		if (!normalizedName) return '';
+
+		const keywordsByTag = {
+			dolore_febbre: ['dolore', 'febbre', 'antidolorifici', 'analgesici', 'antinfiammatori'],
+			raffreddore_influenza: ['raffreddore', 'influenza', 'decongestionante', 'seno', 'paranasali'],
+			gola: ['gola', 'mal di gola', 'pastiglie', 'spray gola'],
+			tosse: ['tosse', 'mucolitico', 'espettorante', 'sedativo tosse'],
+			gastro: ['gastro', 'digestione', 'acidita', 'reflusso', 'probiotici'],
+			vitamine_integratori: ['vitamine', 'integratori', 'magnesio', 'ferro', 'difese immunitarie'],
+			dermocosmesi: ['dermo', 'cosmesi', 'pelle', 'crema', 'solare'],
+			igiene_orale: ['igiene orale', 'dentifricio', 'collutorio', 'gengive'],
+			naso: ['naso', 'spray nasale', 'rinite', 'sinusite'],
+			occhi: ['occhi', 'oculare', 'lacrimazione', 'congiuntivite'],
+			bambino: ['bambino', 'pediatrico', 'neonato', 'infanzia'],
+			medicazione: ['medicazione', 'cerotti', 'garze', 'disinfettante'],
+		};
+
+		for (const [tag, keywords] of Object.entries(keywordsByTag)) {
+			if (keywords.some((keyword) => normalizedName.includes(keyword))) return tag;
+		}
+
+		return '';
 	},
 	getRelatedElementsByMode(mode = 0) {
 		if (mode === 1) {
@@ -184,6 +233,7 @@ const ReservationForm = {
 				listEl: document.querySelector('#related-products-list-rx'),
 				emptyEl: document.querySelector('#related-products-empty-rx'),
 				blockEl: document.querySelector('#related-products-block-rx'),
+				rootEl: document.querySelector('#related-products-block-rx'),
 			};
 		}
 
@@ -191,6 +241,7 @@ const ReservationForm = {
 			listEl: document.querySelector('#related-products-list'),
 			emptyEl: document.querySelector('#related-products-empty'),
 			blockEl: document.querySelector('#related-products-block'),
+			rootEl: document.querySelector('#related-products-block'),
 		};
 	},
 	setRelatedLoading(mode = 0, isLoading = false) {
@@ -324,10 +375,13 @@ const ReservationForm = {
 			listEl.appendChild(this.createRelatedProductCard(item));
 		});
 	},
-	loadRelatedProducts(tag = '', mode = null) {
+	loadRelatedProducts(criteria = {}, mode = null) {
 		if (mode === null) mode = this.getSubOrderChecked();
 		if (![0, 1].includes(mode)) return;
-		const normalizedTag = typeof tag === 'string' ? tag.trim().toLowerCase() : '';
+		const rawTag = typeof criteria === 'string' ? criteria : criteria?.tag;
+		const rawSeedName = typeof criteria === 'object' ? criteria?.seedName : '';
+		const normalizedTag = typeof rawTag === 'string' ? rawTag.trim().toLowerCase() : '';
+		const normalizedSeed = typeof rawSeedName === 'string' ? rawSeedName.trim() : '';
 		this.relatedState[mode].lastTag = normalizedTag;
 		this.setRelatedLoading(mode, true);
 
@@ -337,26 +391,41 @@ const ReservationForm = {
 			return;
 		}
 
-		const url = new URL(AppURLs.api.productSuggestions());
-		url.searchParams.set('pharma_id', pharmaId);
-		url.searchParams.set('related_mode', '1');
-		url.searchParams.set('limit', '3');
-		if (normalizedTag) url.searchParams.set('related_tag', normalizedTag);
+		const fetchSuggestions = (tagValue = '') => {
+			const url = new URL(AppURLs.api.productSuggestions());
+			url.searchParams.set('pharma_id', pharmaId);
+			url.searchParams.set('related_mode', '1');
+			url.searchParams.set('limit', '3');
+			if (tagValue) url.searchParams.set('related_tag', tagValue);
+			if (!tagValue && normalizedSeed) url.searchParams.set('related_seed', normalizedSeed);
 
-		const selectedIds = this.getSelectedProductIdsForRelated();
-		if (selectedIds.length > 0) {
-			url.searchParams.set('exclude_ids', selectedIds.join(','));
-		}
+			const selectedIds = this.getSelectedProductIdsForRelated();
+			if (selectedIds.length > 0) {
+				url.searchParams.set('exclude_ids', selectedIds.join(','));
+			}
 
-		appFetchWithToken(url.toString(), {method: 'GET'})
+			return appFetchWithToken(url.toString(), {method: 'GET'});
+		};
+
+		fetchSuggestions(normalizedTag)
 			.then((data) => {
-				this.setRelatedLoading(mode, false);
-				if (data?.status && Array.isArray(data?.data?.products)) {
-					const products = data.data.products.slice(0, 3);
-					this.renderRelatedProducts(products, mode);
-				} else {
-					this.renderRelatedProducts([], mode);
+				let products = data?.status && Array.isArray(data?.data?.products) ? data.data.products.slice(0, 3) : [];
+
+				if (products.length === 0 && normalizedTag) {
+					return fetchSuggestions('')
+						.then((fallbackData) => {
+							products = fallbackData?.status && Array.isArray(fallbackData?.data?.products) ? fallbackData.data.products.slice(0, 3) : [];
+							this.setRelatedLoading(mode, false);
+							this.renderRelatedProducts(products, mode);
+						})
+						.catch(() => {
+							this.setRelatedLoading(mode, false);
+							this.renderRelatedProducts([], mode);
+						});
 				}
+
+				this.setRelatedLoading(mode, false);
+				this.renderRelatedProducts(products, mode);
 			})
 			.catch(() => {
 				this.setRelatedLoading(mode, false);
@@ -473,6 +542,8 @@ const ReservationForm = {
 								id: p.id || p.product_id,
 								name: p.name || p.label || p.product_name || '',
 								code: p.sku || 'N/A',
+								tags: p.tags || p.related_tags || null,
+								category: p.category || p.category_name || null,
 								price: p.price || 'N/A',
 								sale_price: p.sale_price || null,
 								quantity: p.num_items || '',
@@ -667,6 +738,19 @@ const ReservationForm = {
 		this.addProductToTable(data);
 		this.setVisProductsTable(this.countCartItems() > 0);
 		this.resetSubFormProduct();
+
+		if (data?.product?.id) {
+			document.dispatchEvent(new CustomEvent('reservationProductAdded', {
+				detail: {
+					id: data.product.id,
+					name: data.product.name,
+					sku: data.product.code,
+					tags: data.product.tags || null,
+					category: data.product.category || null,
+					type: data.type,
+				},
+			}));
+		}
 	},
 
 	removeProduct(uuid) {
