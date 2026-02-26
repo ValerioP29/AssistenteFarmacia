@@ -21,8 +21,8 @@
 		<link rel="stylesheet" href="./assets/css/style.min.css?v=1.1.1" />
 		<style>
 			.hero-cta__split {
-				display: grid;
-				grid-template-columns: 1fr;
+				display: flex;
+				flex-direction: column;
 				gap: 12px;
 				align-items: center;
 			}
@@ -36,16 +36,15 @@
 			}
 			.hero-cta__placeholder {
 				width: 100%;
-				max-width: 130px;
+				max-width: 180px;
 				aspect-ratio: 4 / 3;
-				object-fit: cover;
 				border-radius: 12px;
 				border: 1px dashed #d7c8ff;
-				background: #f7f3ff;
+				background: linear-gradient(135deg, #f8f4ff 0%, #f0e4ff 100%);
 			}
 			@media (min-width: 640px) {
 				.hero-cta__split {
-					grid-template-columns: 1fr 1fr;
+					flex-direction: row;
 				}
 				.hero-cta__copy {
 					text-align: left;
@@ -78,20 +77,20 @@
 								<p class="hero-cta__subtitle mb-0">Verifichiamo la disponibilita, prepariamo tutto scegli: <b>ritiro senza fila</b> o <b>consegna a domicilio</b> gratuita.</p>
 							</div>
 							<div class="hero-cta__media">
-								<img class="hero-cta__placeholder" src="https://api.assistentefarmacia.it/uploads/images/placeholder-product.jpg" alt="Placeholder prodotto" loading="lazy" decoding="async" />
+								<div class="hero-cta__placeholder ph-img-placeholder" aria-hidden="true"></div>
 							</div>
 						</div>
 					</div>
-					<div class="hero-cta__steps" aria-label="Passaggi rapidi">
-						<div class="hero-cta__step">
+					<div class="hero-cta__steps" aria-label="Passaggi rapidi" data-hero-rotator>
+						<div class="hero-cta__step is-visible">
 							<span class="hero-cta__step-number">1</span>
 							<span class="hero-cta__step-text">Carica ricetta o prodotti</span>
 						</div>
-						<div class="hero-cta__step">
+						<div class="hero-cta__step is-hidden">
 							<span class="hero-cta__step-number">2</span>
 							<span class="hero-cta__step-text">Conferma quantità richieste</span>
 						</div>
-						<div class="hero-cta__step">
+						<div class="hero-cta__step is-hidden">
 							<span class="hero-cta__step-number">3</span>
 							<span class="hero-cta__step-text">Ricevi conferma e ritiro</span>
 						</div>
