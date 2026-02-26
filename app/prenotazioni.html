@@ -100,11 +100,6 @@
 				box-shadow: 0 6px 16px rgba(28, 25, 56, 0.06);
 			}
 
-			@media (max-width: 767.98px) {
-				.related-products__list {
-					grid-template-columns: 1fr;
-				}
-			}
 			.related-product-card:hover,
 			.related-product-card:focus-within {
 				transform: translateY(-1px);
@@ -138,7 +133,6 @@
 				font-weight: 600;
 				line-height: 1.3;
 				display: -webkit-box;
-				-webkit-line-clamp: 2;
 				-webkit-box-orient: vertical;
 				overflow: hidden;
 				color: #3f345a;
@@ -250,22 +244,7 @@
 							</div>
 
 								<div class="suborder-group suborder-group--1 d-none">
-									<div class="form-group mb-3">
-										<label for="related-seed-tag-prescription" class="form-label">Categoria della richiesta <small>(opzionale)</small></label>
-										<select id="related-seed-tag-prescription" class="form-select form-select-sm">
-											<option value="">In evidenza</option>
-											<option value="dolore_febbre">Dolore/Febbre</option>
-											<option value="raffreddore_influenza">Raffreddore/Influenza</option>
-											<option value="gola">Gola</option>
-											<option value="tosse">Tosse</option>
-											<option value="naso">Naso</option>
-											<option value="gastro">Gastro</option>
-											<option value="dermocosmesi">Dermocosmesi</option>
-											<option value="vitamine_integratori">Vitamine/Integratori</option>
-											<option value="bambino">Bambino</option>
-											<option value="medicazione">Medicazione</option>
-										</select>
-									</div>
+									
 
 									<!-- Toggle per selezionare tipo di ricetta -->
 									<div class="form-group mb-3">
@@ -304,28 +283,6 @@
 							</div>
 						</div>
 
-						<div class="form-group mb-3 related-products" id="related-products-block">
-							<div class="related-products__header">
-								<p class="related-products__title">Prodotti utili scelti per te</p>
-								<span class="related-products__subtitle">Piccoli consigli, subito pronti</span>
-							</div>
-							<label for="related-tag-select" class="form-label mb-1 small text-muted">Categoria</label>
-							<select id="related-tag-select" class="form-select form-select-sm mb-2">
-								<option value="">In evidenza</option>
-							</select>
-							<div id="related-products-list" class="related-products__list"></div>
-							<div id="related-products-empty" class="related-products__empty d-none"><i class="fa-regular fa-lightbulb"></i><span>Nessun suggerimento disponibile al momento.</span></div>
-						</div>
-
-						<div class="form-group mb-3 related-products d-none" id="related-products-block-rx">
-							<div class="related-products__header">
-								<p class="related-products__title">Prodotti utili scelti per te</p>
-								<span class="related-products__subtitle">Piccoli consigli, subito pronti</span>
-							</div>
-							<div id="related-products-list-rx" class="related-products__list"></div>
-							<div id="related-products-empty-rx" class="related-products__empty d-none"><i class="fa-regular fa-lightbulb"></i><span>Nessun suggerimento disponibile al momento.</span></div>
-						</div>
-
 						<button type="button" class="btn btn-primary btn-add mb-4 w-100" onclick="ReservationForm.insertProduct()">+ Aggiungi al carrello</button>
 
 						<table id="product-summary" class="table product-table mb-3 d-none">
@@ -337,6 +294,30 @@
 							</thead>
 							<tbody></tbody>
 						</table>
+
+						<div class="form-group mb-3 related-products d-none" id="related-products-block-rx">
+							<div class="form-group mb-3">
+										<select id="related-seed-tag-prescription" class="form-select form-select-sm">
+											<option value="">In evidenza</option>
+											<option value="dolore_febbre">Dolore/Febbre</option>
+											<option value="raffreddore_influenza">Raffreddore/Influenza</option>
+											<option value="gola">Gola</option>
+											<option value="tosse">Tosse</option>
+											<option value="naso">Naso</option>
+											<option value="gastro">Gastro</option>
+											<option value="dermocosmesi">Dermocosmesi</option>
+											<option value="vitamine_integratori">Vitamine/Integratori</option>
+											<option value="bambino">Bambino</option>
+											<option value="medicazione">Medicazione</option>
+										</select>
+									</div>
+							<div class="related-products__header">
+								<p class="related-products__title">Scelti per te:</p>
+								<span class="related-products__subtitle">Piccoli consigli, subito pronti</span>
+							</div>
+							<div id="related-products-list-rx" class="related-products__list"></div>
+							<div id="related-products-empty-rx" class="related-products__empty d-none"><i class="fa-regular fa-lightbulb"></i><span>Nessun suggerimento disponibile al momento.</span></div>
+						</div>
 
 						<div class="form-group mb-3">
 							<label for="pickup" class="form-label">Data e ora di ritiro <small>(opzionale)</small></label>

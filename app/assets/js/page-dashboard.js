@@ -269,8 +269,8 @@ document.addEventListener('appLoaded', () => {
 		if (steps.length < 2) return;
 
 		const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-		const fadeDuration = reducedMotion ? 0 : 250;
-		const intervalDuration = reducedMotion ? 1200 : 1000;
+		const fadeDuration = reducedMotion ? 250 : 500;
+		const intervalDuration = reducedMotion ? 2200 : 2000;
 		let currentIndex = steps.findIndex((step) => step.classList.contains('is-visible'));
 		if (currentIndex < 0) currentIndex = 0;
 
