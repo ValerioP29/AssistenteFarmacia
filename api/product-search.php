@@ -18,7 +18,7 @@ if( ! $user ){
 //------------------------------------------------
 
 $input = $_GET;
-$search_term = trim($input['search'] ?? '');
+$search_term = trim((string)($input['search'] ?? ($input['query'] ?? ($input['q'] ?? ''))));
 $pharma_id = (int)($input['pharma_id'] ?? ($input['pharmacy_id'] ?? 0));
 $related_mode = (int)($input['related_mode'] ?? 0) === 1;
 $related_tag = trim($input['related_tag'] ?? '');
@@ -158,6 +158,11 @@ function build_utf8_unicode_expr($expr){
 	return "CONVERT({$expr} USING utf8mb4) COLLATE utf8mb4_unicode_ci";
 }
 
+function build_where_sql($conditions){
+	if (empty($conditions)) return '';
+	return ' WHERE ' . implode(' AND ', $conditions);
+}
+
 $related_tag_normalized = normalize_related_text($related_tag);
 $related_seed_normalized = trim(mb_strtolower((string)$related_seed, 'UTF-8'));
 $is_featured_tag = is_featured_related_tag($related_tag_normalized);
@@ -256,7 +261,7 @@ try {
 		}
 
 		$scoreExpr = "0";
-		$whereExtra = '';
+		$whereConditions = [];
 		$paramsBranch = [];
 		$branch = 'generic';
 
@@ -301,7 +306,7 @@ try {
 
 			if (!empty($tagConditions)) {
 				$branch = 'tag';
-				$whereExtra = ' AND (' . implode(' OR ', $tagConditions) . ')';
+				$whereConditions[] = '(' . implode(' OR ', $tagConditions) . ')';
 				$scoreExpr = 'CASE WHEN (' . implode(' OR ', $tagConditions) . ') THEN 1 ELSE 0 END';
 			}
 		}
@@ -315,7 +320,7 @@ try {
 				OR LOWER({$descriptionSearchExpr}) LIKE LOWER(:seed_like)
 				OR LOWER({$categorySearchExpr}) LIKE LOWER(:seed_like))";
 			$branch = 'seed';
-			$whereExtra = " AND {$seedCondition}";
+			$whereConditions[] = $seedCondition;
 			$paramsBranch[':seed_like'] = $seedLike;
 			$scoreExpr = "CASE
 				WHEN LOWER({$nameSearchExpr}) LIKE LOWER(:seed_like) THEN 3
@@ -334,7 +339,7 @@ try {
 			{$orderConfig['is_lowercase']} AS related_is_lowercase_name,
 			{$scoreExpr} AS related_relevance_score
 			FROM ({$select_base}) base";
-		$whereExtraSql = $whereExtra;
+		$whereExtraSql = build_where_sql($whereConditions);
 		$orderSql = $orderConfig['order_sql'];
 
 		$params = [':pharma_id' => $pharma_id];
