@@ -73,10 +73,14 @@ function related_debug_log($enabled, $message, $context = []){
 	error_log('[related-products] ' . $message . ' ' . json_encode($context, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
 }
 
-function build_related_discount_expr($priceExpr){
+function build_related_discount_expr($priceExpr, $columnRefs = []){
+	$isOnSaleExpr = $columnRefs['is_on_sale'] ?? 'pp.is_on_sale';
+	$discountTypeExpr = $columnRefs['discount_type'] ?? 'pp.discount_type';
+	$percentageDiscountRawExpr = $columnRefs['percentage_discount'] ?? 'pp.percentage_discount';
+
 	$percentageDiscountExpr = "CASE
-		WHEN pp.percentage_discount IS NULL THEN NULL
-		WHEN pp.percentage_discount > 0 AND pp.percentage_discount <= 100 THEN pp.percentage_discount
+		WHEN {$percentageDiscountRawExpr} IS NULL THEN NULL
+		WHEN {$percentageDiscountRawExpr} > 0 AND {$percentageDiscountRawExpr} <= 100 THEN {$percentageDiscountRawExpr}
 		ELSE NULL
 	END";
 
@@ -87,10 +91,10 @@ function build_related_discount_expr($priceExpr){
 	END";
 
 	$hasDiscountExpr = "CASE
-		WHEN pp.is_on_sale = 1 THEN 1
+		WHEN {$isOnSaleExpr} = 1 THEN 1
 		WHEN ({$discountedPriceExpr}) IS NOT NULL AND ({$discountedPriceExpr}) < ({$priceExpr}) THEN 1
-		WHEN pp.discount_type IS NOT NULL AND TRIM(CONVERT(pp.discount_type USING utf8mb4) COLLATE utf8mb4_unicode_ci) <> ''
-			AND pp.percentage_discount IS NOT NULL AND pp.percentage_discount > 0 THEN 1
+		WHEN {$discountTypeExpr} IS NOT NULL AND TRIM(CONVERT({$discountTypeExpr} USING utf8mb4) COLLATE utf8mb4_unicode_ci) <> ''
+			AND {$percentageDiscountRawExpr} IS NOT NULL AND {$percentageDiscountRawExpr} > 0 THEN 1
 		ELSE 0
 	END";
 
@@ -100,8 +104,8 @@ function build_related_discount_expr($priceExpr){
 	];
 }
 
-function build_related_order_by($nameExpr, $imageExpr, $priceExpr, $scoreExpr = null){
-	$discountConfig = build_related_discount_expr($priceExpr);
+function build_related_order_by($nameExpr, $imageExpr, $priceExpr, $scoreExpr = null, $columnRefs = []){
+	$discountConfig = build_related_discount_expr($priceExpr, $columnRefs);
 	$imageTextExpr = "CONVERT({$imageExpr} USING utf8mb4) COLLATE utf8mb4_unicode_ci";
 	$nameTextExpr = "CONVERT({$nameExpr} USING utf8mb4) COLLATE utf8mb4_unicode_ci";
 	$hasImageExpr = "CASE
@@ -163,38 +167,51 @@ function build_where_sql($conditions){
 	return ' WHERE ' . implode(' AND ', $conditions);
 }
 
-function build_product_base_select_sql($global_table_exists, $tags_column_exists, $includeSearchFilter = false, $exclude_ids = []){
+function build_safe_column_expr($columnName, $pharmaColumnsMap, $defaultExpr = 'NULL'){
+	$exists = !empty($pharmaColumnsMap[$columnName]);
+	if ($exists) {
+		return "pp.{$columnName}";
+	}
+	return $defaultExpr;
+}
+
+function build_safe_column_select_expr($columnName, $pharmaColumnsMap, $defaultExpr = 'NULL'){
+	$expr = build_safe_column_expr($columnName, $pharmaColumnsMap, $defaultExpr);
+	return "{$expr} AS {$columnName}";
+}
+
+function build_product_base_select_sql($global_table_exists, $pharma_columns_map, $includeSearchFilter = false, $exclude_ids = []){
 	// Selezione esplicita: niente pp.* per evitare collisioni con alias normalizzati (name/description/image/sku/tags).
-	$tagsSelect = $tags_column_exists ? 'pp.tags AS tags' : 'NULL AS tags';
+	$tagsSelect = build_safe_column_select_expr('tags', $pharma_columns_map, 'NULL');
 	$baseColumns = [
-		'pp.id',
-		'pp.pharma_id',
-		'pp.product_id',
-		'pp.price',
-		'pp.sale_price',
-		'pp.num_items',
-		'pp.is_active',
-		'pp.is_featured',
-		'pp.is_on_sale',
-		'pp.discount_type',
-		'pp.percentage_discount',
+		build_safe_column_select_expr('id', $pharma_columns_map, 'NULL'),
+		build_safe_column_select_expr('pharma_id', $pharma_columns_map, 'NULL'),
+		build_safe_column_select_expr('product_id', $pharma_columns_map, 'NULL'),
+		build_safe_column_select_expr('price', $pharma_columns_map, 'NULL'),
+		build_safe_column_select_expr('sale_price', $pharma_columns_map, 'NULL'),
+		build_safe_column_select_expr('num_items', $pharma_columns_map, '0'),
+		build_safe_column_select_expr('is_active', $pharma_columns_map, '1'),
+		build_safe_column_select_expr('is_featured', $pharma_columns_map, '0'),
+		build_safe_column_select_expr('is_on_sale', $pharma_columns_map, 'NULL'),
+		build_safe_column_select_expr('discount_type', $pharma_columns_map, 'NULL'),
+		build_safe_column_select_expr('percentage_discount', $pharma_columns_map, 'NULL'),
 		$tagsSelect,
 	];
 
 	$normalizedColumns = $global_table_exists
 		? [
-			"COALESCE(pp.name, gp.name) AS name",
-			"COALESCE(pp.description, gp.description) AS description",
-			"COALESCE(pp.image, gp.image) AS image",
-			"COALESCE(pp.sku, gp.sku) AS sku",
+			"COALESCE(" . build_safe_column_expr('name', $pharma_columns_map, 'NULL') . ", gp.name) AS name",
+			"COALESCE(" . build_safe_column_expr('description', $pharma_columns_map, 'NULL') . ", gp.description) AS description",
+			"COALESCE(" . build_safe_column_expr('image', $pharma_columns_map, 'NULL') . ", gp.image) AS image",
+			"COALESCE(" . build_safe_column_expr('sku', $pharma_columns_map, 'NULL') . ", gp.sku) AS sku",
 			"COALESCE(gp.category, '') AS category",
 			"COALESCE(gp.requires_prescription, 0) AS requires_prescription",
 		]
 		: [
-			"pp.name AS name",
-			"COALESCE(pp.description, '') AS description",
-			"pp.image AS image",
-			"pp.sku AS sku",
+			build_safe_column_select_expr('name', $pharma_columns_map, 'NULL'),
+			"COALESCE(" . build_safe_column_expr('description', $pharma_columns_map, 'NULL') . ", '') AS description",
+			build_safe_column_select_expr('image', $pharma_columns_map, 'NULL'),
+			build_safe_column_select_expr('sku', $pharma_columns_map, 'NULL'),
 			"NULL AS category",
 			"0 AS requires_prescription",
 		];
@@ -256,12 +273,18 @@ if( $pharma_id <= 0 || (!$related_mode && empty($search_term)) ){
 
 //------------------------------------------------
 
+$sql = null;
+$sql_branch = null;
+$sql_generic = null;
+
 try {
 	global $pdo;
+	$debug_enabled = in_array(strtolower(trim((string)($input['debug'] ?? ''))), ['1', 'true', 'yes', 'on'], true);
+	$schema_debug = [];
 	
 	// Prima verifichiamo se esiste la tabella globale dei prodotti
 	$global_table_exists = false;
-	$tags_column_exists = false;
+	$pharma_columns_map = [];
 	try {
 		$stmt = $pdo->prepare("SHOW TABLES LIKE 'jta_global_prods'");
 		$stmt->execute();
@@ -271,12 +294,29 @@ try {
 		$global_table_exists = false;
 	}
 
-	try {
-		$stmt = $pdo->prepare("SHOW COLUMNS FROM jta_pharma_prods LIKE 'tags'");
-		$stmt->execute();
-		$tags_column_exists = $stmt->rowCount() > 0;
-	} catch (Exception $e) {
-		$tags_column_exists = false;
+	$stmtColumns = $pdo->prepare("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'jta_pharma_prods'");
+	$stmtColumns->execute();
+	$pharma_columns = $stmtColumns->fetchAll(PDO::FETCH_COLUMN);
+	foreach ($pharma_columns as $columnName) {
+		$pharma_columns_map[(string)$columnName] = true;
+	}
+	$tags_column_exists = !empty($pharma_columns_map['tags']);
+
+	if ($debug_enabled) {
+		$schema_debug['file'] = __FILE__;
+		$schema_debug['database'] = $pdo->query("SELECT DATABASE()")->fetchColumn();
+		$schema_debug['host'] = $pdo->query("SELECT @@hostname")->fetchColumn();
+		$schema_debug['port'] = $pdo->query("SELECT @@port")->fetchColumn();
+
+		$stmtTableMeta = $pdo->prepare("SELECT TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'jta_pharma_prods'");
+		$stmtTableMeta->execute();
+		$schema_debug['table_meta'] = $stmtTableMeta->fetchAll(PDO::FETCH_ASSOC);
+
+		$stmtColumnCheck = $pdo->prepare("SELECT COLUMN_NAME, COUNT(*) AS cnt FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'jta_pharma_prods' AND COLUMN_NAME IN ('is_on_sale', 'is_featured', 'discount_type') GROUP BY COLUMN_NAME");
+		$stmtColumnCheck->execute();
+		$schema_debug['column_presence'] = $stmtColumnCheck->fetchAll(PDO::FETCH_ASSOC);
+
+		error_log('[product-search][debug] runtime_schema=' . json_encode($schema_debug, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
 	}
 
 	related_debug_log($related_debug, 'init', [
@@ -288,6 +328,7 @@ try {
 		'related_mode' => $related_mode,
 		'tags_column_exists' => $tags_column_exists,
 		'global_table_exists' => $global_table_exists,
+		'pharma_columns' => array_keys($pharma_columns_map),
 		'exclude_ids_count' => count($exclude_ids),
 	]);
 	
@@ -299,7 +340,7 @@ try {
 		$descriptionExpr = $global_table_exists ? "COALESCE(pp.description, gp.description, '')" : "COALESCE(pp.description, '')";
 		$categoryExpr = $global_table_exists ? "COALESCE(gp.category, '')" : "''";
 
-		$select_base = build_product_base_select_sql($global_table_exists, $tags_column_exists, false, $exclude_ids);
+		$select_base = build_product_base_select_sql($global_table_exists, $pharma_columns_map, false, $exclude_ids);
 
 		$scoreExpr = "0";
 		$whereConditions = [];
@@ -370,7 +411,11 @@ try {
 				ELSE 0 END";
 		}
 
-		$orderConfig = build_related_order_by('base.name', 'base.image', 'COALESCE(base.sale_price, base.price)', $scoreExpr);
+		$orderConfig = build_related_order_by('base.name', 'base.image', 'COALESCE(base.sale_price, base.price)', $scoreExpr, [
+			'is_on_sale' => 'base.is_on_sale',
+			'discount_type' => 'base.discount_type',
+			'percentage_discount' => 'base.percentage_discount',
+		]);
 		$select_sql = "SELECT base.*,
 			{$orderConfig['has_discount']} AS related_has_discount,
 			{$orderConfig['price_discounted']} AS related_price_discounted,
@@ -406,7 +451,11 @@ try {
 		if (count($products) === 0) {
 			$branch = 'generic';
 			$genericScore = "CASE WHEN ranked.is_featured = 1 THEN 2 ELSE 1 END";
-			$orderGeneric = build_related_order_by('ranked.name', 'ranked.image', 'COALESCE(ranked.sale_price, ranked.price)', $genericScore);
+			$orderGeneric = build_related_order_by('ranked.name', 'ranked.image', 'COALESCE(ranked.sale_price, ranked.price)', $genericScore, [
+				'is_on_sale' => 'ranked.is_on_sale',
+				'discount_type' => 'ranked.discount_type',
+				'percentage_discount' => 'ranked.percentage_discount',
+			]);
 			$sql_generic = "SELECT ranked.*,
 				{$orderGeneric['has_discount']} AS related_has_discount,
 				{$orderGeneric['price_discounted']} AS related_price_discounted,
@@ -483,7 +532,7 @@ try {
 
 	// Query di ricerca classica
 	$searchLike = '%' . $search_term . '%';
-	$search_select_base = build_product_base_select_sql($global_table_exists, $tags_column_exists, true, $exclude_ids);
+	$search_select_base = build_product_base_select_sql($global_table_exists, $pharma_columns_map, true, $exclude_ids);
 	$sql = "SELECT base.*,
 		CASE
 			WHEN LOWER(CONVERT(base.name USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_prefix) THEN 3
@@ -532,7 +581,16 @@ try {
 	if ($e instanceof PDOException && isset($e->errorInfo[0])) {
 		$sqlState = $e->errorInfo[0];
 	}
-	error_log('[product-search] SQL error: ' . $e->getMessage() . ' | SQLSTATE: ' . $sqlState);
+	$errorContext = [
+		'file' => __FILE__,
+		'pharma_id' => $pharma_id,
+		'search_term' => $search_term,
+		'related_mode' => $related_mode,
+		'sql' => $sql,
+		'sql_branch' => $sql_branch,
+		'sql_generic' => $sql_generic,
+	];
+	error_log('[product-search] SQL error: ' . $e->getMessage() . ' | SQLSTATE: ' . $sqlState . ' | context=' . json_encode($errorContext, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
 
 	echo json_encode([
 		'code'    => 500,
