@@ -23,10 +23,12 @@ const ReservationForm = {
 		0: {
 			lastTag: '',
 			products: [],
+			didInit: false,
 		},
 		1: {
 			lastTag: '',
 			products: [],
+			didInit: false,
 		},
 	},
 	relatedProductAddedListenerAttached: false,
@@ -165,6 +167,13 @@ const ReservationForm = {
 
 		if (val === 0 && this.selectedProduct) {
 			this.refreshSuggestionsFromSelectedProduct(this.selectedProduct, 0);
+			return;
+		}
+
+		if (!this.relatedState[val].didInit) {
+			this.relatedState[val].didInit = true;
+			this.showRelatedSection(val);
+			this.loadRelatedProducts({tag: '', seedName: ''}, val);
 		}
 	},
 	normalizeProductForSelection(product = {}) {
