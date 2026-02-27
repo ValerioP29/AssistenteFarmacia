@@ -163,6 +163,63 @@ function build_where_sql($conditions){
 	return ' WHERE ' . implode(' AND ', $conditions);
 }
 
+function build_product_base_select_sql($global_table_exists, $tags_column_exists, $includeSearchFilter = false){
+	$tagsSelect = $tags_column_exists ? 'pp.tags AS tags' : 'NULL AS tags';
+	$baseColumns = "
+		pp.id,
+		pp.pharma_id,
+		pp.product_id,
+		pp.price,
+		pp.sale_price,
+		pp.num_items,
+		pp.is_active,
+		pp.is_featured,
+		pp.is_on_sale,
+		pp.discount_type,
+		pp.percentage_discount,
+		{$tagsSelect}";
+
+	if ($global_table_exists) {
+		$searchWhereSql = $includeSearchFilter
+			? "
+				AND (
+					LOWER(pp.name) LIKE LOWER(:search_term)
+					OR LOWER(COALESCE(gp.name, '')) LIKE LOWER(:search_term)
+				)"
+			: '';
+
+		return "SELECT
+				{$baseColumns},
+				COALESCE(pp.name, gp.name) AS name,
+				COALESCE(pp.description, gp.description) AS description,
+				COALESCE(pp.image, gp.image) AS image,
+				COALESCE(pp.sku, gp.sku) AS sku,
+				COALESCE(gp.category, '') AS category,
+				COALESCE(gp.requires_prescription, 0) AS requires_prescription
+			FROM jta_pharma_prods pp
+			LEFT JOIN jta_global_prods gp ON pp.product_id = gp.id
+			WHERE pp.pharma_id = :pharma_id
+				AND pp.is_active = 1{$searchWhereSql}";
+	}
+
+	$searchWhereSql = $includeSearchFilter
+		? "
+			AND LOWER(pp.name) LIKE LOWER(:search_term)"
+		: '';
+
+	return "SELECT
+			{$baseColumns},
+			pp.name AS name,
+			COALESCE(pp.description, '') AS description,
+			pp.image AS image,
+			pp.sku AS sku,
+			NULL AS category,
+			0 AS requires_prescription
+		FROM jta_pharma_prods pp
+		WHERE pp.pharma_id = :pharma_id
+			AND pp.is_active = 1{$searchWhereSql}";
+}
+
 $related_tag_normalized = normalize_related_text($related_tag);
 $related_seed_normalized = trim(mb_strtolower((string)$related_seed, 'UTF-8'));
 $is_featured_tag = is_featured_related_tag($related_tag_normalized);
@@ -225,32 +282,7 @@ try {
 		$descriptionExpr = $global_table_exists ? "COALESCE(pp.description, gp.description, '')" : "COALESCE(pp.description, '')";
 		$categoryExpr = $global_table_exists ? "COALESCE(gp.category, '')" : "''";
 
-		if ($global_table_exists) {
-			$select_base = "SELECT 
-							pp.*,
-							COALESCE(pp.name, gp.name) as name,
-							COALESCE(pp.description, gp.description) as description,
-							COALESCE(pp.image, gp.image) as image,
-							COALESCE(pp.sku, gp.sku) as sku,
-							gp.category as category,
-							gp.requires_prescription
-						FROM jta_pharma_prods pp
-						LEFT JOIN jta_global_prods gp ON pp.product_id = gp.id
-						WHERE pp.pharma_id = :pharma_id
-							AND pp.is_active = 1";
-		} else {
-			$select_base = "SELECT 
-							pp.*,
-							pp.name as name,
-							pp.description as description,
-							pp.image as image,
-							pp.sku as sku,
-							NULL as category,
-							0 AS requires_prescription
-						FROM jta_pharma_prods pp
-						WHERE pp.pharma_id = :pharma_id
-							AND pp.is_active = 1";
-		}
+		$select_base = build_product_base_select_sql($global_table_exists, $tags_column_exists, false);
 
 		if (!empty($exclude_ids)) {
 			$placeholders = [];
@@ -442,6 +474,7 @@ try {
 
 	// Query di ricerca classica
 	$searchLike = '%' . $search_term . '%';
+	$search_select_base = build_product_base_select_sql($global_table_exists, $tags_column_exists, true);
 	if ($global_table_exists) {
 		$sql = "SELECT base.*,
 			CASE
@@ -449,23 +482,7 @@ try {
 				WHEN LOWER(CONVERT(base.name USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term) THEN 2
 				WHEN LOWER(CONVERT(base.description USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term) THEN 1
 				ELSE 0 END AS search_relevance
-			FROM (
-				SELECT 
-					pp.*,
-					COALESCE(pp.name, gp.name) as name,
-					COALESCE(pp.description, gp.description) as description,
-					COALESCE(pp.image, gp.image) as image,
-					COALESCE(pp.sku, gp.sku) as sku,
-					gp.category as category
-				FROM jta_pharma_prods pp
-				LEFT JOIN jta_global_prods gp ON pp.product_id = gp.id
-				WHERE pp.pharma_id = :pharma_id
-					AND pp.is_active = 1
-					AND (
-						LOWER(pp.name) LIKE LOWER(:search_term)
-						OR LOWER(COALESCE(gp.name, '')) LIKE LOWER(:search_term)
-					)
-			) base
+			FROM ({$search_select_base}) base
 			ORDER BY
 				CASE WHEN base.image IS NOT NULL AND TRIM(CONVERT(base.image USING utf8mb4) COLLATE utf8mb4_unicode_ci) <> '' AND LOWER(TRIM(CONVERT(base.image USING utf8mb4) COLLATE utf8mb4_unicode_ci)) NOT LIKE '%placeholder%' THEN 1 ELSE 0 END DESC,
 				CASE WHEN base.name IS NOT NULL AND TRIM(CONVERT(base.name USING utf8mb4) COLLATE utf8mb4_unicode_ci) <> '' AND BINARY base.name = BINARY LOWER(base.name) THEN 1 ELSE 0 END DESC,
@@ -480,12 +497,7 @@ try {
 				WHEN LOWER(CONVERT(base.name USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term) THEN 2
 				WHEN LOWER(CONVERT(base.description USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term) THEN 1
 				ELSE 0 END AS search_relevance
-			FROM (
-				SELECT * FROM jta_pharma_prods 
-				WHERE pharma_id = :pharma_id
-					AND is_active = 1
-					AND LOWER(name) LIKE LOWER(:search_term)
-			) base
+			FROM ({$search_select_base}) base
 			ORDER BY
 				CASE WHEN base.image IS NOT NULL AND TRIM(CONVERT(base.image USING utf8mb4) COLLATE utf8mb4_unicode_ci) <> '' AND LOWER(TRIM(CONVERT(base.image USING utf8mb4) COLLATE utf8mb4_unicode_ci)) NOT LIKE '%placeholder%' THEN 1 ELSE 0 END DESC,
 				CASE WHEN base.name IS NOT NULL AND TRIM(CONVERT(base.name USING utf8mb4) COLLATE utf8mb4_unicode_ci) <> '' AND BINARY base.name = BINARY LOWER(base.name) THEN 1 ELSE 0 END DESC,
