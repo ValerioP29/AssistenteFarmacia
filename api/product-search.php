@@ -163,61 +163,78 @@ function build_where_sql($conditions){
 	return ' WHERE ' . implode(' AND ', $conditions);
 }
 
-function build_product_base_select_sql($global_table_exists, $tags_column_exists, $includeSearchFilter = false){
+function build_product_base_select_sql($global_table_exists, $tags_column_exists, $includeSearchFilter = false, $exclude_ids = []){
+	// Selezione esplicita: niente pp.* per evitare collisioni con alias normalizzati (name/description/image/sku/tags).
 	$tagsSelect = $tags_column_exists ? 'pp.tags AS tags' : 'NULL AS tags';
-	$baseColumns = "
-		pp.id,
-		pp.pharma_id,
-		pp.product_id,
-		pp.price,
-		pp.sale_price,
-		pp.num_items,
-		pp.is_active,
-		pp.is_featured,
-		pp.is_on_sale,
-		pp.discount_type,
-		pp.percentage_discount,
-		{$tagsSelect}";
+	$baseColumns = [
+		'pp.id',
+		'pp.pharma_id',
+		'pp.product_id',
+		'pp.price',
+		'pp.sale_price',
+		'pp.num_items',
+		'pp.is_active',
+		'pp.is_featured',
+		'pp.is_on_sale',
+		'pp.discount_type',
+		'pp.percentage_discount',
+		$tagsSelect,
+	];
 
-	if ($global_table_exists) {
-		$searchWhereSql = $includeSearchFilter
-			? "
-				AND (
-					LOWER(pp.name) LIKE LOWER(:search_term)
-					OR LOWER(COALESCE(gp.name, '')) LIKE LOWER(:search_term)
-				)"
-			: '';
+	$normalizedColumns = $global_table_exists
+		? [
+			"COALESCE(pp.name, gp.name) AS name",
+			"COALESCE(pp.description, gp.description) AS description",
+			"COALESCE(pp.image, gp.image) AS image",
+			"COALESCE(pp.sku, gp.sku) AS sku",
+			"COALESCE(gp.category, '') AS category",
+			"COALESCE(gp.requires_prescription, 0) AS requires_prescription",
+		]
+		: [
+			"pp.name AS name",
+			"COALESCE(pp.description, '') AS description",
+			"pp.image AS image",
+			"pp.sku AS sku",
+			"NULL AS category",
+			"0 AS requires_prescription",
+		];
 
-		return "SELECT
-				{$baseColumns},
-				COALESCE(pp.name, gp.name) AS name,
-				COALESCE(pp.description, gp.description) AS description,
-				COALESCE(pp.image, gp.image) AS image,
-				COALESCE(pp.sku, gp.sku) AS sku,
-				COALESCE(gp.category, '') AS category,
-				COALESCE(gp.requires_prescription, 0) AS requires_prescription
-			FROM jta_pharma_prods pp
-			LEFT JOIN jta_global_prods gp ON pp.product_id = gp.id
-			WHERE pp.pharma_id = :pharma_id
-				AND pp.is_active = 1{$searchWhereSql}";
+	$where = [
+		'pp.pharma_id = :pharma_id',
+		'pp.is_active = 1',
+	];
+
+	if ($includeSearchFilter) {
+		$searchExprs = [
+			"LOWER(CONVERT(pp.name USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term)",
+			"LOWER(CONVERT(COALESCE(pp.description, '') USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term)",
+			"LOWER(CONVERT(COALESCE(pp.sku, '') USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term)",
+		];
+		if ($global_table_exists) {
+			$searchExprs[] = "LOWER(CONVERT(COALESCE(gp.name, '') USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term)";
+			$searchExprs[] = "LOWER(CONVERT(COALESCE(gp.description, '') USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term)";
+			$searchExprs[] = "LOWER(CONVERT(COALESCE(gp.sku, '') USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term)";
+		}
+		$where[] = '(' . implode(' OR ', $searchExprs) . ')';
 	}
 
-	$searchWhereSql = $includeSearchFilter
-		? "
-			AND LOWER(pp.name) LIKE LOWER(:search_term)"
-		: '';
+	if (!empty($exclude_ids)) {
+		$placeholders = [];
+		foreach ($exclude_ids as $idx => $id) {
+			$placeholders[] = ':exclude_' . $idx;
+		}
+		$where[] = 'pp.id NOT IN (' . implode(',', $placeholders) . ')';
+	}
 
+	$joinSql = $global_table_exists ? 'LEFT JOIN jta_global_prods gp ON pp.product_id = gp.id' : '';
+
+	$selectCols = array_merge($baseColumns, $normalizedColumns);
 	return "SELECT
-			{$baseColumns},
-			pp.name AS name,
-			COALESCE(pp.description, '') AS description,
-			pp.image AS image,
-			pp.sku AS sku,
-			NULL AS category,
-			0 AS requires_prescription
-		FROM jta_pharma_prods pp
-		WHERE pp.pharma_id = :pharma_id
-			AND pp.is_active = 1{$searchWhereSql}";
+		" . implode(",
+		", $selectCols) . "
+	FROM jta_pharma_prods pp
+	{$joinSql}
+	" . build_where_sql($where);
 }
 
 $related_tag_normalized = normalize_related_text($related_tag);
@@ -282,15 +299,7 @@ try {
 		$descriptionExpr = $global_table_exists ? "COALESCE(pp.description, gp.description, '')" : "COALESCE(pp.description, '')";
 		$categoryExpr = $global_table_exists ? "COALESCE(gp.category, '')" : "''";
 
-		$select_base = build_product_base_select_sql($global_table_exists, $tags_column_exists, false);
-
-		if (!empty($exclude_ids)) {
-			$placeholders = [];
-			foreach ($exclude_ids as $idx => $id) {
-				$placeholders[] = ':exclude_' . $idx;
-			}
-			$select_base .= " AND pp.id NOT IN (" . implode(',', $placeholders) . ")";
-		}
+		$select_base = build_product_base_select_sql($global_table_exists, $tags_column_exists, false, $exclude_ids);
 
 		$scoreExpr = "0";
 		$whereConditions = [];
@@ -474,43 +483,29 @@ try {
 
 	// Query di ricerca classica
 	$searchLike = '%' . $search_term . '%';
-	$search_select_base = build_product_base_select_sql($global_table_exists, $tags_column_exists, true);
-	if ($global_table_exists) {
-		$sql = "SELECT base.*,
-			CASE
-				WHEN LOWER(CONVERT(base.name USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_prefix) THEN 3
-				WHEN LOWER(CONVERT(base.name USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term) THEN 2
-				WHEN LOWER(CONVERT(base.description USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term) THEN 1
-				ELSE 0 END AS search_relevance
-			FROM ({$search_select_base}) base
-			ORDER BY
-				CASE WHEN base.image IS NOT NULL AND TRIM(CONVERT(base.image USING utf8mb4) COLLATE utf8mb4_unicode_ci) <> '' AND LOWER(TRIM(CONVERT(base.image USING utf8mb4) COLLATE utf8mb4_unicode_ci)) NOT LIKE '%placeholder%' THEN 1 ELSE 0 END DESC,
-				CASE WHEN base.name IS NOT NULL AND TRIM(CONVERT(base.name USING utf8mb4) COLLATE utf8mb4_unicode_ci) <> '' AND BINARY base.name = BINARY LOWER(base.name) THEN 1 ELSE 0 END DESC,
-				CASE WHEN base.name IS NOT NULL AND TRIM(CONVERT(base.name USING utf8mb4) COLLATE utf8mb4_unicode_ci) <> '' AND BINARY base.name = BINARY CONCAT(UPPER(LEFT(base.name, 1)), LOWER(SUBSTRING(base.name, 2))) THEN 1 ELSE 0 END DESC,
-				search_relevance DESC,
-				base.name ASC
-			LIMIT :limit";
-	} else {
-		$sql = "SELECT base.*,
-			CASE
-				WHEN LOWER(CONVERT(base.name USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_prefix) THEN 3
-				WHEN LOWER(CONVERT(base.name USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term) THEN 2
-				WHEN LOWER(CONVERT(base.description USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term) THEN 1
-				ELSE 0 END AS search_relevance
-			FROM ({$search_select_base}) base
-			ORDER BY
-				CASE WHEN base.image IS NOT NULL AND TRIM(CONVERT(base.image USING utf8mb4) COLLATE utf8mb4_unicode_ci) <> '' AND LOWER(TRIM(CONVERT(base.image USING utf8mb4) COLLATE utf8mb4_unicode_ci)) NOT LIKE '%placeholder%' THEN 1 ELSE 0 END DESC,
-				CASE WHEN base.name IS NOT NULL AND TRIM(CONVERT(base.name USING utf8mb4) COLLATE utf8mb4_unicode_ci) <> '' AND BINARY base.name = BINARY LOWER(base.name) THEN 1 ELSE 0 END DESC,
-				CASE WHEN base.name IS NOT NULL AND TRIM(CONVERT(base.name USING utf8mb4) COLLATE utf8mb4_unicode_ci) <> '' AND BINARY base.name = BINARY CONCAT(UPPER(LEFT(base.name, 1)), LOWER(SUBSTRING(base.name, 2))) THEN 1 ELSE 0 END DESC,
-				search_relevance DESC,
-				base.name ASC
-			LIMIT :limit";
-	}
+	$search_select_base = build_product_base_select_sql($global_table_exists, $tags_column_exists, true, $exclude_ids);
+	$sql = "SELECT base.*,
+		CASE
+			WHEN LOWER(CONVERT(base.name USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_prefix) THEN 3
+			WHEN LOWER(CONVERT(base.name USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term) THEN 2
+			WHEN LOWER(CONVERT(base.description USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term) THEN 1
+			ELSE 0 END AS search_relevance
+		FROM ({$search_select_base}) base
+		ORDER BY
+			CASE WHEN base.image IS NOT NULL AND TRIM(CONVERT(base.image USING utf8mb4) COLLATE utf8mb4_unicode_ci) <> '' AND LOWER(TRIM(CONVERT(base.image USING utf8mb4) COLLATE utf8mb4_unicode_ci)) NOT LIKE '%placeholder%' THEN 1 ELSE 0 END DESC,
+			CASE WHEN base.name IS NOT NULL AND TRIM(CONVERT(base.name USING utf8mb4) COLLATE utf8mb4_unicode_ci) <> '' AND BINARY base.name = BINARY LOWER(base.name) THEN 1 ELSE 0 END DESC,
+			CASE WHEN base.name IS NOT NULL AND TRIM(CONVERT(base.name USING utf8mb4) COLLATE utf8mb4_unicode_ci) <> '' AND BINARY base.name = BINARY CONCAT(UPPER(LEFT(base.name, 1)), LOWER(SUBSTRING(base.name, 2))) THEN 1 ELSE 0 END DESC,
+			search_relevance DESC,
+			base.name ASC
+		LIMIT :limit";
 
 	$stmt = $pdo->prepare($sql);
 	$stmt->bindValue(':pharma_id', $pharma_id, PDO::PARAM_INT);
 	$stmt->bindValue(':search_term', $searchLike, PDO::PARAM_STR);
 	$stmt->bindValue(':search_prefix', mb_strtolower($search_term, 'UTF-8') . '%', PDO::PARAM_STR);
+	foreach ($exclude_ids as $idx => $id) {
+		$stmt->bindValue(':exclude_' . $idx, $id, PDO::PARAM_INT);
+	}
 	$stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
 	$stmt->execute();
 

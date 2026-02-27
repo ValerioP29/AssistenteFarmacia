@@ -35,6 +35,7 @@ const ReservationForm = {
 	isInitialized: false,
 	suborderListenersBoundForm: null,
 	_warnedNoPharmaId: false,
+	_tsElRef: null,
 
 	ensureDomRefs() {
 		const form = document.querySelector('#form-reservation');
@@ -56,6 +57,8 @@ const ReservationForm = {
 		}
 		this.ts = null;
 		this.currProd = null;
+		this.selectedProduct = null;
+		this._tsElRef = null;
 	},
 
 	init() {
@@ -66,6 +69,10 @@ const ReservationForm = {
 			this.destroyTomSelect();
 			this.isInitialized = false;
 			this.suborderListenersBoundForm = null;
+			this.selectedProduct = null;
+			this.relatedState[0] = {lastTag: '', products: [], didInit: false};
+			this.relatedState[1] = {lastTag: '', products: [], didInit: false};
+			this._warnedNoPharmaId = false;
 		}
 
 		if (this.isInitialized && !formChanged) return;
@@ -205,6 +212,8 @@ const ReservationForm = {
 		const relatedBlockRx = document.querySelector('#related-products-block-rx');
 		if (relatedBlockRx) relatedBlockRx.classList.add('d-none');
 
+		this.showRelatedSection(val);
+
 		if (this.selectedProduct && val === 0) {
 			this.refreshSuggestionsFromSelectedProduct(this.selectedProduct, 0);
 			return;
@@ -212,7 +221,6 @@ const ReservationForm = {
 
 		if (!this.relatedState[val].didInit) {
 			this.relatedState[val].didInit = true;
-			this.showRelatedSection(val);
 			this.loadRelatedProducts({tag: '', seedName: ''}, val);
 		}
 	},
@@ -630,12 +638,18 @@ const ReservationForm = {
 		const el = document.querySelector('#product-name');
 		if (!el) return;
 
+		if (this._tsElRef && this._tsElRef !== el) {
+			// DOM sostituito: distruggo l'istanza legata al nodo precedente.
+			this.destroyTomSelect();
+		}
+
 		if (!el.tomselect && this.ts) {
 			this.destroyTomSelect();
 		}
 
 		if (el.tomselect) {
 			this.ts = el.tomselect;
+			this._tsElRef = el;
 			return;
 		}
 
@@ -662,10 +676,8 @@ const ReservationForm = {
 				if (query.length < 2) return callback([]);
 				const pharmaId = dataStore?.pharma?.id;
 				if (!pharmaId) {
-					if (!ReservationForm._warnedNoPharmaId) {
-						console.warn('Abort. Nessuna ID Farmacia trovato.');
-						ReservationForm._warnedNoPharmaId = true;
-					}
+					console.warn('Abort. Nessuna ID Farmacia trovato.');
+					ReservationForm._warnedNoPharmaId = true;
 					return callback([]);
 				}
 
@@ -823,6 +835,7 @@ const ReservationForm = {
 				this.renderRelatedProducts([], this.getSubOrderChecked());
 			},
 		});
+		this._tsElRef = el;
 	},
 
 	getCartData() {
@@ -1112,10 +1125,13 @@ function bootReservationForm() {
 	if (!reservationBootstrapped || isNewForm) {
 		reservationBootstrapped = true;
 
-		formEl.addEventListener('submit', function (e) {
-			e.preventDefault();
-			ReservationForm.submit();
-		});
+		if (formEl.dataset.rfSubmitBound !== '1') {
+			formEl.addEventListener('submit', function (e) {
+				e.preventDefault();
+				ReservationForm.submit();
+			});
+			formEl.dataset.rfSubmitBound = '1';
+		}
 	}
 
 	attachReservationGlobalListeners();
