@@ -5,6 +5,7 @@ const ReservationForm = {
 	ts: null,
 	table: null,
 	currProd: null,
+	selectedProduct: null,
 	sending: false,
 	relatedTagsPreset: [
 		{value: 'dolore_febbre', label: 'Dolore/Febbre'},
@@ -150,6 +151,41 @@ const ReservationForm = {
 
 		const relatedBlockRx = document.querySelector('#related-products-block-rx');
 		if (relatedBlockRx) relatedBlockRx.classList.add('d-none');
+
+		if (val === 0 && this.selectedProduct) {
+			this.refreshSuggestionsFromSelectedProduct(this.selectedProduct, 0);
+		}
+	},
+	normalizeProductForSelection(product = {}) {
+		const firstTagFromArray = Array.isArray(product?.tags) && product.tags.length ? String(product.tags[0] || '').trim() : '';
+		const tagFromString = typeof product?.tags === 'string' ? product.tags.trim().split(',')[0] : '';
+		const tag = String(product?.tag || firstTagFromArray || tagFromString || '').trim().toLowerCase();
+
+		return {
+			id: product?.id ?? product?.product_id ?? product?.prod_id ?? null,
+			name: String(product?.name || product?.product_name || product?.label || '').trim(),
+			tag,
+			tags: product?.tags || null,
+			category: product?.category || product?.category_name || null,
+			sku: product?.code || product?.sku || null,
+		};
+	},
+	refreshSuggestionsFromSelectedProduct(product = null, mode = null) {
+		const effectiveMode = (mode === null ? this.getSubOrderChecked() : mode);
+
+		if (!product) {
+			this.renderRelatedProducts([], effectiveMode);
+			return;
+		}
+
+		const normalizedProduct = this.normalizeProductForSelection(product);
+		const criteria = {
+			tag: normalizedProduct.tag || '',
+			seedName: normalizedProduct.name || '',
+		};
+
+		this.showRelatedSection(effectiveMode);
+		this.loadRelatedProducts(criteria, effectiveMode);
 	},
 	initRelatedProducts() {
 		const selectNoRx = document.querySelector('#related-tag-select');
@@ -180,8 +216,10 @@ const ReservationForm = {
 			const p = e?.detail || {};
 			const mode = ReservationForm.getSubOrderChecked();
 			ReservationForm.showRelatedSection(mode);
-			const tag = ReservationForm.pickRelatedTagFromProduct(p);
-			ReservationForm.loadRelatedProducts({tag, seedName: p?.name || ''}, mode);
+			ReservationForm.refreshSuggestionsFromSelectedProduct({
+				...p,
+				tag: ReservationForm.pickRelatedTagFromProduct(p),
+			}, mode);
 		});
 
 		this.relatedProductAddedListenerAttached = true;
@@ -498,6 +536,7 @@ const ReservationForm = {
 
 		this.ts = new TomSelect('#product-name', {
 			maxItems: 1,
+			dropdownParent: 'body',
 			valueField: 'id',
 			labelField: 'name',
 			searchField: ['name', 'code'],
@@ -515,8 +554,8 @@ const ReservationForm = {
 				return nuovoProdotto;
 			},
 			load(query, callback) {
-				if (query.length < 2) return callback();
-				const pharmaId = dataStore.pharma.id;
+				if (query.length < 2) return callback([]);
+				const pharmaId = dataStore.pharma?.id;
 				if (!pharmaId) {
 					console.warn('Abort. Nessuna ID Farmacia trovato.');
 					return callback([]);
@@ -524,36 +563,39 @@ const ReservationForm = {
 
 				const url = new URL(AppURLs.api.productSuggestions());
 				url.searchParams.set('search', query);
+				url.searchParams.set('query', query);
+				url.searchParams.set('q', query);
 				url.searchParams.set('pharma_id', pharmaId);
 
 				appFetchWithToken(url.toString(), {method: 'GET'})
 					.then((data) => {
-						if (data.status) {
-							// Base search: mantiene il mapping storico Tom Select (id/name/code) anche con payload alternativi.
-							const rawList = Array.isArray(data?.data?.products)
-								? data.data.products
-								: Array.isArray(data?.data?.items)
-									? data.data.items
-									: Array.isArray(data?.data)
-										? data.data
-										: [];
-							if (!Array.isArray(rawList)) return callback([]);
-							const results = rawList.map((p) => ({
-								id: p.id || p.product_id,
-								name: p.name || p.label || p.product_name || '',
-								code: p.sku || 'N/A',
-								tags: p.tags || p.related_tags || null,
-								category: p.category || p.category_name || null,
-								price: p.price || 'N/A',
-								sale_price: p.sale_price || null,
-								quantity: p.num_items || '',
-								thumbnail: ReservationForm.resolveRelatedProductImage(p.image || ''),
-							}));
-							callback(results);
-						} else {
-							console.warn('⚠️ Nessun prodotto trovato:', data.message || data.error);
-							callback([]);
-						}
+						const rawList = Array.isArray(data?.data?.products)
+							? data.data.products
+							: Array.isArray(data?.data?.items)
+								? data.data.items
+								: Array.isArray(data?.data?.data)
+									? data.data.data
+									: Array.isArray(data?.products)
+										? data.products
+										: Array.isArray(data?.items)
+											? data.items
+											: Array.isArray(data?.data)
+												? data.data
+												: [];
+						if (!Array.isArray(rawList)) return callback([]);
+						const results = rawList.map((p) => ({
+							id: p.id || p.product_id || p.prod_id,
+							name: p.name || p.label || p.product_name || '',
+							code: p.sku || p.code || 'N/A',
+							tag: p.tag || '',
+							tags: p.tags || p.related_tags || p.tag || null,
+							category: p.category || p.category_name || null,
+							price: p.price || 'N/A',
+							sale_price: p.sale_price || null,
+							quantity: p.num_items || '',
+							thumbnail: ReservationForm.resolveRelatedProductImage(p.image || ''),
+						}));
+						callback(results);
 					})
 					.catch((err) => {
 						console.error('❌ Errore nella ricerca prodotti:', err);
@@ -621,6 +663,8 @@ const ReservationForm = {
 					if (!item.thumbnail) item.thumbnail = AppURLs.api.base + '/uploads/images/placeholder-product.jpg';
 
 					this.currProd = item;
+					this.selectedProduct = this.normalizeProductForSelection(item);
+					this.refreshSuggestionsFromSelectedProduct(this.selectedProduct, this.getSubOrderChecked());
 
 					input.classList.add('d-none');
 
@@ -650,9 +694,25 @@ const ReservationForm = {
 					}
 				} else {
 					this.currProd = null;
+					this.selectedProduct = null;
+					this.renderRelatedProducts([], this.getSubOrderChecked());
 
 					input.classList.remove('d-none');
 				}
+			},
+			onItemAdd: (value) => {
+				const item = this.getTs()?.options?.[value];
+				if (!item) return;
+				this.selectedProduct = this.normalizeProductForSelection(item);
+			},
+			onClear: () => {
+				this.selectedProduct = null;
+				this.renderRelatedProducts([], this.getSubOrderChecked());
+			},
+			onItemRemove: () => {
+				if (this.getTs()?.items?.length > 0) return;
+				this.selectedProduct = null;
+				this.renderRelatedProducts([], this.getSubOrderChecked());
 			},
 		});
 	},
