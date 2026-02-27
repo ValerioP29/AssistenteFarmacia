@@ -33,14 +33,50 @@ const ReservationForm = {
 	},
 	relatedProductAddedListenerAttached: false,
 	isInitialized: false,
+	suborderListenersBoundForm: null,
+	_warnedNoPharmaId: false,
 
-	init() {
-		if (this.isInitialized) return;
-		this.isInitialized = true;
+	ensureDomRefs() {
+		const form = document.querySelector('#form-reservation');
+		if (!form) return {ok: false, formChanged: false};
 
-		this.form = document.querySelector('#form-reservation');
+		const formChanged = !!(this.form && this.form !== form);
+		this.form = form;
 		this.picker = document.querySelector('#pickup');
 		this.table = document.querySelector('#product-summary');
+
+		return {ok: true, formChanged};
+	},
+
+	destroyTomSelect() {
+		try {
+			this.ts?.destroy?.();
+		} catch (e) {
+			console.warn('ReservationForm: destroyTomSelect fallito', e);
+		}
+		this.ts = null;
+		this.currProd = null;
+	},
+
+	init() {
+		const {ok, formChanged} = this.ensureDomRefs();
+		if (!ok) return;
+
+		if (formChanged) {
+			this.destroyTomSelect();
+			this.isInitialized = false;
+			this.suborderListenersBoundForm = null;
+		}
+
+		if (this.isInitialized && !formChanged) return;
+		this.isInitialized = true;
+
+		if (this.suborderListenersBoundForm !== this.form) {
+			this.form.querySelectorAll('input[name="suborder-type"]').forEach((radio) => {
+				radio.addEventListener('change', () => this.updateSubOrderView());
+			});
+			this.suborderListenersBoundForm = this.form;
+		}
 
 		this.initRelatedProducts();
 		this.attachReservationProductAddedListener();
@@ -143,11 +179,15 @@ const ReservationForm = {
 	},
 
 	getSubOrderChecked() {
+		if (!this.form) return 0;
 		const checked = this.form.querySelector('input[name="suborder-type"]:checked');
 		const val = checked ? parseInt(checked.value) : 0;
 		return val;
 	},
 	updateSubOrderView() {
+		const {ok} = this.ensureDomRefs();
+		if (!ok) return;
+
 		const groups = this.form.querySelectorAll('.suborder-group');
 		const val = this.getSubOrderChecked();
 
@@ -165,7 +205,7 @@ const ReservationForm = {
 		const relatedBlockRx = document.querySelector('#related-products-block-rx');
 		if (relatedBlockRx) relatedBlockRx.classList.add('d-none');
 
-		if (val === 0 && this.selectedProduct) {
+		if (this.selectedProduct && val === 0) {
 			this.refreshSuggestionsFromSelectedProduct(this.selectedProduct, 0);
 			return;
 		}
@@ -585,9 +625,19 @@ const ReservationForm = {
 		if (detailsDiv) detailsDiv.innerHTML = '';
 	},
 	initTomSelect() {
+		this.ensureDomRefs();
 		if (!window.TomSelect) return;
 		const el = document.querySelector('#product-name');
-		if (!el || el.tomselect) return;
+		if (!el) return;
+
+		if (!el.tomselect && this.ts) {
+			this.destroyTomSelect();
+		}
+
+		if (el.tomselect) {
+			this.ts = el.tomselect;
+			return;
+		}
 
 		this.ts = new TomSelect('#product-name', {
 			maxItems: 1,
@@ -610,9 +660,12 @@ const ReservationForm = {
 			},
 			load(query, callback) {
 				if (query.length < 2) return callback([]);
-				const pharmaId = dataStore.pharma?.id;
+				const pharmaId = dataStore?.pharma?.id;
 				if (!pharmaId) {
-					console.warn('Abort. Nessuna ID Farmacia trovato.');
+					if (!ReservationForm._warnedNoPharmaId) {
+						console.warn('Abort. Nessuna ID Farmacia trovato.');
+						ReservationForm._warnedNoPharmaId = true;
+					}
 					return callback([]);
 				}
 
@@ -1053,13 +1106,17 @@ function attachReservationGlobalListeners() {
 
 function bootReservationForm() {
 	const formEl = document.querySelector('#form-reservation');
-	if (!formEl || reservationBootstrapped) return;
-	reservationBootstrapped = true;
+	if (!formEl) return;
 
-	formEl.addEventListener('submit', function (e) {
-		e.preventDefault();
-		ReservationForm.submit();
-	});
+	const isNewForm = ReservationForm.form !== formEl;
+	if (!reservationBootstrapped || isNewForm) {
+		reservationBootstrapped = true;
+
+		formEl.addEventListener('submit', function (e) {
+			e.preventDefault();
+			ReservationForm.submit();
+		});
+	}
 
 	attachReservationGlobalListeners();
 	ReservationForm.init();
@@ -1090,6 +1147,8 @@ function setSubOrderTypeByUrl() {
 }
 
 document.addEventListener('reservationFormReset', setSubOrderTypeByUrl);
+
+window.ReservationForm = ReservationForm;
 
 /*
 function setProductInCartByUrl(data){
