@@ -30,8 +30,12 @@ const ReservationForm = {
 		},
 	},
 	relatedProductAddedListenerAttached: false,
+	isInitialized: false,
 
 	init() {
+		if (this.isInitialized) return;
+		this.isInitialized = true;
+
 		this.form = document.querySelector('#form-reservation');
 		this.picker = document.querySelector('#pickup');
 		this.table = document.querySelector('#product-summary');
@@ -107,15 +111,22 @@ const ReservationForm = {
 
 	resetSubFormProduct() {
 		const form = document.querySelector('#form-reservation');
+		if (!form) return;
 		const checboxPresc = form.querySelector('#res-prod-toggle-prescription');
+		if (!checboxPresc) return;
 
-		ReservationForm.ts.clear();
+		ReservationForm.ts?.clear?.();
 		form.querySelector('#res-prod-qty').value = '1';
 		ReservationForm.clearFileSelected(false);
 		checboxPresc.checked = false;
 		checboxPresc.dispatchEvent(new Event('change', {bubbles: true}));
 		form.querySelector('#res-prod-cf').value = '';
 		form.querySelector('#res-prod-nre').value = '';
+
+		const input = form.querySelector('.form-group--ts .ts-container');
+		input?.classList.remove('d-none');
+		const detailsDiv = document.querySelector('#product-details');
+		if (detailsDiv) detailsDiv.innerHTML = '';
 	},
 
 	// Rimozione file ricetta
@@ -447,12 +458,12 @@ const ReservationForm = {
 
 		fetchSuggestions(normalizedTag)
 			.then((data) => {
-				let products = data?.status && Array.isArray(data?.data?.products) ? data.data.products.slice(0, 3) : [];
+				let products = this.extractProductsList(data).map((item) => this.normalizeRelatedProduct(item)).filter((item) => item.id && item.name).slice(0, 3);
 
 				if (products.length === 0 && normalizedTag) {
 					return fetchSuggestions('')
 						.then((fallbackData) => {
-							products = fallbackData?.status && Array.isArray(fallbackData?.data?.products) ? fallbackData.data.products.slice(0, 3) : [];
+							products = this.extractProductsList(fallbackData).map((item) => this.normalizeRelatedProduct(item)).filter((item) => item.id && item.name).slice(0, 3);
 							this.setRelatedLoading(mode, false);
 							this.renderRelatedProducts(products, mode);
 						})
@@ -469,6 +480,36 @@ const ReservationForm = {
 				this.setRelatedLoading(mode, false);
 				this.renderRelatedProducts([], mode);
 			});
+	},
+	extractProductsList(data) {
+		if (Array.isArray(data?.data?.products)) return data.data.products;
+		if (Array.isArray(data?.data?.items)) return data.data.items;
+		if (Array.isArray(data?.data?.data)) return data.data.data;
+		if (Array.isArray(data?.products)) return data.products;
+		if (Array.isArray(data?.items)) return data.items;
+		if (Array.isArray(data?.data)) return data.data;
+		return [];
+	},
+	normalizeRelatedProduct(item = {}) {
+		const productId = item?.id ?? item?.product_id ?? item?.prod_id ?? null;
+		const parsedId = parseInt(productId, 10);
+		const priceOriginal = item?.price_original ?? item?.price ?? null;
+		const priceDiscounted = item?.price_discounted ?? item?.sale_price ?? item?.discounted_price ?? null;
+		const rawDiscount = item?.has_discount ?? item?.related_has_discount ?? 0;
+		const hasDiscountFlag = (rawDiscount === true || rawDiscount === 1 || rawDiscount === '1');
+		const hasDiscountPrice = priceDiscounted !== null && priceDiscounted !== undefined && String(priceDiscounted).trim() !== '';
+		const hasDiscount = hasDiscountFlag || hasDiscountPrice;
+
+		return {
+			...item,
+			id: Number.isNaN(parsedId) ? null : parsedId,
+			name: String(item?.name || item?.product_name || item?.label || '').trim(),
+			sku: item?.sku || item?.code || '',
+			image: item?.image || item?.thumbnail || '',
+			price_original: priceOriginal,
+			price_discounted: priceDiscounted,
+			has_discount: hasDiscount,
+		};
 	},
 	setSubOrderType(type) {
 		const input = this.form.querySelector('#suborder-type--' + type);
@@ -527,7 +568,12 @@ const ReservationForm = {
 		return this.ts;
 	},
 	deselectProductSelected() {
-		this.ts.clear();
+		this.ts?.clear?.();
+		const form = document.querySelector('#form-reservation');
+		const input = form?.querySelector('.form-group--ts .ts-container');
+		input?.classList.remove('d-none');
+		const detailsDiv = document.querySelector('#product-details');
+		if (detailsDiv) detailsDiv.innerHTML = '';
 	},
 	initTomSelect() {
 		if (!window.TomSelect) return;
@@ -977,14 +1023,12 @@ const ReservationForm = {
 	},
 };
 
-document.addEventListener('appLoaded', () => {
-	const formEl = document.querySelector('#form-reservation');
-	if (formEl) {
-		formEl.addEventListener('submit', function (e) {
-			e.preventDefault();
-			ReservationForm.submit();
-		});
-	}
+let reservationBootstrapped = false;
+let reservationGlobalListenersAttached = false;
+
+function attachReservationGlobalListeners() {
+	if (reservationGlobalListenersAttached) return;
+	reservationGlobalListenersAttached = true;
 
 	document.addEventListener('reservationSuccess', function (e) {
 		const data = e.detail;
@@ -996,9 +1040,33 @@ document.addEventListener('appLoaded', () => {
 		const data = e.detail;
 		if (data.message) showToast?.(data.message || 'Prenotazione fallita!', 'danger');
 	});
+}
 
+function bootReservationForm() {
+	const formEl = document.querySelector('#form-reservation');
+	if (!formEl || reservationBootstrapped) return;
+	reservationBootstrapped = true;
+
+	formEl.addEventListener('submit', function (e) {
+		e.preventDefault();
+		ReservationForm.submit();
+	});
+
+	attachReservationGlobalListeners();
 	ReservationForm.init();
+}
+
+document.addEventListener('appLoaded', () => {
+	bootReservationForm();
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+	bootReservationForm();
+});
+
+setTimeout(() => {
+	bootReservationForm();
+}, 0);
 
 function setSubOrderTypeByUrl() {
 	const params = new URLSearchParams(window.location.search);
