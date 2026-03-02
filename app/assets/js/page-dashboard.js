@@ -313,17 +313,6 @@ document.addEventListener('appLoaded', () => {
 		});
 	})();
 
-	(function homeBookingCardsModule() {
-		const cards = document.querySelectorAll('.home-booking-card');
-		cards.forEach((card) => {
-			card.addEventListener('keydown', (e) => {
-				if (e.key === 'Enter' || e.key === ' ') {
-					e.preventDefault();
-					card.click();
-				}
-			});
-		});
-	})();
 
 	initHeroStepsRotator();
 
