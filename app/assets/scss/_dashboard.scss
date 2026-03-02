@@ -440,11 +440,12 @@ body.page-dashboard {
 		margin-bottom: 8px;
 	}
 
-	.home-featured-tail {
-		width: 100%;
-		margin: 0 0 12px;
+	#home-booking-carousel-card .home-featured-tail {
+		width: calc(100% + 16px);
+		margin: -8px -8px 14px;
 		height: clamp(60px, 12vw, 120px);
-		border-radius: 14px;
+		border-bottom-left-radius: 18px;
+		border-bottom-right-radius: 18px;
 		background-color: #f2e8ff;
 		background-image: url('../images/home-featured-tail.webp'), linear-gradient(180deg, rgba(147, 88, 215, 0.34) 0%, rgba(224, 202, 255, 0.72) 60%, rgba(246, 240, 255, 0.95) 100%);
 		background-size: cover, cover;
@@ -452,15 +453,6 @@ body.page-dashboard {
 		background-position: center;
 		box-shadow: inset 0 8px 18px rgba(114, 49, 168, 0.12);
 		overflow: hidden;
-	}
-
-	// Tail “flush” con il padding dell'app-card
-	#home-booking-carousel-card {
-		.home-featured-tail {
-			width: calc(100% + 16px);
-			margin: -8px -8px 12px;
-			border-radius: 18px;
-		}
 	}
 
 	#home-booking-carousel {
@@ -848,7 +840,7 @@ body.page-dashboard {
 
 	/* Desktop typography */
 	@media (min-width: 768px) {
-		.home-featured-tail {
+		#home-booking-carousel-card .home-featured-tail {
 			margin-left: -12px;
 			margin-right: -12px;
 		}
