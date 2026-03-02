@@ -659,11 +659,13 @@ body.page-dashboard {
 			color: #6c3a8f;
 		}
 
+		/* Stato normale: 3 pill in riga (desktop), grid */
 		&__steps {
 			display: grid;
-  			grid-template-columns: repeat(3, minmax(0, 1fr));
+			grid-template-columns: repeat(3, minmax(0, 1fr));
 			gap: 0.5rem;
 			margin-top: 0.75rem;
+			position: relative;
 		}
 
 		&__step {
@@ -689,13 +691,19 @@ body.page-dashboard {
 			pointer-events: none;
 		}
 
+		/* Stato rotating: UNA sola riga, gli step si sovrappongono e non occupano spazio extra */
 		&__steps.is-rotating {
-			grid-template-columns: 1fr;
-			grid-template-rows: 1fr;
+			display: block;      /* evita comportamenti grid che impilano */
+			position: relative;
+			min-height: 44px;    /* altezza stabile della pill (alza/abbassa se serve) */
+		}
 
-			&__step {
-				grid-area: 1 / 1;
-			}
+		&__steps.is-rotating .hero-cta__step {
+			position: absolute;
+			left: 0;
+			right: 0;
+			top: 0;
+			justify-content: center;
 		}
 
 		&__step-number {
@@ -736,6 +744,7 @@ body.page-dashboard {
 		}
 	}
 
+	/* Desktop typography */
 	@media (min-width: 768px) {
 		.hero-cta {
 			padding: 1.1rem 1.2rem;
@@ -750,14 +759,16 @@ body.page-dashboard {
 		}
 	}
 
+	/* Mobile: 1 colonna SOLO quando NON ruota */
 	@media (max-width: 767.98px) {
 		.hero-cta {
-			&__steps {
+			&__steps:not(.is-rotating) {
 				grid-template-columns: 1fr;
 			}
 		}
 	}
 
+	/* Reduced motion */
 	@media (prefers-reduced-motion: reduce) {
 		.hero-cta {
 			&__step {
