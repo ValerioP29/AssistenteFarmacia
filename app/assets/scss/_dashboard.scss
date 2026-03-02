@@ -440,7 +440,7 @@ body.page-dashboard {
 		margin-bottom: 8px;
 	}
 
-	.home-featured-tail {
+	#home-booking-carousel-card .home-featured-tail {
 		width: calc(100% + 16px);
 		margin: -8px -8px 14px;
 		height: clamp(60px, 12vw, 120px);
@@ -840,7 +840,7 @@ body.page-dashboard {
 
 	/* Desktop typography */
 	@media (min-width: 768px) {
-		.home-featured-tail {
+		#home-booking-carousel-card .home-featured-tail {
 			margin-left: -12px;
 			margin-right: -12px;
 		}
