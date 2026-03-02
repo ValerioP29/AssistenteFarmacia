@@ -130,6 +130,59 @@
 				</app-card>
 				</div>
 
+				<div class="home-featured-tail" aria-hidden="true"></div>
+
+				<app-card id="home-booking-carousel-card">
+					<div class="slider-promo-title">Consigli rapidi</div>
+					<div class="slider-promo-container" id="home-booking-carousel">
+						<button class="slider-arrow slider-arrow-left d-none" aria-label="Precedente">&#10094;</button>
+						<div class="slider-promo" role="region" aria-roledescription="carousel" aria-label="Consigli rapidi">
+							<div class="slider-promo-item">
+								<article class="home-booking-card" onclick="goTo(AppURLs.page.reservation())" role="button" tabindex="0" aria-label="Vai a Prenotazioni per Benessere quotidiano">
+									<div class="home-booking-card__icon"><i class="bi bi-heart-pulse"></i></div>
+									<div class="home-booking-card__content">
+										<h3 class="home-booking-card__title">Benessere quotidiano</h3>
+										<p class="home-booking-card__desc">Prodotti per supportare energia, difese e vitalità ogni giorno.</p>
+										<span class="home-booking-card__cta">Scopri i prodotti</span>
+									</div>
+								</article>
+							</div>
+							<div class="slider-promo-item">
+								<article class="home-booking-card" onclick="goTo(AppURLs.page.reservation())" role="button" tabindex="0" aria-label="Vai a Prenotazioni per Cura della pelle">
+									<div class="home-booking-card__icon"><i class="bi bi-droplet-half"></i></div>
+									<div class="home-booking-card__content">
+										<h3 class="home-booking-card__title">Cura della pelle</h3>
+										<p class="home-booking-card__desc">Detersione, idratazione e trattamenti pensati per ogni esigenza.</p>
+										<span class="home-booking-card__cta">Scopri i prodotti</span>
+									</div>
+								</article>
+							</div>
+							<div class="slider-promo-item">
+								<article class="home-booking-card" onclick="goTo(AppURLs.page.reservation())" role="button" tabindex="0" aria-label="Vai a Prenotazioni per Integratori mirati">
+									<div class="home-booking-card__icon"><i class="bi bi-capsule"></i></div>
+									<div class="home-booking-card__content">
+										<h3 class="home-booking-card__title">Integratori mirati</h3>
+										<p class="home-booking-card__desc">Scegli soluzioni specifiche con il supporto della tua farmacia.</p>
+										<span class="home-booking-card__cta">Scopri i prodotti</span>
+									</div>
+								</article>
+							</div>
+							<div class="slider-promo-item">
+								<article class="home-booking-card" onclick="goTo(AppURLs.page.reservation())" role="button" tabindex="0" aria-label="Vai a Prenotazioni per Famiglia e bambini">
+									<div class="home-booking-card__icon"><i class="bi bi-people"></i></div>
+									<div class="home-booking-card__content">
+										<h3 class="home-booking-card__title">Famiglia e bambini</h3>
+										<p class="home-booking-card__desc">Un percorso semplice per trovare prodotti adatti a tutte le età.</p>
+										<span class="home-booking-card__cta">Scopri i prodotti</span>
+									</div>
+								</article>
+							</div>
+						</div>
+						<button class="slider-arrow slider-arrow-right d-none" aria-label="Successivo">&#10095;</button>
+						<div class="slider-dots"></div>
+					</div>
+				</app-card>
+
 				<app-card>
 					<div class="card-header ">
 						<span>Il tuo percorso benessere</span>

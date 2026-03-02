@@ -305,8 +305,24 @@ document.addEventListener('appLoaded', () => {
 	}
 
 	(function promoSliderModule() {
-		const promoRoot = document.querySelector('.slider-promo-container:not(#featured-services)');
-		if (promoRoot) initSimpleSlider(promoRoot);
+		const promoRoots = document.querySelectorAll('.slider-promo-container:not(#featured-services)');
+		promoRoots.forEach((promoRoot) => {
+			if (promoRoot.dataset.sliderInit === '1') return;
+			promoRoot.dataset.sliderInit = '1';
+			initSimpleSlider(promoRoot);
+		});
+	})();
+
+	(function homeBookingCardsModule() {
+		const cards = document.querySelectorAll('.home-booking-card');
+		cards.forEach((card) => {
+			card.addEventListener('keydown', (e) => {
+				if (e.key === 'Enter' || e.key === ' ') {
+					e.preventDefault();
+					card.click();
+				}
+			});
+		});
 	})();
 
 	initHeroStepsRotator();

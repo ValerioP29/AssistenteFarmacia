@@ -440,6 +440,96 @@ body.page-dashboard {
 		margin-bottom: 8px;
 	}
 
+	.home-featured-tail {
+		width: calc(100% + 16px);
+		margin: -8px -8px 14px;
+		height: clamp(60px, 12vw, 120px);
+		border-bottom-left-radius: 18px;
+		border-bottom-right-radius: 18px;
+		background-color: #f2e8ff;
+		background-image: url('../images/home-featured-tail.webp'), linear-gradient(180deg, rgba(147, 88, 215, 0.34) 0%, rgba(224, 202, 255, 0.72) 60%, rgba(246, 240, 255, 0.95) 100%);
+		background-size: cover, cover;
+		background-repeat: no-repeat;
+		background-position: center;
+		box-shadow: inset 0 8px 18px rgba(114, 49, 168, 0.12);
+		overflow: hidden;
+	}
+
+	#home-booking-carousel {
+		.slider-promo-item {
+			padding: 4px 2px;
+		}
+	}
+
+	.home-booking-card {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+		width: 100%;
+		height: 100%;
+		padding: 14px;
+		border-radius: 14px;
+		background: linear-gradient(138deg, #f8f3ff 0%, #ffffff 100%);
+		border: 1px solid rgba(128, 49, 170, 0.14);
+		box-shadow: 0 8px 18px rgba(93, 46, 128, 0.08);
+		cursor: pointer;
+
+		&__icon {
+			flex: 0 0 52px;
+			width: 52px;
+			height: 52px;
+			border-radius: 50%;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			color: #fff;
+			background: linear-gradient(135deg, #8841c4 0%, #6f2ea9 100%);
+			box-shadow: 0 8px 16px rgba(111, 46, 169, 0.24);
+
+			i {
+				font-size: 1.25rem;
+			}
+		}
+
+		&__content {
+			display: flex;
+			flex-direction: column;
+			gap: 5px;
+		}
+
+		&__title {
+			margin: 0;
+			font-size: 15px;
+			line-height: 1.25;
+			font-weight: 700;
+			color: #3f2458;
+		}
+
+		&__desc {
+			margin: 0;
+			font-size: 13px;
+			line-height: 1.35;
+			color: #6f6380;
+		}
+
+		&__cta {
+			display: inline-flex;
+			align-self: flex-start;
+			margin-top: 2px;
+			padding: 6px 12px;
+			border-radius: 999px;
+			font-size: 12px;
+			font-weight: 700;
+			color: #6a2c9b;
+			background: rgba(128, 49, 170, 0.1);
+		}
+
+		&:focus-visible {
+			outline: 2px solid #6f2ea9;
+			outline-offset: 2px;
+		}
+	}
+
 	.slider-promo-container {
 		position: relative;
 		overflow: hidden;
@@ -746,6 +836,29 @@ body.page-dashboard {
 
 	/* Desktop typography */
 	@media (min-width: 768px) {
+		.home-featured-tail {
+			margin-left: -12px;
+			margin-right: -12px;
+		}
+
+		.home-booking-card {
+			padding: 16px;
+
+			&__icon {
+				flex-basis: 56px;
+				width: 56px;
+				height: 56px;
+			}
+
+			&__title {
+				font-size: 16px;
+			}
+
+			&__desc {
+				font-size: 13px;
+			}
+		}
+
 		.hero-cta {
 			padding: 1.1rem 1.2rem;
 
