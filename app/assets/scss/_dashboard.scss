@@ -156,16 +156,48 @@ body.page-dashboard {
 	}
 }
 
-// ── PROMO CAROUSEL (prodotti a coppia per slide) ───────────────
+// ── PROMO CAROUSEL ──────────────────────────────────────────────
 #promo-carousel {
-  .slider-promo-item {
-    display: grid;
-    grid-template-columns: repeat(2, calc((100% - 8px) / 2));
-    gap: 8px;
-    border-radius: 0;
-    overflow: visible;
-    align-items: stretch;
-  }
+	.slider-promo {
+		display: flex;
+		gap: 8px;
+		overflow-x: auto;
+		overflow-y: hidden;
+		scroll-snap-type: x mandatory;
+		scroll-behavior: smooth;
+		-webkit-overflow-scrolling: touch;
+		padding-bottom: 4px;
+		transform: none !important;
+		transition: none;
+
+		&::-webkit-scrollbar {
+			display: none;
+		}
+		scrollbar-width: none;
+	}
+
+	.slider-promo > .product-card {
+		flex: 0 0 calc((100% - 40px) / 6);
+		scroll-snap-align: start;
+	}
+
+	@media (max-width: 1024px) {
+		.slider-promo > .product-card {
+			flex-basis: calc((100% - 24px) / 4);
+		}
+	}
+
+	@media (max-width: 768px) {
+		.slider-promo > .product-card {
+			flex-basis: calc((100% - 8px) / 2);
+		}
+	}
+
+	@media (max-width: 480px) {
+		.slider-promo > .product-card {
+			flex-basis: 100%;
+		}
+	}
 }
 
 	.promo-card {

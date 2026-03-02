@@ -222,6 +222,59 @@ document.addEventListener('appLoaded', () => {
 
 	}
 
+	function initPromoCarousel(root) {
+		if (!root) return;
+		if (root._promoCleanup) root._promoCleanup();
+
+		const track = root.querySelector('.slider-promo');
+		const btnPrev = root.querySelector('.slider-arrow-left');
+		const btnNext = root.querySelector('.slider-arrow-right');
+		const dotsContainer = root.querySelector('.slider-dots');
+		if (!track || !btnPrev || !btnNext) return;
+
+		if (dotsContainer) dotsContainer.classList.add('d-none');
+
+		track.setAttribute('tabindex', '0');
+
+		const getScrollStep = () => {
+			const firstCard = track.querySelector('.product-card');
+			if (!firstCard) return track.clientWidth;
+			const cardRect = firstCard.getBoundingClientRect();
+			const trackStyle = window.getComputedStyle(track);
+			const gap = parseFloat(trackStyle.columnGap || trackStyle.gap || '0') || 0;
+			return cardRect.width + gap;
+		};
+
+		const scrollByStep = (direction = 1) => {
+			track.scrollBy({left: getScrollStep() * direction, behavior: 'smooth'});
+		};
+
+		const onPrev = () => scrollByStep(-1);
+		const onNext = () => scrollByStep(1);
+		const onKeydown = (e) => {
+			if (e.key === 'ArrowLeft') {
+				e.preventDefault();
+				onPrev();
+			}
+			if (e.key === 'ArrowRight') {
+				e.preventDefault();
+				onNext();
+			}
+		};
+
+		btnPrev.classList.remove('d-none');
+		btnNext.classList.remove('d-none');
+		btnPrev.addEventListener('click', onPrev);
+		btnNext.addEventListener('click', onNext);
+		track.addEventListener('keydown', onKeydown);
+
+		root._promoCleanup = () => {
+			btnPrev.removeEventListener('click', onPrev);
+			btnNext.removeEventListener('click', onNext);
+			track.removeEventListener('keydown', onKeydown);
+		};
+	}
+
 	// ======== FEATURED SERVICES CAROUSEL ========
 	(function featuredServicesModule() {
 		const featuredCard = document.getElementById('featured-services-card');
@@ -340,6 +393,10 @@ document.addEventListener('appLoaded', () => {
 		promoRoots.forEach((promoRoot) => {
 			if (promoRoot.dataset.sliderInit === '1') return;
 			promoRoot.dataset.sliderInit = '1';
+			if (promoRoot.id === 'promo-carousel') {
+				initPromoCarousel(promoRoot);
+				return;
+			}
 			initSimpleSlider(promoRoot);
 		});
 	})();
