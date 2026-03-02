@@ -1,242 +1,560 @@
+/* ================================================================
+   _page-punti-benessere.scss
+   Aggiungere dentro body.page-wellness { ... } oppure globale.
+   ================================================================ */
+
+$primary: #8031aa;
+$primary-dark: #6a2892;
+$primary-light: #ede5ff;
+$primary-mid: #c4a0ee;
+
 body.page-wellness {
-	h1 {
-		text-align: center;
-		color: $primary-color;
-		margin: 10px 0 20px;
-		font-weight: bold;
-		font-size: 20px;
-	}
+	/* ── Score card ─────────────────────────────────────── */
+	.wb-score-card {
+		background: linear-gradient(135deg, #f3e7ff 0%, #ead9ff 100%);
+		border: 1px solid rgba(128, 49, 170, 0.18);
+		border-radius: 20px;
+		padding: 20px;
+		margin-bottom: 14px;
+		transition: box-shadow 0.3s ease;
 
-	.score-box {
-		text-align: center;
-		margin: 20px 0;
+		&.is-unlocked {
+			background: linear-gradient(135deg, #8031aa 0%, #6a2892 100%);
+			border-color: transparent;
+			box-shadow: 0 12px 28px rgba(108, 47, 147, 0.3);
 
-		.points {
-			font-size: 42px;
-			font-weight: bold;
-			color: #6d2a93;
+			.wb-score-card__number,
+			.wb-score-card__label,
+			.wb-score-card__hint {
+				color: #fff;
+			}
+
+			.wb-score-card__goal-badge {
+				background: rgba(255, 255, 255, 0.2);
+				color: #fff;
+
+				span { color: rgba(255, 255, 255, 0.75); }
+			}
 		}
 
-		.label {
-			font-size: 16px;
-			margin-top: 8px;
-		}
-	}
-
-	.goal-box {
-		background: #f2ebff;
-		padding: 16px;
-		border-radius: 12px;
-		text-align: center;
-		margin-top: 20px;
-
-		h2 {
-			font-size: 18px;
-			color: #6d2a93;
-			margin-bottom: 8px;
-		}
-
-		p {
-			font-size: 14px;
-			color: #444;
-		}
-	}
-
-	.reward {
-		background: #fff8e1;
-		padding: 12px;
-		margin-top: 20px;
-		border-radius: 10px;
-		border: 1px solid #ffe082;
-		text-align: center;
-
-		h3 {
-			margin: 0;
-			color: #f9a825;
-			font-size: 16px;
-		}
-
-		p {
-			margin: 8px 0;
-			font-size: 14px;
-		}
-
-		small {
-			display: block;
-			margin-top: 6px;
-			font-size: 12px;
-			color: #a67c00;
-		}
-
-		img {
-			margin-top: 12px;
-			width: 100%;
-			border-radius: 10px;
-		}
-	}
-
-	// === VOUCHER LIST ===
-	.voucher-box {
-		margin-top: 24px;
-		text-align: left;
-
-		h3 {
-			font-size: 16px;
-			color: #6d2a93;
-			margin-bottom: 8px;
-			font-weight: bold;
-		}
-
-		.voucher-list {
-			display: flex;
-			flex-direction: column;
-			gap: 10px;
-		}
-
-		.voucher-item {
-			border: 1px solid #eee;
-			border-radius: 10px;
-			padding: 10px;
+		&__top {
 			display: flex;
 			justify-content: space-between;
-			align-items: center;
-			gap: 12px;
-			background: #fff;
+			align-items: flex-start;
+			margin-bottom: 14px;
+		}
 
-			.voucher-meta {
-				flex: 1;
-				display: grid;
-				gap: 4px;
+		&__points {
+			display: flex;
+			align-items: baseline;
+			gap: 6px;
+		}
 
-				.voucher-code,
-				.voucher-status,
-				.voucher-exp {
-					font-size: 13px;
-					color: #444;
+		&__number {
+			font-size: 3rem;
+			font-weight: 800;
+			line-height: 1;
+			color: $primary-dark;
+		}
 
-					.tag {
-						display: inline-block;
-						font-size: 11px;
-						color: #777;
-						margin-right: 4px;
-					}
-				}
+		&__label {
+			font-size: 1rem;
+			font-weight: 600;
+			color: #7a5fa0;
+		}
+
+		&__goal-badge {
+			display: flex;
+			flex-direction: column;
+			align-items: flex-end;
+			background: rgba(255, 255, 255, 0.65);
+			border-radius: 10px;
+			padding: 6px 12px;
+			font-size: 0.82rem;
+			color: $primary-dark;
+			backdrop-filter: blur(4px);
+
+			span {
+				font-weight: 400;
+				color: #7a5fa0;
+				font-size: 0.72rem;
 			}
 
-			.voucher-actions {
-				.btn {
-					font-size: 13px;
-					padding: 6px 10px;
-					border-radius: 6px;
-					background: #6d2a93;
-					color: #fff;
-					border: none;
-					cursor: pointer;
-
-					&:hover {
-						background: darken(#6d2a93, 8%);
-					}
-				}
+			strong {
+				font-size: 1rem;
+				font-weight: 800;
 			}
 		}
 
-		.redeemed-list {
-			margin-top: 8px;
+		&__hint {
+			margin: 10px 0 0;
+			font-size: 0.82rem;
+			color: #6a4f8a;
+			line-height: 1.4;
 
-			summary {
-				cursor: pointer;
-				color: #666;
-				font-size: 13px;
+			strong { color: $primary-dark; }
+		}
+	}
+
+	.wellness-title {
+		    font-size: 1.5rem;
+			color: #6a2892;
+			text-align: center;
+	}
+
+	/* ── Progress bar ───────────────────────────────────── */
+	.wb-progress {
+		height: 10px;
+		background: rgba(255, 255, 255, 0.5);
+		border-radius: 999px;
+		overflow: hidden;
+
+		&__fill {
+			height: 100%;
+			border-radius: 999px;
+			background: linear-gradient(90deg, #a855f7 0%, #ec4899 100%);
+			transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+
+			&.is-full {
+				background: rgba(255, 255, 255, 0.9);
 			}
 		}
 	}
 
-	// === MODALE QR ===
-	.voucher-modal {
-		position: fixed;
-		inset: 0;
+	/* ── Redeem banner ──────────────────────────────────── */
+	.wb-redeem-banner {
 		display: flex;
 		align-items: center;
-		justify-content: center;
-		z-index: 9999;
+		gap: 12px;
+		background: linear-gradient(90deg, #fff7e6 0%, #fff1f5 100%);
+		border: 1.5px solid #f5c842;
+		border-radius: 16px;
+		padding: 14px 16px;
+		margin-bottom: 16px;
+		animation: pulseGlow 2s ease-in-out infinite;
 
-		&.is-hidden {
-			display: none;
+		@keyframes pulseGlow {
+			0%, 100% { box-shadow: 0 0 0 0 rgba(245, 200, 66, 0.3); }
+			50%       { box-shadow: 0 0 0 8px rgba(245, 200, 66, 0); }
 		}
 
-		.vm-backdrop {
-			position: absolute;
-			inset: 0;
-			background: rgba(0, 0, 0, 0.5);
+		&__icon {
+			font-size: 2rem;
+			flex-shrink: 0;
 		}
 
-		.vm-dialog {
-			position: relative;
-			background: #fff;
-			border-radius: 12px;
-			padding: 16px;
-			width: min(92vw, 420px);
-			max-height: 90vh;
-			overflow: auto;
-			box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+		&__body {
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			gap: 2px;
+		}
 
-			h4 {
-				font-size: 16px;
-				margin-bottom: 10px;
-				color: #6d2a93;
-			}
+		&__title {
+			font-size: 0.92rem;
+			font-weight: 700;
+			color: #7a4f00;
+		}
 
-			.vm-body {
-				text-align: center;
+		&__desc {
+			font-size: 0.78rem;
+			color: #a06a20;
+		}
 
-				.muted {
-					font-size: 13px;
-					color: #666;
-					margin-bottom: 12px;
-				}
+		&__btn {
+			flex-shrink: 0;
+			background: linear-gradient(135deg, $primary 0%, $primary-dark 100%);
+			color: #fff;
+			border: 0;
+			border-radius: 999px;
+			padding: 10px 18px;
+			font-size: 0.88rem;
+			font-weight: 700;
+			cursor: pointer;
+			box-shadow: 0 4px 12px rgba(108, 47, 147, 0.3);
+			transition: filter 0.2s;
 
-				.vm-qr img {
-					display: block;
-					margin: 10px auto;
-					max-width: 260px;
-					width: 100%;
-					height: auto;
-				}
-
-				.vm-code code {
-					font-size: 14px;
-					padding: 6px 10px;
-					background: #f6f6f6;
-					border-radius: 6px;
-					display: inline-block;
-					margin-top: 8px;
-				}
-			}
-
-			.vm-close {
-				position: absolute;
-				right: 8px;
-				top: 6px;
-				background: transparent;
-				border: 0;
-				font-size: 20px;
-				cursor: pointer;
-				color: #333;
+			&:hover   { filter: brightness(1.1); }
+			&:disabled {
+				opacity: 0.65;
+				cursor: not-allowed;
+				filter: none;
 			}
 		}
+	}
+
+	/* ── Voucher list ───────────────────────────────────── */
+	.wb-voucher-section {
+		margin-bottom: 16px;
+
+		&__title {
+			font-size: 0.95rem;
+			font-weight: 700;
+			color: #352243;
+			margin-bottom: 10px;
+		}
+	}
+
+	.wb-voucher-list {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+	}
+
+	.wb-voucher-item {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		background: #f8f4ff;
+		border-radius: 14px;
+		padding: 14px 16px;
+		border-left: 4px solid $primary;
+
+		&--used    { border-left-color: #aaa; opacity: 0.7; }
+		&--expired { border-left-color: #e55; opacity: 0.65; }
+		&--pending { border-left-color: #f5a623; }
+
+		&__left {
+			display: flex;
+			flex-direction: column;
+			gap: 3px;
+		}
+
+		&__value {
+			font-size: 1.1rem;
+			font-weight: 800;
+			color: $primary-dark;
+		}
+
+		&__code {
+			font-size: 1rem;
+			font-weight: 700;
+			letter-spacing: 0.08em;
+			color: #352243;
+			background: #e8d8ff;
+			border-radius: 6px;
+			padding: 2px 8px;
+			display: inline-block;
+		}
+
+		&__status {
+			font-size: 0.75rem;
+			color: #7a5fa0;
+			font-weight: 600;
+		}
+
+		&__exp {
+			font-size: 0.72rem;
+			color: #a0a0a0;
+		}
+
+		&__actions {
+			flex-shrink: 0;
+		}
+	}
+
+	.wb-qr-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		background: $primary;
+		color: #fff;
+		border: 0;
+		border-radius: 10px;
+		padding: 8px 14px;
+		font-size: 0.82rem;
+		font-weight: 700;
+		cursor: pointer;
+		transition: filter 0.2s;
+
+		&:hover { filter: brightness(1.1); }
+	}
+
+	.wb-empty-vouchers {
+		text-align: center;
+		color: #a0a0a0;
+		font-size: 0.88rem;
+		padding: 20px 0;
+	}
+
+	/* ── Legend accordion ───────────────────────────────── */
+	.wb-legend-toggle {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		width: 100%;
+		padding: 12px 16px;
+		background: $primary-light;
+		border: 0;
+		border-radius: 12px;
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: $primary-dark;
+		cursor: pointer;
+		margin-bottom: 4px;
+		transition: background 0.2s;
+
+		&:hover { background: darken($primary-light, 4%); }
+
+		&__chevron {
+			transition: transform 0.25s ease;
+		}
+
+		&.is-open .wb-legend-toggle__chevron {
+			transform: rotate(180deg);
+		}
+	}
+
+	.wb-legend-body {
+		padding: 8px 0 4px;
+	}
+
+	.wb-legend-item {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 12px;
+		padding: 10px 14px;
+		border-radius: 10px;
+		background: #f8f4ff;
+		margin-bottom: 8px;
+
+		&__text {
+			flex: 1;
+		}
+
+		&__title {
+			font-size: 0.88rem;
+			font-weight: 700;
+			color: #352243;
+		}
+
+		&__desc {
+			font-size: 0.78rem;
+			color: #7a5fa0;
+			margin-top: 2px;
+			line-height: 1.35;
+		}
+
+		&__pts {
+			flex-shrink: 0;
+			background: $primary;
+			color: #fff;
+			border-radius: 999px;
+			padding: 3px 10px;
+			font-size: 0.8rem;
+			font-weight: 700;
+		}
+	}
+
+	/* ── Skeleton loading ───────────────────────────────── */
+	.wb-skeleton {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		padding: 4px 0;
+
+		&__bar {
+			height: 56px;
+			border-radius: 14px;
+			background: linear-gradient(90deg, #f0e8ff 25%, #e0d0f7 50%, #f0e8ff 75%);
+			background-size: 200% 100%;
+			animation: shimmer 1.4s infinite;
+
+			&--tall  { height: 100px; }
+			&--short { height: 36px; width: 60%; }
+		}
+	}
+
+	@keyframes shimmer {
+		0%   { background-position: 200% 0; }
+		100% { background-position: -200% 0; }
 	}
 }
 
-.progress {
-	height: 10px;
-	background: #e5d6f5;
-	border-radius: 999px;
-	overflow: hidden;
-	margin-top: 10px;
+/* ── Modale voucher ────────────────────────────────────────────── */
+.wb-modal {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
 
-	.progress-bar {
-		height: 100%;
-		background: #6d2a93;
-		transition: width 0.3s ease;
+	@media (min-width: 480px) { align-items: center; }
+
+	&.is-hidden {
+		display: none;
 	}
+
+	&__backdrop {
+		position: absolute;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.55);
+		backdrop-filter: blur(4px);
+	}
+
+	&__dialog {
+		position: relative;
+		background: #fff;
+		border-radius: 24px 24px 0 0;
+		padding: 28px 24px 36px;
+		width: 100%;
+		max-width: 420px;
+		max-height: 90vh;
+		overflow-y: auto;
+		animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+		@media (min-width: 480px) {
+			border-radius: 24px;
+		}
+	}
+
+	@keyframes slideUp {
+		from { transform: translateY(60px); opacity: 0; }
+		to   { transform: translateY(0);    opacity: 1; }
+	}
+
+	&__close {
+		position: absolute;
+		top: 14px;
+		right: 16px;
+		background: #f0e8ff;
+		border: 0;
+		width: 32px;
+		height: 32px;
+		border-radius: 50%;
+		font-size: 1.1rem;
+		cursor: pointer;
+		color: #6a2892;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	&__header {
+		text-align: center;
+		margin-bottom: 20px;
+	}
+
+	&__badge {
+		display: inline-block;
+		background: linear-gradient(135deg, #8031aa, #6a2892);
+		color: #fff;
+		border-radius: 999px;
+		padding: 4px 16px;
+		font-size: 1.1rem;
+		font-weight: 800;
+		margin-bottom: 8px;
+	}
+
+	&__title {
+		margin: 0 0 4px;
+		font-size: 1.1rem;
+		font-weight: 700;
+		color: #352243;
+	}
+
+	&__subtitle {
+		margin: 0;
+		font-size: 0.82rem;
+		color: #7a5fa0;
+	}
+
+	&__body {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 14px;
+	}
+
+	&__qr {
+		background: #fff;
+		border-radius: 16px;
+		padding: 12px;
+		border: 2px solid #ede5ff;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 224px;
+
+		img { display: block; }
+	}
+
+	&__no-qr {
+		color: #7a5fa0;
+		font-size: 0.9rem;
+		text-align: center;
+		padding: 20px;
+	}
+
+	&__code {
+		font-size: 1.4rem;
+		letter-spacing: 0.12em;
+		font-weight: 800;
+		color: #352243;
+		background: #f0e8ff;
+		border-radius: 10px;
+		padding: 8px 20px;
+		display: block;
+		text-align: center;
+		width: 100%;
+	}
+
+	&__expiry {
+		font-size: 0.78rem;
+		color: #a0a0a0;
+		margin: 0;
+	}
+
+	&__footer {
+		margin-top: 18px;
+	}
+
+	&__share-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		width: 100%;
+		padding: 12px;
+		border-radius: 999px;
+		background: #ede5ff;
+		color: #6a2892;
+		border: 0;
+		font-size: 0.92rem;
+		font-weight: 700;
+		cursor: pointer;
+		transition: background 0.2s;
+
+		&:hover { background: darken(#ede5ff, 6%); }
+	}
+}
+
+/* ── Toast ─────────────────────────────────────────────────────── */
+.wb-toast {
+	position: fixed;
+	bottom: 90px;
+	left: 50%;
+	transform: translateX(-50%) translateY(20px);
+	padding: 10px 20px;
+	border-radius: 999px;
+	font-size: 0.88rem;
+	font-weight: 600;
+	color: #fff;
+	z-index: 10000;
+	opacity: 0;
+	transition: opacity 0.25s ease, transform 0.25s ease;
+	pointer-events: none;
+	white-space: nowrap;
+
+	&.is-visible {
+		opacity: 1;
+		transform: translateX(-50%) translateY(0);
+	}
+
+	&--success { background: #22c55e; }
+	&--error   { background: #ef4444; }
+	&--info    { background: #6a2892; }
 }

@@ -7,6 +7,11 @@ body.page-reservation {
 		font-size: 20px;
 	}
 
+    .upload-prod { 
+		display: flex;
+		gap:5px;
+	}
+
 	.form-reservation{
 		.form-group--product{
 			background-color: #fff2f6;
@@ -52,11 +57,7 @@ body.page-reservation {
 		// 	display: none;
 		// }
 	}
-
-	#product-details{
-		// margin-top: 2rem;
-	}
-
+	
 	.selected-product-preview {
 		display: flex;
 		flex-direction: row;

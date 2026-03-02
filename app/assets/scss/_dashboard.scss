@@ -10,36 +10,163 @@ body.page-dashboard {
 		}
 	}
 
-	.card-header {
+	// ── WELLNESS CARD ─────────────────────────────────────────────
+	.wellness-card {
+	.wellness-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 12px;
+
+		&__title {
+		font-size: 1.05rem;
+		font-weight: 700;
+		color: #352243;
+		}
+	}
+
+	.wellness-quiz-cta {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+		background: linear-gradient(135deg, #8031aa 0%, #6a2892 100%);
+		border-radius: 14px;
+		padding: 14px 16px;
+		text-decoration: none;
+		cursor: pointer;
+		margin-bottom: 12px;
+
+		&__icon {
+		flex: 0 0 40px;
+		width: 40px;
+		height: 40px;
+		border-radius: 50%;
+		background: rgba(255, 255, 255, 0.18);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		color: #fff;
+		font-size: 1.2rem;
+		}
+
+		&__body {
+		display: flex;
+		flex-direction: column;
+		gap: 3px;
+		}
+
+		&__title {
+		font-size: 0.95rem;
+		font-weight: 700;
+		color: #fff;
+		}
+
+		&__desc {
+		font-size: 0.8rem;
+		line-height: 1.35;
+		color: rgba(255, 255, 255, 0.88);
+
+		strong {
+			color: #fff;
+		}
+		}
+
+		&:focus-visible {
+		outline: 2px solid #6f2ea9;
+		outline-offset: 2px;
+		}
+	}
+
+	.wellness-progress-box {
+		background: #f5f0ff;
+		border-radius: 12px;
+		padding: 12px 14px;
+		margin-bottom: 12px;
+
+		&__top {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		gap: 10px;
-		padding-top: 0;
+		margin-bottom: 8px;
+		}
 
-		.wellness-points {
-			background: #e4d4ff;
-			text-align: center;
-			color: #6b32c8;
-			padding: 6px 14px;
-			border-radius: 999px;
-			font-size: 13px;
-			font-weight: 700;
-			cursor: pointer;
+		&__label {
+		font-size: 0.88rem;
+		font-weight: 700;
+		color: #352243;
+		}
 
-			.points-label {
-				white-space: nowrap;
-			}
+		&__value {
+		font-size: 0.9rem;
+		font-weight: 700;
+		color: #8031aa;
+		}
 
-			.svg-icon {
-				width: 1.6em;
-				height: 1.6em;
-				flex-shrink: 0;
-				display: inline-block;
-				color: currentColor;
-			}
+		&__hint {
+		margin: 6px 0 0;
+		font-size: 0.78rem;
+		color: #6f6380;
 		}
 	}
+
+	.wellness-progress-bar {
+		width: 100%;
+		height: 8px;
+		background: #e0d0f7;
+		border-radius: 999px;
+		overflow: hidden;
+
+		&__fill {
+		height: 100%;
+		border-radius: 999px;
+		background: linear-gradient(90deg, #a855f7 0%, #ec4899 100%);
+		transition: width 0.6s ease;
+		min-width: 4px;
+		}
+	}
+
+	.wellness-voucher-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		width: 100%;
+		padding: 0.75rem 1rem;
+		border-radius: 999px;
+		background: #ede5ff;
+		color: #6a2892;
+		font-size: 0.95rem;
+		font-weight: 700;
+		text-decoration: none;
+		cursor: pointer;
+		transition: background 0.2s ease;
+
+		i {
+		font-size: 1.05rem;
+		}
+
+		&:hover {
+		background: #ddd0f8;
+		}
+
+		&:focus-visible {
+		outline: 2px solid #6f2ea9;
+		outline-offset: 2px;
+		}
+	}
+}
+
+// ── PROMO CAROUSEL (prodotti a coppia per slide) ───────────────
+#promo-carousel {
+  .slider-promo-item {
+    display: grid;
+    grid-template-columns: repeat(2, calc((100% - 8px) / 2));
+    gap: 8px;
+    border-radius: 0;
+    overflow: visible;
+    align-items: stretch;
+  }
+}
 
 	.promo-card {
 		display: flex;
@@ -440,21 +567,6 @@ body.page-dashboard {
 		margin-bottom: 8px;
 	}
 
-	#home-booking-carousel-card .home-featured-tail {
-		width: calc(100% + 16px);
-		margin: -8px -8px 14px;
-		height: clamp(60px, 12vw, 120px);
-		border-bottom-left-radius: 18px;
-		border-bottom-right-radius: 18px;
-		background-color: #f2e8ff;
-		background-image: url('../images/home-featured-tail.webp'), linear-gradient(180deg, rgba(147, 88, 215, 0.34) 0%, rgba(224, 202, 255, 0.72) 60%, rgba(246, 240, 255, 0.95) 100%);
-		background-size: cover, cover;
-		background-repeat: no-repeat;
-		background-position: center;
-		box-shadow: inset 0 8px 18px rgba(114, 49, 168, 0.12);
-		overflow: hidden;
-	}
-
 	#home-booking-carousel {
 		.slider-promo-item {
 			padding: 4px 2px;
@@ -507,6 +619,7 @@ body.page-dashboard {
 			line-height: 1.25;
 			font-weight: 700;
 			color: #3f2458;
+			text-align: center;
 		}
 
 		&__desc {
@@ -514,18 +627,19 @@ body.page-dashboard {
 			font-size: 13px;
 			line-height: 1.35;
 			color: #6f6380;
+			text-align: center;
 		}
 
 		&__cta {
 			display: inline-flex;
-			align-self: flex-start;
-			margin-top: 2px;
+			align-self: center;
+			margin-top: 10px;
 			padding: 6px 12px;
 			border-radius: 999px;
 			font-size: 12px;
 			font-weight: 700;
-			color: #6a2c9b;
-			background: rgba(128, 49, 170, 0.1);
+			color: #fff;
+			background: #6a2c9b;
 		}
 
 		&:focus-visible {

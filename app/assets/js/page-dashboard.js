@@ -66,7 +66,38 @@ document.addEventListener('appLoaded', () => {
 			gestisciWellnessPoints(`${user.wellness_points}`);
 		}
 	});
+// Aggiorna barra progresso benessere dalla risposta reale dell'API
+		document.addEventListener('wellnessSuccess', function (event) {
+			const data = event.detail || {};
 
+			const total = Number(data.points ?? 0);
+			const goal  = Number(data.goal ?? 100);
+
+			// Stessa logica di page-punti-benessere.js
+			const cycle     = total % goal;
+			const atThreshold = total > 0 && cycle === 0;
+			const displayPoints = atThreshold ? 0 : cycle;
+			const remain    = atThreshold ? goal : Math.max(goal - cycle, 0);
+			const pct       = Math.round((displayPoints / goal) * 100);
+
+			const fill  = document.getElementById('wellness-progress-fill');
+			const label = document.getElementById('wellness-progress-label');
+			const hint  = document.getElementById('wellness-progress-hint');
+			const bar   = fill?.parentElement;
+
+			if (fill)  fill.style.width = Math.max(pct, pct > 0 ? 2 : 0) + '%';
+			if (label) label.textContent = `${displayPoints}/${goal}`;
+			if (bar) {
+				bar.setAttribute('aria-valuenow', displayPoints);
+				bar.setAttribute('aria-valuemax', goal);
+			}
+			if (hint) {
+				hint.textContent = atThreshold
+					? 'Hai appena sbloccato un buono. Si riparte da 0! 🎉'
+					: `Ti mancano ${remain} punti per sbloccare 10 EUR.`;
+			}
+		});
+		
 	if (dataStore?.pharma) {
 		document.dispatchEvent(new CustomEvent('pharma:dataReady', {detail: dataStore.pharma}));
 	}

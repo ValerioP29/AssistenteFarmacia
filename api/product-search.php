@@ -224,23 +224,40 @@ function build_product_base_select_sql($global_table_exists, $pharma_columns_map
 			"0    AS requires_prescription",
 		];
 
-	$where = [
+		$where = [
 		'pp.pharma_id = :pharma_id',
-		'pp.is_active = 1',
 	];
 
+	// is_active solo se la colonna esiste davvero
+	if (!empty($pharma_columns_map['is_active'])) {
+		$where[] = 'pp.is_active = 1';
+	}
+
 	if ($includeSearchFilter) {
-		$searchExprs = [
-			"LOWER(CONVERT(pp.name USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term)",
-			"LOWER(CONVERT(COALESCE(pp.description, '') USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term)",
-			"LOWER(CONVERT(COALESCE(pp.sku, '') USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term)",
-		];
+		$searchExprs = [];
+
+		if (!empty($pharma_columns_map['name'])) {
+			$searchExprs[] = "LOWER(CONVERT(pp.name USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term)";
+		}
+		if (!empty($pharma_columns_map['description'])) {
+			$searchExprs[] = "LOWER(CONVERT(COALESCE(pp.description, '') USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term)";
+		}
+		if (!empty($pharma_columns_map['sku'])) {
+			$searchExprs[] = "LOWER(CONVERT(COALESCE(pp.sku, '') USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term)";
+		}
+
 		if ($global_table_exists) {
 			$searchExprs[] = "LOWER(CONVERT(COALESCE(gp.name, '') USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term)";
 			$searchExprs[] = "LOWER(CONVERT(COALESCE(gp.description, '') USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term)";
 			$searchExprs[] = "LOWER(CONVERT(COALESCE(gp.sku, '') USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term)";
 		}
-		$where[] = '(' . implode(' OR ', $searchExprs) . ')';
+
+		// Se non ho nulla su cui cercare, non devo mai tornare "tutto"
+		if (empty($searchExprs)) {
+			$where[] = '0=1';
+		} else {
+			$where[] = '(' . implode(' OR ', $searchExprs) . ')';
+		}
 	}
 
 	if (!empty($exclude_ids)) {

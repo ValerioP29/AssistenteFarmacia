@@ -10,6 +10,19 @@
  *  - Filtro per tag (select): ricarica con il tag selezionato
  */
 
+// Fallback: se escapeHtml non è definita (ordine script / reload), non deve mai crashare TomSelect
+if (typeof window.escapeHtml !== 'function') {
+	window.escapeHtml = function (value) {
+		const s = String(value ?? '');
+		return s
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;')
+			.replace(/'/g, '&#039;');
+	};
+}
+
 const ReservationForm = {
 	form: null,
 	picker: null,
@@ -63,6 +76,52 @@ const ReservationForm = {
 		this.picker = document.querySelector('#pickup');
 		this.table  = document.querySelector('#product-summary');
 		return { ok: true, formChanged };
+	},
+
+		getPharmaId() {
+		const toInt = (v) => {
+			if (v === null || v === undefined) return 0;
+			const n = parseInt(String(v), 10);
+			return Number.isFinite(n) && n > 0 ? n : 0;
+		};
+
+		const candidates = [
+			dataStore?.pharma?.id,
+			dataStore?.pharmacy?.id,
+			dataStore?.pharmacy_id,
+			dataStore?.pharma_id,
+			window?.dataStore?.pharma?.id,
+			window?.dataStore?.pharmacy?.id,
+			window?.pharma_id,
+			window?.pharmacy_id,
+			document.querySelector('meta[name="pharma-id"]')?.content,
+			document.querySelector('[data-pharma-id]')?.dataset?.pharmaId,
+			localStorage.getItem('pharma_id'),
+			localStorage.getItem('pharmacy_id'),
+		];
+
+		for (const c of candidates) {
+			const id = toInt(c);
+			if (id) return id;
+		}
+		return 0;
+	},
+	
+
+	buildApiUrl(pathOrUrl) {
+		const raw = (pathOrUrl ?? '').toString();
+		if (!raw) return null;
+
+		// 1) prova come URL assoluta
+		try { return new URL(raw); } catch (e) {}
+
+		// 2) prova relativa rispetto all'origine corrente
+		try { return new URL(raw, window.location.origin); } catch (e) {}
+
+		// 3) ultima spiaggia: rispetto alla pagina
+		try { return new URL(raw, window.location.href); } catch (e) {}
+
+		return null;
 	},
 
 	destroyTomSelect() {
@@ -345,7 +404,7 @@ const ReservationForm = {
 		this.relatedState[mode].lastSeed = seed;
 		this.setRelatedLoading(mode, true);
 
-		const pharmaId = dataStore?.pharma?.id;
+		const pharmaId = this.getPharmaId();
 		if (!pharmaId) {
 			// pharmaId non ancora disponibile (race condition con app.js):
 			// rimette didInit = false e schedula un retry tramite polling.
@@ -356,7 +415,8 @@ const ReservationForm = {
 		}
 
 		const buildUrl = (tagValue = '') => {
-			const url = new URL(AppURLs.api.productSuggestions());
+		const url = this.buildApiUrl(AppURLs?.api?.productSuggestions?.());
+		if (!url) return '';
 			url.searchParams.set('pharma_id', pharmaId);
 			url.searchParams.set('related_mode', '1');
 			url.searchParams.set('limit', '3');
@@ -375,13 +435,24 @@ const ReservationForm = {
 				.filter((item) => item.id && item.name)
 				.slice(0, 3);
 
-		appFetchWithToken(buildUrl(tag), { method: 'GET' })
+				const urlPrimary = buildUrl(tag);
+			if (!urlPrimary) {
+				this.relatedState[mode].didInit = false;
+				this.setRelatedLoading(mode, false);
+				// retry: se AppURLs/dataStore non erano pronti
+				this._schedulePharmaRetry(mode);
+				return;
+			}
+
+			appFetchWithToken(urlPrimary, { method: 'GET' })
 			.then((data) => {
 				let products = normalize(data);
 
 				// Fallback: se nessun risultato con il tag, riprova senza
 				if (products.length === 0 && tag) {
-					return appFetchWithToken(buildUrl(''), { method: 'GET' })
+					const urlFallback = buildUrl('');
+					if (!urlFallback) throw new Error('URL fallback non valido');
+					return appFetchWithToken(urlFallback, { method: 'GET' })
 						.then((fallback) => {
 							products = normalize(fallback);
 							this.setRelatedLoading(mode, false);
@@ -527,8 +598,12 @@ const ReservationForm = {
 		if (!imagePath) return this.getRelatedPlaceholderImage();
 		if (imagePath.startsWith('http') || imagePath.startsWith('/')) return imagePath;
 		if (imagePath.startsWith('api/')) return `../${imagePath}`;
-		return new URL(imagePath, `${AppURLs.panel?.base || window.location.origin}/`).toString();
-	},
+			try {
+				return new URL(imagePath, `${AppURLs?.panel?.base || window.location.origin}/`).toString();
+			} catch (e) {
+				return this.getRelatedPlaceholderImage();
+			}	
+		},
 
 	createRelatedProductCard(item) {
 		const card = document.createElement('article');
@@ -625,7 +700,7 @@ const ReservationForm = {
 		this._pharmaRetryCount = 0;
 		const attempt = () => {
 			this._pharmaRetryTimer = null;
-			const pharmaId = dataStore?.pharma?.id;
+			const pharmaId = this.getPharmaId();
 
 			if (pharmaId) {
 				console.info('ReservationForm: pharmaId disponibile (' + pharmaId + '), carico i suggerimenti.');
@@ -689,24 +764,30 @@ const ReservationForm = {
 			},
 
 			load(query, callback) {
-				if (query.length < 2) return callback([]);
-				const pharmaId = dataStore?.pharma?.id;
+			try {
+				if (!query || query.length < 2) return callback([]);
+
+				const pharmaId = ReservationForm.getPharmaId();
 				if (!pharmaId) {
-					// Se pharmaId non è ancora disponibile mostra un messaggio
-					// nell'input invece di fallire silenziosamente
-					console.warn('TomSelect: pharmaId non ancora disponibile, riprova tra un momento.');
+					ReservationForm._schedulePharmaRetry(ReservationForm.getSubOrderChecked());
 					return callback([]);
 				}
-				const url = new URL(AppURLs.api.productSuggestions());
-				url.searchParams.set('search',    query);
-				url.searchParams.set('query',     query);
-				url.searchParams.set('q',         query);
+
+				// URL robusto: anche se productSuggestions() ritorna path relativo
+				const endpoint = (window.AppURLs?.api?.productSuggestions?.() ?? '');
+				const url = new URL(endpoint, window.location.origin);
+				url.searchParams.set('search', query);
 				url.searchParams.set('pharma_id', pharmaId);
+				url.searchParams.set('limit', '20');
 
 				appFetchWithToken(url.toString(), { method: 'GET' })
-					.then((data) => {
+					.then(async (resp) => {
+						// appFetchWithToken può tornare JSON o Response: gestiamo entrambi
+						const data = (resp && typeof resp.json === 'function') ? await resp.json() : resp;
+
 						const rawList = ReservationForm.extractProductsList(data);
-						if (!Array.isArray(rawList)) return callback([]);
+						if (!Array.isArray(rawList) || rawList.length === 0) return callback([]);
+
 						callback(rawList.map((p) => ({
 							id:        p.id || p.product_id || p.prod_id,
 							name:      p.name || p.label || p.product_name || '',
@@ -714,14 +795,21 @@ const ReservationForm = {
 							tag:       p.tag || '',
 							tags:      p.tags || p.related_tags || p.tag || null,
 							category:  p.category || p.category_name || null,
-							price:     p.price || 'N/A',
-							sale_price: p.sale_price || null,
+							price:     (p.price ?? 'N/A'),
+							sale_price: (p.sale_price ?? null),
 							quantity:  p.num_items || '',
 							thumbnail: ReservationForm.resolveRelatedProductImage(p.image || ''),
 						})));
 					})
-					.catch((err) => { console.error('Errore ricerca prodotti:', err); callback([]); });
-			},
+					.catch((err) => {
+						console.error('TomSelect load failed:', err);
+						callback([]);
+					});
+			} catch (e) {
+				console.error('TomSelect load crash:', e);
+				callback([]);
+			}
+		},
 
 			render: {
 				option(item, escape) {
@@ -736,12 +824,12 @@ const ReservationForm = {
 						? `<span style="text-decoration:line-through;color:#999;">€${escape(item.price)}</span> <strong style="color:green;">€${escape(item.sale_price)}</strong>`
 						: `€${escape(item.price)}`;
 					const meta = [];
-					if (item.code)          meta.push(`Codice: ${escapeHtml(item.code)}`);
+					if (item.code) meta.push(`Codice: ${escapeHtml(item.code)}`);
 					if (parseFloat(item.price)) meta.push(`Prezzo: ${priceHtml}`);
 					return `<div class="option" style="display:flex;align-items:center;gap:10px;">
 						${item.thumbnail ? `<img src="${item.thumbnail}" style="width:24px;height:24px;margin-right:8px;" />` : ''}
 						<div style="display:flex;flex-direction:column;">
-							<span><strong>${escapeHtml(item.name)}</strong></span>
+							<span><strong>${escape(item.name)}</strong></span>
 							<small style="color:#666;">${meta.join(' | ')}</small>
 						</div></div>`;
 				},
@@ -1117,6 +1205,7 @@ function attachReservationGlobalListeners() {
 function bootReservationForm() {
 	const formEl = document.querySelector('#form-reservation');
 	if (!formEl) return;
+	// Aspetta che AppURLs e appFetchWithToken esistano davvero (evita init random a reload)
 
 	if (!reservationBootstrapped || ReservationForm.form !== formEl) {
 		reservationBootstrapped = true;
@@ -1142,7 +1231,7 @@ setTimeout(() => bootReservationForm(), 0);
  */
 (function attachPharmaReadyListeners() {
 	const triggerReady = () => {
-		if (!dataStore?.pharma?.id) return;
+		if (!ReservationForm.getPharmaId()) return;
 
 		// Cancella il polling se attivo
 		if (ReservationForm._pharmaRetryTimer) {

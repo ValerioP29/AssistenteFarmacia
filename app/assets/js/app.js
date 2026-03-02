@@ -80,6 +80,7 @@ const AppURLs = {
 		getWellnessChallenge: () => AppURLs.api.base + '/weekly-challenge-get.php',
 		postWellnessDay: () => AppURLs.api.base + '/weekly-challenge-post.php',
 		getWellnessPoints: () => AppURLs.api.base + '/points-get.php',
+		generateVoucher: () => AppURLs.api.base + '/voucher-generate.php',
 		getQuiz: () => AppURLs.api.base + '/quiz-get.php',
 		sendQuiz: () => AppURLs.api.base + '/quiz-post.php',
 		saveQuestionary: () => AppURLs.api.base + '/questionary-post.php',

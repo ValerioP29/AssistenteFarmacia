@@ -131,8 +131,9 @@
 				</div>
 
 				<app-card id="home-booking-carousel-card">
-					<div class="home-featured-tail" aria-hidden="true"></div>
-					<div class="slider-promo-title">Consigli rapidi</div>
+					<div class="home-featured-tail" aria-hidden="true">
+						<div class="slider-promo-title">Consigli rapidi</div>
+					</div>
 					<div class="slider-promo-container" id="home-booking-carousel">
 						<button class="slider-arrow slider-arrow-left d-none" aria-label="Precedente">&#10094;</button>
 						<div class="slider-promo" role="region" aria-roledescription="carousel" aria-label="Consigli rapidi">
@@ -182,43 +183,39 @@
 					</div>
 				</app-card>
 
-				<app-card>
-					<div class="card-header ">
-						<span>Il tuo percorso benessere</span>
-						<a id="wellness-points" class="wellness-points" onclick="goTo(AppURLs.page.wellnessPoints())">
-							<span class="points-label">0 punti</span>
-							<span class="svg-icon" aria-hidden="true">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="16" height="16" fill="currentColor">
-									<path d="M320 112C434.9 112 528 205.1 528 320C528 434.9 434.9 528 320 528C205.1 528 112 434.9 112 320C112 205.1 205.1 112 320 112zM320 576C461.4 576 576 461.4 576 320C576 178.6 461.4 64 320 64C178.6 64 64 178.6 64 320C64 461.4 178.6 576 320 576zM280 400C266.7 400 256 410.7 256 424C256 437.3 266.7 448 280 448L360 448C373.3 448 384 437.3 384 424C384 410.7 373.3 400 360 400L352 400L352 312C352 298.7 341.3 288 328 288L280 288C266.7 288 256 298.7 256 312C256 325.3 266.7 336 280 336L304 336L304 400L280 400zM320 256C337.7 256 352 241.7 352 224C352 206.3 337.7 192 320 192C302.3 192 288 206.3 288 224C288 241.7 302.3 256 320 256z" />
-								</svg>
-							</span>
-						</a>
+				<app-card class="wellness-card">
+					<div class="wellness-header">
+						<span class="wellness-header__title">Benessere</span>
 					</div>
-					<div class="grid">
-						<!-- Quiz del Giorno -->
-						<a role="button" onclick="goTo(AppURLs.page.quiz())" class="grid-item quiz">
-							<img class="grid-img" src="./assets/images/icona_quiz_del_giorno.png" alt="Quiz del giorno" width="28" height="28" />
-							<span>Quiz del Giorno</span>
-						</a>
 
-						<!-- Check-up Istantanei -->
-						<a role="button" onclick="goTo(AppURLs.page.checkUpPage())" class="grid-item checkup">
-							<img class="grid-img" src="./assets/images/icona_checkup_istantanei.png" alt="Check-up" width="28" height="28" />
-							<span>Check-up Istantanei</span>
-						</a>
+					<!-- Quiz del Giorno CTA -->
+					<a role="button" class="wellness-quiz-cta" onclick="goTo(AppURLs.page.quiz())" aria-label="Vai al Questionario del giorno">
+						<span class="wellness-quiz-cta__icon" aria-hidden="true">
+						<i class="bi bi-journal-text"></i>
+						</span>
+						<div class="wellness-quiz-cta__body">
+						<span class="wellness-quiz-cta__title">Questionario del giorno</span>
+						<span class="wellness-quiz-cta__desc">2 minuti: guadagni punti. Ogni 100 punti: <strong>Voucher 10 EUR</strong>.</span>
+						</div>
+					</a>
 
-						<!-- Sfida Settimanale -->
-						<a role="button" onclick="goTo(AppURLs.page.wellnessChallenge())" class="grid-item challenge">
-							<img class="grid-img" src="./assets/images/icona_sfida_settimanale.png" alt="Sfida settimanale" width="28" height="28" />
-							<span>Sfida Settimanale</span>
-						</a>
-
-						<!-- Sondaggio -->
-						<a role="button" onclick="goTo(AppURLs.page.survey())" class="grid-item survey show-on-pharma--1 d-none">
-							<img class="grid-img" src="./assets/images/icona_sondaggio_della_settimana.png" alt="Sondaggio Benessere Settimanale" width="28" height="28" />
-							<span>Sondaggio Benessere Settimanale</span>
-						</a>
+					<!-- Verso il voucher -->
+					<div class="wellness-progress-box">
+						<div class="wellness-progress-box__top">
+						<span class="wellness-progress-box__label">Verso il voucher</span>
+						<span class="wellness-progress-box__value" id="wellness-progress-label">0/100</span>
+						</div>
+						<div class="wellness-progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Progresso verso il voucher">
+						<div class="wellness-progress-bar__fill" id="wellness-progress-fill" style="width: 0%"></div>
+						</div>
+						<p class="wellness-progress-box__hint" id="wellness-progress-hint">Ti mancano 100 punti per sbloccare 10 EUR.</p>
 					</div>
+
+					<!-- Premi e Voucher -->
+					<a role="button" class="wellness-voucher-btn" onclick="goTo(AppURLs.page.wellnessPoints())" aria-label="Vai a Premi e Voucher">
+						<i class="bi bi-award" aria-hidden="true"></i>
+						<span>Premi e Voucher</span>
+					</a>
 				</app-card>
 
 				<app-card id="featured-services-card">
@@ -237,11 +234,16 @@
 				</app-card>
 
 				<app-card>
-					<div class="card-header ">
+					<div class="card-header">
 						<span>Prodotti in promozione</span>
 						<a role="button" class="link-page" onclick="goTo(AppURLs.page.promotions())">Vedi tutti &gt;</a>
 					</div>
-					<div id="promo-list" class="grid-product"></div>
+					<div class="slider-promo-container" id="promo-carousel">
+						<button class="slider-arrow slider-arrow-left d-none" aria-label="Precedente">&#10094;</button>
+						<div class="slider-promo" id="promo-list" role="region" aria-roledescription="carousel" aria-label="Prodotti in promozione"></div>
+						<button class="slider-arrow slider-arrow-right d-none" aria-label="Successivo">&#10095;</button>
+						<div class="slider-dots"></div>
+					</div>
 				</app-card>
 
 				<app-card id="highlighted-event-card">
