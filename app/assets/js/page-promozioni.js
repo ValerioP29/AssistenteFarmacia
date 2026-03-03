@@ -1,5 +1,13 @@
 let prodotti = [];
 
+function getForcedPromoConfig() {
+	const body = document?.body;
+	const forcedTag = body?.dataset?.promoForcedTag ? body.dataset.promoForcedTag.trim() : '';
+	const forcedTitle = body?.dataset?.promoForcedTitle ? body.dataset.promoForcedTitle.trim() : '';
+	return {forcedTag, forcedTitle};
+}
+
+
 function isFeatured(item) {
 	return Number(item?.is_featured) === 1 || item?.is_featured === true;
 }
@@ -150,9 +158,11 @@ async function loadPromotions(options = {}) {
 	const {limit = null, containerId = 'promo-list'} = options;
 
 	try {
+		const {forcedTag, forcedTitle} = getForcedPromoConfig();
 		const paramsUrl = new URLSearchParams(window.location.search);
 		const tipo = paramsUrl.get('tipo');
-		const tag = paramsUrl.get('tag');
+		const queryTag = paramsUrl.get('tag');
+		const tag = forcedTag || queryTag;
 		const params = new URLSearchParams();
 
 		const isDashboard = containerId === 'promo-list';
@@ -179,7 +189,7 @@ async function loadPromotions(options = {}) {
 		}
 
 		if (!isDashboard) {
-			updatePromotionsHeading({tipo, tag: json?.data?.tag || tag, isFiltered});
+			updatePromotionsHeading({tipo, tag: json?.data?.tag || tag, isFiltered, forcedTitle});
 		}
 
 		if (!json.status || !Array.isArray(prodottiData)) {
@@ -217,7 +227,7 @@ async function loadPromotions(options = {}) {
 
 		itemsToRender.forEach((item) => {
 			const card = isDashboard ? createPromoCardDashboard(item) : createPromoCardFull(item);
-			if(tipo && isFiltered) card.classList.add('selected');
+			if ((tipo || tag) && isFiltered) card.classList.add('selected');
 			container.appendChild(card);
 		});
 
@@ -243,13 +253,13 @@ function humanizeTagLabel(value = '') {
 		.join(' ');
 }
 
-function updatePromotionsHeading({tipo = '', tag = '', isFiltered = false} = {}) {
+function updatePromotionsHeading({tipo = '', tag = '', isFiltered = false, forcedTitle = ''} = {}) {
 	const titleEl = document.getElementById('promo-title');
 	const subtitleEl = document.getElementById('promo-subtitle');
 	if (!titleEl || !subtitleEl) return;
 
 	if (tag) {
-		titleEl.textContent = `Promozioni: ${humanizeTagLabel(tag)}`;
+		titleEl.textContent = forcedTitle || `Promozioni: ${humanizeTagLabel(tag)}`;
 		subtitleEl.textContent = isFiltered
 			? 'Stai visualizzando solo i prodotti in promozione per il tag selezionato.'
 			: 'Nessun prodotto trovato per il tag selezionato.';

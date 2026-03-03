@@ -7,6 +7,7 @@
 require_once '../../config/database.php';
 require_once '../../includes/auth_middleware.php';
 require_once '../../includes/product_tags_engine.php';
+require_once '../../lib/tags_catalog.php';
 
 checkAccess(['pharmacist']);
 header('Content-Type: application/json');
@@ -52,16 +53,32 @@ try {
 
     $products = db_fetch_all($sql, $params);
 
-    $data = array_map(function ($product) {
+    $allowedTags = getAllowedCanonicalTags();
+    $suggestionPool = [];
+    foreach ($allowedTags as $tag) {
+        $suggestionPool[$tag] = true;
+    }
+
+    $data = array_map(function ($product) use (&$suggestionPool) {
         $suggestion = suggestTagsFromName((string)($product['name'] ?? ''));
+        $currentTags = normalizeTagsListCanonical(normalizeTagArray($product['tags'] ?? null));
+        $suggestedTags = normalizeTagsListCanonical($suggestion['suggested_tags'] ?? []);
+
+        foreach ($currentTags as $tag) {
+            $suggestionPool[$tag] = true;
+        }
+
+        foreach ($suggestedTags as $tag) {
+            $suggestionPool[$tag] = true;
+        }
 
         return [
             'id' => (int)$product['id'],
             'sku' => $product['sku'] !== null ? (string)$product['sku'] : null,
             'name' => (string)$product['name'],
             'image' => $product['image'] ?: null,
-            'current_tags' => normalizeTagArray($product['tags'] ?? null),
-            'suggested_tags' => $suggestion['suggested_tags'],
+            'current_tags' => $currentTags,
+            'suggested_tags' => $suggestedTags,
             'confidence' => $suggestion['confidence'],
             'matched_keywords' => $suggestion['matched_keywords'],
             'is_featured' => (int)($product['is_featured'] ?? 0),
@@ -71,6 +88,8 @@ try {
     echo json_encode([
         'success' => true,
         'count' => count($data),
+        'allowed_tags' => $allowedTags,
+        'suggestions' => array_keys($suggestionPool),
         'data' => $data,
         'meta' => [
             'pharma_id' => $pharmaId,

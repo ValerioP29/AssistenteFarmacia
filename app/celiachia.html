@@ -1,82 +1,64 @@
 <!DOCTYPE html>
 <html lang="it">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Prodotti Senza Glutine</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
-    <link rel="stylesheet" href="./assets/css/style.min.css?v=1.1.1" />
-</head>
-<body class="page-app page-celiachia loading">
-    <div id="app" class="app-container">
-        <app-header></app-header>
-        <app-goback></app-goback>
-        <app-body>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<title>Assistente Farmacia</title>
 
-            <app-card>
-                <div class="celiachia-hero">
-                    <div class="celiachia-hero__icon"><i class="bi bi-flower1"></i></div>
-                    <div>
-                        <h1 class="celiachia-hero__title">Prodotti senza glutine</h1>
-                        <p class="celiachia-hero__desc">Una selezione di prodotti adatti a celiaci e intolleranti al glutine.</p>
-                    </div>
-                </div>
-            </app-card>
+		<!-- Favicon -->
+		<link rel="icon" type="image/png" href="./assets/favicon/favicon-96x96.png" sizes="96x96" />
+		<link rel="icon" type="image/svg+xml" href="./assets/favicon/favicon.svg" />
+		<link rel="shortcut icon" href="./assets/favicon/favicon.ico" />
+		<link rel="apple-touch-icon" sizes="180x180" href="./assets/favicon/apple-touch-icon.png" />
+		<meta name="apple-mobile-web-app-title" content="Assistente" />
+		<link rel="manifest" href="./assets/favicon/site.webmanifest" />
 
-            <app-card>
-                <div id="celiachia-list" class="grid-product">
-                    <div class="text-center text-muted py-4 w-100">Caricamento prodotti...</div>
-                </div>
-            </app-card>
+		<!-- Styles -->
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
 
-        </app-body>
-        <app-footer></app-footer>
-    </div>
+		<link rel="stylesheet" href="./assets/css/style.min.css?v=1.1.1" />
+	</head>
+	<body class="page-app page-promotions page-celiachia loading" data-promo-forced-tag="celiachia" data-promo-forced-title="Celiachia">
+		<div id="app" class="app-container">
+			<app-header></app-header>
+			<app-goback></app-goback>
+			<app-body>
+				<app-card>
+					<h1 id="promo-title"></h1>
+					<p id="promo-subtitle" class="subtitle"></p>
 
-    <script type="module" src="./assets/components/layout.js?v=1.1.1"></script>
-    <script src="./assets/js/app.js?v=1.1.1"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-    document.addEventListener('appLoaded', () => {
-        const pharmaId = dataStore?.pharma?.id;
-        const list = document.getElementById('celiachia-list');
+					<div class="see-all-wrapper">
+						<button class="see-all-btn btn btn-outline-primary mb-3" onclick="goTo(AppURLs.page.promotions())">Vedi tutte le promozioni</button>
+					</div>
 
-        const url = `${AppURLs.api.productSuggestions()}?pharma_id=${pharmaId}&related_tag=celiachia&limit=20`;
+					<div id="promotions-container">
+						<div class="h5 text-center text-primary text-brand mb-3 d-none show-on-pharma--1">Promo 1+1 ​Scegli 2 prodotti BioNike, il meno caro è gratis</div>
+						<div id="promo-list-full"><!-- cards generate qui --></div>
+					</div>
 
-        appFetchWithToken(url, { method: 'GET' })
-            .then((data) => {
-                const products = data?.data?.products || data?.data?.items || data?.data || data?.products || [];
-                
-                if (!products.length) {
-                    list.innerHTML = '<p class="text-center text-muted py-4">Nessun prodotto trovato.</p>';
-                    return;
-                }
+					<div class="see-all-wrapper">
+						<button class="see-all-btn btn btn-outline-primary" onclick="goTo(AppURLs.page.promotions())">Vedi tutte le promozioni</button>
+					</div>
 
-                list.innerHTML = products.map((p) => {
-                    const img = p.image?.src || p.image || AppURLs.api.base + '/uploads/images/placeholder-product.jpg';
-                    const showDiscount = p.is_on_sale && Number(p.price_sale) < Number(p.price_regular);
-                    return `
-                    <div class="grid-item product-card">
-                        <a class="product-name" href="${AppURLs.page.promotions() + '?id=' + p.id}">
-                            <img src="${img}" alt="${escapeHtml(p.name)}" loading="lazy" />
-                        </a>
-                        <a class="product-name" href="${AppURLs.page.promotions() + '?id=' + p.id}">${escapeHtml(p.name)}</a>
-                        <div class="product-prices">
-                            ${showDiscount ? `<s>€${Number(p.price_regular).toFixed(2)}</s>` : ''}
-                            <span class="price">€${Number(showDiscount ? p.price_sale : p.price_regular).toFixed(2)}</span>
-                        </div>
-                        <button type="button" class="btn btn-primary" aria-label="Aggiungi ${escapeHtml(p.name)} al carrello">
-                            Aggiungi
-                        </button>
-                    </div>`;
-                }).join('');
-            })
-            .catch(() => {
-                list.innerHTML = '<p class="text-center text-muted py-4">Errore nel caricamento.</p>';
-            });
-    });
-    </script>
-</body>
+					<div class="custom_request__wrapper">
+						<strong>Non trovi quello che cerchi?</strong>
+						<p>Scrivici qui per ricevere un consiglio personalizzato dal nostro farmacista!</p>
+						<textarea class="form-control" name="custom_request" placeholder="Scrivi qui la tua richiesta..."></textarea>
+						<button class="cta-submit">RICHIEDI SUBITO</button>
+					</div>
+				</app-card>
+			</app-body>
+			<app-cart class="d-none"></app-cart>
+			<app-footer></app-footer>
+		</div>
+		<script type="module" src="./assets/components/layout.js?v=1.1.1"></script>
+		<script type="text/javascript" src="./assets/js/app.js?v=1.1.1"></script>
+		<script src="./assets/js/cart.js?v=1.1.1"></script>
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+		<script src="./assets/js/smartAIcontext.js?v=1.1.1"></script>
+		<script src="./assets/js/page-promozioni.js?v=1.1.1"></script>
+	</body>
 </html>

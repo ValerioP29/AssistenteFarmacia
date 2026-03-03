@@ -7,6 +7,7 @@
 require_once '../../config/database.php';
 require_once '../../includes/auth_middleware.php';
 require_once '../../includes/image_manager.php';
+require_once '../../lib/tags_catalog.php';
 
 // Verifica accesso farmacista
 checkAccess(['pharmacist']);
@@ -48,7 +49,7 @@ function normalizeProductTagsInput($rawTags): ?array {
             continue;
         }
 
-        $tagValue = strtolower(trim((string)$tag));
+        $tagValue = canonicalizeTagValue($tag);
         if ($tagValue === '') {
             continue;
         }
@@ -64,6 +65,8 @@ function normalizeProductTagsInput($rawTags): ?array {
 }
 
 try {
+    $responseWarnings = [];
+
     // Ottieni farmacia corrente
     $pharmacy = getCurrentPharmacy();
     $pharmacyId = $pharmacy['id'] ?? 0;
@@ -99,6 +102,34 @@ try {
     $isFeatured = $isFeaturedInputProvided ? parseBoolishValue($_POST['is_featured']) : null;
     $tagsInputProvided = array_key_exists('tags', $_POST);
     $normalizedTags = $tagsInputProvided ? normalizeProductTagsInput($_POST['tags']) : null;
+    $allowedTagsSet = array_fill_keys(getAllowedCanonicalTags(), true);
+    $unknownTags = [];
+
+    if ($tagsInputProvided && is_array($normalizedTags)) {
+        foreach ($normalizedTags as $tag) {
+            if (!isset($allowedTagsSet[$tag])) {
+                $unknownTags[] = $tag;
+            }
+        }
+        $unknownTags = array_values(array_unique($unknownTags));
+    }
+
+    $strictFlagRaw = strtolower(trim((string)getenv('TAGS_STRICT')));
+    $strictTags = in_array($strictFlagRaw, ['1', 'true', 'yes', 'on'], true);
+    if (!empty($unknownTags)) {
+        if ($strictTags) {
+            http_response_code(422);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Sono presenti tag non consentiti',
+                'unknown_tags' => $unknownTags,
+            ]);
+            exit;
+        }
+
+        $responseWarnings[] = 'Tag non presenti nel catalogo ufficiale: ' . implode(', ', $unknownTags);
+    }
+
     // Campo presente => replace esplicito; [] / stringa vuota devono svuotare a [] e non preservare.
     if ($tagsInputProvided) {
         $tagsForDb = json_encode($normalizedTags ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -457,11 +488,17 @@ try {
         $message = 'Prodotto creato con successo';
     }
     
-    echo json_encode([
+    $responsePayload = [
         'success' => true,
         'message' => $message,
         'product_id' => $productId
-    ]);
+    ];
+
+    if (!empty($responseWarnings)) {
+        $responsePayload['warnings'] = $responseWarnings;
+    }
+
+    echo json_encode($responsePayload);
     
 } catch (Exception $e) {
     http_response_code(500);
