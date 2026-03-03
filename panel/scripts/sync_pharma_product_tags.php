@@ -2,17 +2,34 @@
 /**
  * Sync tags prodotti farmacia da catalogo globale + motore regole nome.
  *
+ * Policy sicurezza (default): preserve-manual + dry-run.
+ * - preserve-manual: non rimuove i tag già presenti; aggiunge solo auto-tag mancanti.
+ * - dry-run di default: senza --apply non scrive su DB.
+ * - Logga il diff per record (added / preserved / before / after).
+ * - Usa --apply per applicare gli update reali.
+ * - Usa --dry-run=0 solo insieme a --apply se vuoi forzare esplicitamente.
+ *
  * Uso:
- * php panel/scripts/sync_pharma_product_tags.php --pharma_id=1 [--limit=1000] [--dry-run=1]
+ * php panel/scripts/sync_pharma_product_tags.php --pharma_id=1 [--limit=1000] [--apply] [--dry-run=1]
  */
 
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/product_tags_engine.php';
 
-$options = getopt('', ['pharma_id::', 'limit::', 'dry-run::']);
+$options = getopt('', ['pharma_id::', 'limit::', 'dry-run::', 'apply::']);
 $pharmaId = isset($options['pharma_id']) ? (int)$options['pharma_id'] : 0;
 $limit = isset($options['limit']) ? max(1, (int)$options['limit']) : 5000;
-$dryRun = in_array((string)($options['dry-run'] ?? '0'), ['1', 'true', 'yes', 'on'], true);
+
+$applyFlagRaw = (string)($options['apply'] ?? '');
+$applyEnabled = $applyFlagRaw !== ''
+	? in_array(strtolower($applyFlagRaw), ['1', 'true', 'yes', 'on'], true)
+	: array_key_exists('apply', $options);
+
+// default ON: dry-run unless --apply is provided
+$dryRun = !$applyEnabled;
+if (array_key_exists('dry-run', $options)) {
+	$dryRun = in_array((string)$options['dry-run'], ['1', 'true', 'yes', 'on'], true);
+}
 
 if ($pharmaId <= 0) {
 	fwrite(STDERR, "Parametro obbligatorio: --pharma_id=<id>\n");
@@ -79,34 +96,65 @@ try {
 	$skipped = 0;
 	$taggedFromCategory = 0;
 	$taggedFromName = 0;
+	$changes = [];
 
 	foreach ($rows as $row) {
 		$currentTags = normalizeTagArray($row['tags'] ?? null);
-		$categoryTags = mapGlobalCategoryToTags($row['category'] ?? null);
+		$categoryTags = array_map('normalizeRelatedTag', mapGlobalCategoryToTags($row['category'] ?? null));
 		$nameSuggestion = suggestTagsFromName((string)($row['name'] ?? ''));
-		$nameTags = array_values(array_filter($nameSuggestion['suggested_tags'] ?? [], function ($tag) {
-			return normalizeRelatedTag((string)$tag) !== 'altro';
+		$nameTags = array_values(array_filter(array_map('normalizeRelatedTag', $nameSuggestion['suggested_tags'] ?? []), function ($tag) {
+			return $tag !== 'altro' && $tag !== '';
 		}));
 
-		$merged = [];
-		foreach (array_merge($currentTags, $categoryTags, $nameTags) as $tag) {
-			$tag = normalizeRelatedTag((string)$tag);
-			if ($tag === '' || $tag === 'altro') continue;
-			$merged[$tag] = true;
+		// preserve-manual: conserva SEMPRE i tag già presenti
+		$preserved = [];
+		foreach ($currentTags as $tag) {
+			$normTag = normalizeRelatedTag((string)$tag);
+			if ($normTag === '') continue;
+			$preserved[$normTag] = true;
 		}
-		$finalTags = array_keys($merged);
+
+		$autoPool = [];
+		foreach (array_merge($categoryTags, $nameTags) as $tag) {
+			if ($tag === '' || $tag === 'altro') continue;
+			$autoPool[$tag] = true;
+		}
+
+		$before = array_keys($preserved);
+		$finalMap = $preserved;
+		$added = [];
+		foreach (array_keys($autoPool) as $candidate) {
+			if (!isset($finalMap[$candidate])) {
+				$finalMap[$candidate] = true;
+				$added[] = $candidate;
+			}
+		}
+		$after = array_keys($finalMap);
 
 		if (!empty($categoryTags)) $taggedFromCategory++;
 		if (!empty($nameTags)) $taggedFromName++;
 
-		$same = json_encode($currentTags) === json_encode($finalTags);
-		if ($same) {
+		if (empty($added)) {
 			$skipped++;
 			continue;
 		}
 
+		$changes[] = [
+			'id' => (int)$row['id'],
+			'name' => (string)($row['name'] ?? ''),
+			'before' => $before,
+			'added' => $added,
+			'preserved' => $before,
+			'after' => $after,
+		];
+
 		if (!$dryRun) {
-			db()->update('jta_pharma_prods', ['tags' => !empty($finalTags) ? json_encode($finalTags, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null], 'id = ? AND pharma_id = ?', [(int)$row['id'], $pharmaId]);
+			db()->update(
+				'jta_pharma_prods',
+				['tags' => !empty($after) ? json_encode($after, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null],
+				'id = ? AND pharma_id = ?',
+				[(int)$row['id'], $pharmaId]
+			);
 		}
 
 		$updated++;
@@ -116,12 +164,14 @@ try {
 		'success' => true,
 		'pharma_id' => $pharmaId,
 		'limit' => $limit,
+		'mode' => $dryRun ? 'dry-run (default preserve-manual)' : 'apply (preserve-manual)',
 		'dry_run' => $dryRun,
 		'total_rows' => count($rows),
 		'updated' => $updated,
 		'skipped' => $skipped,
 		'tagged_from_global_category' => $taggedFromCategory,
 		'tagged_from_name_rules' => $taggedFromName,
+		'changes' => $changes,
 	], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n";
 } catch (Exception $e) {
 	fwrite(STDERR, 'Errore sync tags: ' . $e->getMessage() . "\n");

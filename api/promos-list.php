@@ -23,8 +23,35 @@ if( $limit < 1 ) $limit = 1;
 if( $limit > $limit_default ) $limit = $limit_default;
 
 $tipo   = $_GET['tipo'] ?? null;
+$tag    = trim((string)($_GET['tag'] ?? ''));
 $pharma = getMyPharma();
 $is_really_filtered = FALSE;
+
+function normalize_promo_tags($rawTags) {
+	if ($rawTags === null) return [];
+	if (is_array($rawTags)) {
+		$tags = $rawTags;
+	} else {
+		$rawTags = trim((string)$rawTags);
+		if ($rawTags === '') return [];
+		$decoded = json_decode($rawTags, true);
+		if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+			$tags = $decoded;
+		} else {
+			$tags = explode(',', $rawTags);
+		}
+	}
+
+	$normalized = [];
+	foreach ($tags as $tagValue) {
+		if (is_array($tagValue) || is_object($tagValue)) continue;
+		$clean = strtolower(trim((string)$tagValue));
+		if ($clean === '') continue;
+		$normalized[$clean] = true;
+	}
+
+	return array_keys($normalized);
+}
 
 $products = ProductsModel::findPromosByPharma( $pharma['id'], $limit );
 
@@ -51,6 +78,15 @@ if (isset($tipo) ) {
 	}
 }
 
+if ($tag !== '') {
+	$normalizedTag = strtolower(str_replace(['-', ' '], '_', $tag));
+	$products = array_values(array_filter($products, function($product) use ($normalizedTag) {
+		$tags = normalize_promo_tags($product['tags'] ?? null);
+		return in_array($normalizedTag, $tags, true);
+	}));
+	$is_really_filtered = TRUE;
+}
+
 echo json_encode([
 	'code'    => 200,
 	'status'  => TRUE,
@@ -58,5 +94,6 @@ echo json_encode([
 	'data'    => [
 		'products' => array_map('normalize_product_data', $products),
 		'filtered' => $is_really_filtered ? TRUE : FALSE,
+		'tag' => $tag !== '' ? strtolower(str_replace(['-', ' '], '_', $tag)) : null,
 	],
 ]);
