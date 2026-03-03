@@ -737,201 +737,195 @@ const ReservationForm = {
 	},
 
 	initTomSelect() {
-		this.ensureDomRefs();
-		if (!window.TomSelect) return;
-		const el = document.querySelector('#product-name');
-		if (!el) return;
+    this.ensureDomRefs();
+    if (!window.TomSelect) return;
 
-		if (this._tsElRef && this._tsElRef !== el) this.destroyTomSelect();
-		if (!el.tomselect && this.ts) this.destroyTomSelect();
-		if (el.tomselect) { this.ts = el.tomselect; this._tsElRef = el; return; }
+    const el = document.querySelector('#product-name');
+    if (!el) return;
 
-		this.ts = new TomSelect('#product-name', {
-			maxItems: 1,
-			dropdownParent: 'body',
-			valueField: 'id',
-			labelField: 'name',
-			searchField: ['name', 'code'],
-			
-			minChars: 3,
-			loadThrottle: 300,
-			preload: false,
-			shouldLoad: (query) => query.length >= 3,
+    if (el.tomselect) {
+        try { el.tomselect.destroy(); } catch(e) {}
+    }
+    this.ts = null;
+    this._tsElRef = null;
 
-			load(query, callback) {
-				try {
-					if (!query || query.length < 3) return callback([]);
+    this.ts = new TomSelect('#product-name', {
+        maxItems:       1,
+        dropdownParent: 'body',
+        valueField:     'id',
+        labelField:     'name',
+        searchField:    ['name', 'code'],
+        options:        [],
+        items:          [],
+        persist:        false,
+        loadThrottle:   300,
 
-				const pharmaId = ReservationForm.getPharmaId();
-				if (!pharmaId) {
-					ReservationForm._schedulePharmaRetry(ReservationForm.getSubOrderChecked());
-					return callback([]);
-				}
+        load: (query, callback) => {
+			if (!query || query.length < 3) return callback([]);
 
-				// URL robusto: anche se productSuggestions() ritorna path relativo
-				const endpoint = (window.AppURLs?.api?.productSuggestions?.() ?? '');
-				const url = new URL(endpoint, window.location.origin);
-				url.searchParams.set('search', query);
-				url.searchParams.set('pharma_id', pharmaId);
-				url.searchParams.set('limit', '20');
-
-				appFetchWithToken(url.toString(), { method: 'GET' })
-					.then(async (resp) => {
-						// appFetchWithToken può tornare JSON o Response: gestiamo entrambi
-						const data = (resp && typeof resp.json === 'function') ? await resp.json() : resp;
-
-						const rawList = ReservationForm.extractProductsList(data);
-						if (!Array.isArray(rawList) || rawList.length === 0) return callback([]);
-
-						callback(rawList.map((p) => ({
-							id:        p.id || p.product_id || p.prod_id,
-							name:      p.name || p.label || p.product_name || '',
-							code:      p.sku || p.code || 'N/A',
-							tag:       p.tag || '',
-							tags:      p.tags || p.related_tags || p.tag || null,
-							category:  p.category || p.category_name || null,
-							price:     (p.price ?? 'N/A'),
-							sale_price: (p.sale_price ?? null),
-							quantity:  p.num_items || '',
-							thumbnail: ReservationForm.resolveRelatedProductImage(p.image || ''),
-						})));
-					})
-					.catch((err) => {
-						console.error('TomSelect load failed:', err);
-						callback([]);
-					});
-			} catch (e) {
-				console.error('TomSelect load crash:', e);
-				callback([]);
+			const pharmaId = this.getPharmaId();
+			if (!pharmaId) {
+				this._schedulePharmaRetry(this.getSubOrderChecked());
+				return callback([]);
 			}
+
+			// Costruisci la URL come stringa diretta invece di usare searchParams
+			const base = AppURLs.api.productSuggestions();
+			const fullUrl = `${base}?search=${encodeURIComponent(query)}&pharma_id=${pharmaId}&limit=20`;
+			
+			console.log('URL:', fullUrl); // DEBUG
+
+			appFetchWithToken(fullUrl, { method: 'GET' })
+				.then((data) => {
+					console.log('API risposta:', data);
+					const rawList = this.extractProductsList(data);
+					if (!Array.isArray(rawList) || !rawList.length) return callback([]);
+					callback(rawList.map((p) => ({
+						id:         p.id || p.product_id || p.prod_id,
+						name:       p.name || p.label || p.product_name || '',
+						code:       p.sku || p.code || 'N/A',
+						tag:        p.tag || '',
+						tags:       p.tags || p.related_tags || p.tag || null,
+						category:   p.category || p.category_name || null,
+						price:      p.price ?? 'N/A',
+						sale_price: p.sale_price ?? null,
+						quantity:   p.num_items || '',
+						thumbnail:  this.resolveRelatedProductImage(p.image || ''),
+					})));
+				})
+				.catch((err) => { console.error('fetch fallita:', err); callback([]); });
 		},
+        create: (input) => {
+            const prod = {
+                id:         input,
+                name:       input,
+                code:       'NUOVO',
+                thumbnail:  AppURLs.api.base + '/uploads/images/placeholder-product.jpg',
+                price:      null,
+                quantity:   null,
+                sale_price: null,
+            };
+            document.dispatchEvent(new CustomEvent('productSuggestionCreated', { detail: prod }));
+            return prod;
+        },
 
-			render: {
-				option(item, escape) {
-					if (item.code === 'NUOVO') {
-						return `<div class="option" style="display:flex;align-items:center;gap:10px;">
-							<div style="display:flex;flex-direction:column;">
-								<span><strong>${escape(item.name)}</strong> <span class="badge bg-warning text-dark">Nuovo</span></span>
-								<small style="color:#999;">Prodotto inserito manualmente</small>
-							</div></div>`;
-					}
-					const priceHtml = item.sale_price
-						? `<span style="text-decoration:line-through;color:#999;">€${escape(item.price)}</span> <strong style="color:green;">€${escape(item.sale_price)}</strong>`
-						: `€${escape(item.price)}`;
-					const meta = [];
-					if (item.code) meta.push(`Codice: ${escapeHtml(item.code)}`);
-					if (parseFloat(item.price)) meta.push(`Prezzo: ${priceHtml}`);
-					return `<div class="option" style="display:flex;align-items:center;gap:10px;">
-						${item.thumbnail ? `<img src="${item.thumbnail}" style="width:24px;height:24px;margin-right:8px;" />` : ''}
-						<div style="display:flex;flex-direction:column;">
-							<span><strong>${escape(item.name)}</strong></span>
-							<small style="color:#666;">${meta.join(' | ')}</small>
-						</div></div>`;
-				},
-				option_create(data, escape) {
-					return `<div class="create">
-						<div class="label-not-found">Non è presente?</div>
-						<div class="badge rounded-pill text-bg-success">Aggiungi lo stesso</div>
-					</div>`;
-				},
-				item(item, escape) {
-					if (item.code === 'NUOVO') {
-						return `<div><strong>${escape(item.name)}</strong> <span class="badge bg-warning text-dark">Nuovo</span></div>`;
-					}
-					const priceHtml = item.sale_price
-						? `<span style="text-decoration:line-through;color:#999;">€${item.price}</span> <strong style="color:green;">€${item.sale_price}</strong>`
-						: `<strong>€${item.price || 'N/A'}</strong>`;
-					return `<div><strong>${escape(item.name)}</strong> — <small>Cod: ${escape(item.code)} | ${priceHtml}</small></div>`;
-				},
-			},
+        render: {
+            option(item, escape) {
+                if (item.code === 'NUOVO') {
+                    return `<div class="option" style="display:flex;align-items:center;gap:10px;">
+                        <div style="display:flex;flex-direction:column;">
+                            <span><strong>${escape(item.name)}</strong> <span class="badge bg-warning text-dark">Nuovo</span></span>
+                            <small style="color:#999;">Prodotto inserito manualmente</small>
+                        </div></div>`;
+                }
+                const priceHtml = item.sale_price
+                    ? `<span style="text-decoration:line-through;color:#999;">€${escape(String(item.price))}</span> <strong style="color:green;">€${escape(String(item.sale_price))}</strong>`
+                    : `€${escape(String(item.price ?? ''))}`;
+                const meta = [];
+                if (item.code) meta.push(`Codice: ${escapeHtml(item.code)}`);
+                if (parseFloat(item.price)) meta.push(`Prezzo: ${priceHtml}`);
+                return `<div class="option" style="display:flex;align-items:center;gap:10px;">
+                    ${item.thumbnail ? `<img src="${item.thumbnail}" style="width:24px;height:24px;margin-right:8px;" />` : ''}
+                    <div style="display:flex;flex-direction:column;">
+                        <span><strong>${escape(item.name)}</strong></span>
+                        <small style="color:#666;">${meta.join(' | ')}</small>
+                    </div></div>`;
+            },
+            option_create(data, escape) {
+                return `<div class="create">
+                    <div class="label-not-found">Non è presente?</div>
+                    <div class="badge rounded-pill text-bg-success">Aggiungi lo stesso</div>
+                </div>`;
+            },
+            item(item, escape) {
+                if (item.code === 'NUOVO') {
+                    return `<div><strong>${escape(item.name)}</strong> <span class="badge bg-warning text-dark">Nuovo</span></div>`;
+                }
+                const priceHtml = item.sale_price
+                    ? `<span style="text-decoration:line-through;color:#999;">€${item.price}</span> <strong style="color:green;">€${item.sale_price}</strong>`
+                    : `<strong>€${item.price || 'N/A'}</strong>`;
+                return `<div><strong>${escape(item.name)}</strong> — <small>Cod: ${escape(item.code)} | ${priceHtml}</small></div>`;
+            },
+        },
 
-			onChange: (value) => {
-				const ts = this.getTs();
-				const item = ts?.options?.[value];
-				const detailsDiv = document.querySelector('#product-details');
-				const tsContainer = ts?.control_input?.closest('.form-group--ts')?.querySelector('.ts-container');
+        onChange: (value) => {
+            const ts = this.getTs();
+            const item = ts?.options?.[value];
+            const detailsDiv = document.querySelector('#product-details');
+            const tsContainer = ts?.control_input?.closest('.form-group--ts')?.querySelector('.ts-container');
 
-				detailsDiv && (detailsDiv.innerHTML = '');
+            if (detailsDiv) detailsDiv.innerHTML = '';
 
-				if (item) {
-					if (!item.thumbnail)
-						item.thumbnail = AppURLs.api.base + '/uploads/images/placeholder-product.jpg';
+            if (item) {
+                if (!item.thumbnail)
+                    item.thumbnail = AppURLs.api.base + '/uploads/images/placeholder-product.jpg';
 
-					this.currProd       = item;
-					this.selectedProduct = this.normalizeProductForSelection(item);
+                this.currProd        = item;
+                this.selectedProduct = this.normalizeProductForSelection(item);
+                this.refreshSuggestionsFromSelectedProduct(this.selectedProduct, this.getSubOrderChecked());
+                tsContainer?.classList.add('d-none');
 
-					// Aggiorna i suggerimenti in base al prodotto selezionato
-					this.refreshSuggestionsFromSelectedProduct(this.selectedProduct, this.getSubOrderChecked());
+                const isCustom = item.code === 'NUOVO';
+                if (isCustom) {
+                    detailsDiv.innerHTML = `
+                        <div class="selected-product-preview">
+                            <div class="product-info">
+                                <p><strong>${item.name}</strong> <span class="badge bg-warning text-dark">Nuovo</span></p>
+                                <p><small>Prodotto inserito manualmente. Prezzo e codice non disponibili.</small></p>
+                            </div>
+                            <button class="btn btn-outline-danger btn-remove" type="button"
+                                onclick="ReservationForm.deselectProductSelected();">✕</button>
+                        </div>`;
+                } else {
+                    const priceHtml = item.sale_price
+                        ? `<span style="text-decoration:line-through;color:#999;">€${item.price}</span> <strong style="color:green;">€${item.sale_price}</strong>`
+                        : `<strong>€${item.price || 'N/A'}</strong>`;
+                    const meta = [];
+                    if (item.name)  meta.push(escapeHtml(item.name));
+                    if (item.code)  meta.push(`Codice: ${escapeHtml(item.code)}`);
+                    if (parseFloat(item.price)) meta.push(`Prezzo: ${priceHtml}`);
+                    detailsDiv.innerHTML = `
+                        <div class="selected-product-preview">
+                            ${item.thumbnail ? `<img src="${item.thumbnail}" alt="immagine prodotto" />` : ''}
+                            <div class="product-info">${meta.map((m) => `<p>${m}</p>`).join('')}</div>
+                            <button class="btn btn-outline-danger btn-remove" type="button"
+                                onclick="ReservationForm.deselectProductSelected();">✕</button>
+                        </div>`;
+                }
+            } else {
+                this.currProd        = null;
+                this.selectedProduct = null;
+                tsContainer?.classList.remove('d-none');
+                if (!this._suppressRelatedClear) {
+                    this.loadRelatedProducts({ tag: '', seedName: '' }, this.getSubOrderChecked());
+                }
+            }
+        },
 
-					tsContainer?.classList.add('d-none');
+        onItemAdd: (value) => {
+            const item = this.getTs()?.options?.[value];
+            if (!item) return;
+            this.selectedProduct = this.normalizeProductForSelection(item);
+        },
 
-					const isCustom = item.code === 'NUOVO';
-					if (isCustom) {
-						detailsDiv.innerHTML = `
-							<div class="selected-product-preview">
-								<div class="product-info">
-									<p><strong>${item.name}</strong> <span class="badge bg-warning text-dark">Nuovo</span></p>
-									<p><small>Prodotto inserito manualmente. Prezzo e codice non disponibili.</small></p>
-								</div>
-								<button class="btn btn-outline-danger btn-remove" type="button"
-									onclick="ReservationForm.deselectProductSelected();">✕</button>
-							</div>`;
-					} else {
-						const priceHtml = item.sale_price
-							? `<span style="text-decoration:line-through;color:#999;">€${item.price}</span> <strong style="color:green;">€${item.sale_price}</strong>`
-							: `<strong>€${item.price || 'N/A'}</strong>`;
-						const meta = [];
-						if (item.name)  meta.push(escapeHtml(item.name));
-						if (item.code)  meta.push(`Codice: ${escapeHtml(item.code)}`);
-						if (parseFloat(item.price)) meta.push(`Prezzo: ${priceHtml}`);
-						detailsDiv.innerHTML = `
-							<div class="selected-product-preview">
-								${item.thumbnail ? `<img src="${item.thumbnail}" alt="immagine prodotto" />` : ''}
-								<div class="product-info">${meta.map((m) => `<p>${m}</p>`).join('')}</div>
-								<button class="btn btn-outline-danger btn-remove" type="button"
-									onclick="ReservationForm.deselectProductSelected();">✕</button>
-							</div>`;
-					}
-				} else {
-					// Prodotto deselezionato manualmente
-					this.currProd       = null;
-					this.selectedProduct = null;
-					tsContainer?.classList.remove('d-none');
+        onClear: () => {
+            this.selectedProduct = null;
+            if (!this._suppressRelatedClear) {
+                this.loadRelatedProducts({ tag: '', seedName: '' }, this.getSubOrderChecked());
+            }
+        },
 
-					// Ricarica suggerimenti di default solo se non stiamo facendo un addProduct
-					if (!this._suppressRelatedClear) {
-						this.loadRelatedProducts({ tag: '', seedName: '' }, this.getSubOrderChecked());
-					}
-				}
-			},
+        onItemRemove: () => {
+            if ((this.getTs()?.items?.length || 0) > 0) return;
+            this.selectedProduct = null;
+            if (!this._suppressRelatedClear) {
+                this.loadRelatedProducts({ tag: '', seedName: '' }, this.getSubOrderChecked());
+            }
+        },
+    });
 
-			onItemAdd: (value) => {
-				const item = this.getTs()?.options?.[value];
-				if (!item) return;
-				this.selectedProduct = this.normalizeProductForSelection(item);
-			},
-
-			onClear: () => {
-				this.selectedProduct = null;
-				// Ricarica i default invece di svuotare la lista, a meno che non
-				// stiamo sopprimendo il clear (durante un addProduct da suggerimento)
-				if (!this._suppressRelatedClear) {
-					this.loadRelatedProducts({ tag: '', seedName: '' }, this.getSubOrderChecked());
-				}
-			},
-
-			onItemRemove: () => {
-				if ((this.getTs()?.items?.length || 0) > 0) return;
-				this.selectedProduct = null;
-				if (!this._suppressRelatedClear) {
-					this.loadRelatedProducts({ tag: '', seedName: '' }, this.getSubOrderChecked());
-				}
-			},
-		});
-
-		this._tsElRef = el;
-	},
-
+    this._tsElRef = el;
+},
 	// ─────────────────────────────────────────────
 	// CARRELLO
 	// ─────────────────────────────────────────────
@@ -1214,10 +1208,8 @@ function bootReservationForm() {
 	ReservationForm.init();
 }
 
-document.addEventListener('appLoaded',     () => bootReservationForm());
-document.addEventListener('DOMContentLoaded', () => bootReservationForm());
-setTimeout(() => bootReservationForm(), 0);
-
+// Una sola chiamata, quando l'app è pronta
+document.addEventListener('appLoaded', () => bootReservationForm());
 /**
  * Listener per eventi che segnalano che app.js ha terminato di caricare
  * i dati della farmacia. Nomi comuni — uno di questi sarà quello giusto.
