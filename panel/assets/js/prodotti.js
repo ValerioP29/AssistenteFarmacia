@@ -11,6 +11,7 @@ let currentFilters = {};
 let productToDelete = null;
 let selectedGlobalProduct = null;
 let cachedTagSuggestions = [];
+let allowedTagsSet = null;
 
 // Inizializzazione
 document.addEventListener('DOMContentLoaded', function() {
@@ -394,6 +395,18 @@ function handleProductSubmit(e) {
         // Non modificato: backend preserva i tags esistenti.
         formData.delete('tags');
     } else {
+        if (!allowedTagsSet) {
+            console.warn('Allowed tags non disponibili: procedo senza validazione whitelist lato UI.');
+        } else {
+            const unknownTags = normalizedTags.filter((tag) => !allowedTagsSet.has(tag));
+            if (unknownTags.length > 0) {
+                const confirmation = window.confirm(`Stai creando nuovi tag non presenti nella lista: ${unknownTags.join(', ')}. Confermi?`);
+                if (!confirmation) {
+                    return;
+                }
+            }
+        }
+
         // Modificato (anche a []): applica replace lato backend.
         formData.set('tags', JSON.stringify(normalizedTags));
     }
@@ -437,6 +450,9 @@ function handleProductSubmit(e) {
     .then(data => {
         if (data.success) {
             showAlert(data.message, 'success');
+            if (Array.isArray(data.warnings) && data.warnings.length > 0) {
+                showAlert(data.warnings.join(' | '), 'warning');
+            }
             bootstrap.Modal.getInstance(document.getElementById('productModal')).hide();
             loadProducts();
         } else {
@@ -676,7 +692,10 @@ function normalizeTagValue(tag) {
     return String(tag || '')
         .trim()
         .toLowerCase()
-        .replace(/\s+/g, '_');
+        .replace(/[-\s]+/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/[^a-z0-9_]/g, '')
+        .replace(/^_+|_+$/g, '');
 }
 
 function parseTagsInput(raw) {
@@ -746,12 +765,25 @@ function loadTagSuggestions() {
     fetch(`api/pharma-products/tags-suggest.php?pharma_id=${pharmaId}&limit=250`)
         .then((response) => response.json())
         .then((data) => {
-            if (!data.success || !Array.isArray(data.data)) return;
+            if (!data.success) return;
+
+            const allowedTags = Array.isArray(data.allowed_tags)
+                ? data.allowed_tags.map(normalizeTagValue).filter(Boolean)
+                : [];
+            allowedTagsSet = allowedTags.length ? new Set(allowedTags) : null;
+
             const pool = new Set();
-            data.data.forEach((item) => {
-                (item.current_tags || []).forEach((tag) => pool.add(normalizeTagValue(tag)));
-                (item.suggested_tags || []).forEach((tag) => pool.add(normalizeTagValue(tag)));
-            });
+            const apiSuggestions = Array.isArray(data.suggestions) ? data.suggestions : [];
+            apiSuggestions.forEach((tag) => pool.add(normalizeTagValue(tag)));
+
+            if (Array.isArray(data.data)) {
+                data.data.forEach((item) => {
+                    (item.current_tags || []).forEach((tag) => pool.add(normalizeTagValue(tag)));
+                    (item.suggested_tags || []).forEach((tag) => pool.add(normalizeTagValue(tag)));
+                });
+            }
+
+            allowedTags.forEach((tag) => pool.add(tag));
             cachedTagSuggestions = Array.from(pool).filter(Boolean).sort();
 
             const list = document.getElementById('productTagsSuggestions');
@@ -764,6 +796,7 @@ function loadTagSuggestions() {
             });
         })
         .catch((error) => {
+            allowedTagsSet = null;
             console.warn('Tags suggest non disponibile:', error);
         });
 }

@@ -424,6 +424,22 @@ document.addEventListener('appLoaded', () => {
 		}, intervalDuration);
 	}
 
+
+	function bindPromoTagLinks() {
+		document.querySelectorAll('[data-promo-tag], [data-tag]').forEach((el) => {
+			if (el.dataset.promoTagBound === '1') return;
+			el.dataset.promoTagBound = '1';
+
+			el.addEventListener('click', () => {
+				const tag = String(el.dataset.promoTag || el.dataset.tag || '').trim();
+				if (!tag) return;
+				goTo(`${AppURLs.page.promotions()}?tag=${encodeURIComponent(tag)}`);
+			});
+		});
+	}
+
+	bindPromoTagLinks();
+
 	(function promoSliderModule() {
 		const promoRoots = document.querySelectorAll('.slider-promo-container:not(#featured-services)');
 		promoRoots.forEach((promoRoot) => {

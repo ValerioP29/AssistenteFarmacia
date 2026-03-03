@@ -33,20 +33,14 @@ const ReservationForm = {
 	selectedProduct: null,
 	sending: false,
 
-	// Tutti i tag disponibili — allineati con PHP _related_tags.php e HTML rx-select
+	// Dizionario locale categorie/consigli: value canonico (tag), label umana.
 	relatedTagsPreset: [
-		{ value: 'dolore_febbre',       label: 'Dolore / Febbre' },
-		{ value: 'raffreddore_influenza', label: 'Raffreddore / Influenza' },
-		{ value: 'gola',                label: 'Gola' },
-		{ value: 'tosse',               label: 'Tosse' },
-		{ value: 'naso',                label: 'Naso' },
-		{ value: 'gastro',              label: 'Gastro' },
-		{ value: 'occhi',               label: 'Occhi' },
-		{ value: 'igiene_orale',        label: 'Igiene orale' },
-		{ value: 'vitamine_integratori', label: 'Vitamine / Integratori' },
-		{ value: 'dermocosmesi',        label: 'Dermocosmesi' },
-		{ value: 'bambino',             label: 'Bambino' },
-		{ value: 'medicazione',         label: 'Medicazione' },
+		{ value: '', label: 'Seleziona una categoria' },
+		{ value: 'dolore_febbre', label: 'Dolore e febbre' },
+		{ value: 'gastro', label: 'Gastro' },
+		{ value: 'dermocosmesi', label: 'Dermocosmesi' },
+		{ value: 'vitamine_integratori', label: 'Vitamine e integratori' },
+		{ value: 'bambino', label: 'Bambino' },
 	],
 
 	/** Stato per i due blocchi suggerimenti: 0 = senza ricetta, 1 = con ricetta */
@@ -131,6 +125,34 @@ const ReservationForm = {
 		this.selectedProduct = null;
 		this._tsElRef = null;
 	},
+
+	canonicalizeTagValue(rawTag = '') {
+		return String(rawTag || '')
+			.trim()
+			.toLowerCase()
+			.replace(/[-\s]+/g, '_')
+			.replace(/_+/g, '_')
+			.replace(/[^a-z0-9_]/g, '')
+			.replace(/^_+|_+$/g, '');
+	},
+
+	isAllowedRelatedTag(tag = '') {
+		const canonical = this.canonicalizeTagValue(tag);
+		if (!canonical) return false;
+		return this.relatedTagsPreset.some((entry) => entry.value === canonical);
+	},
+
+	populateRelatedTagSelect(selectEl) {
+		if (!selectEl) return;
+		selectEl.innerHTML = '';
+		this.relatedTagsPreset.forEach(({ value, label }) => {
+			const opt = document.createElement('option');
+			opt.value = value;
+			opt.textContent = label;
+			selectEl.appendChild(opt);
+		});
+	},
+
 
 	init() {
 		const { ok, formChanged } = this.ensureDomRefs();
@@ -290,27 +312,22 @@ const ReservationForm = {
 	// ─────────────────────────────────────────────
 
 	initRelatedProducts() {
-		// Popola la select senza-ricetta con tutti i tag
 		const selectNoRx = document.querySelector('#related-tag-select');
-		if (selectNoRx && selectNoRx.options.length <= 1) {
-			this.relatedTagsPreset.forEach(({ value, label }) => {
-				const opt = document.createElement('option');
-				opt.value = value;
-				opt.textContent = label;
-				selectNoRx.appendChild(opt);
-			});
-		}
+		const selectRx = document.querySelector('#related-seed-tag-prescription');
+
+		this.populateRelatedTagSelect(selectNoRx);
+		this.populateRelatedTagSelect(selectRx);
 
 		selectNoRx?.addEventListener('change', () => {
+			const selectedTag = this.canonicalizeTagValue(selectNoRx.value || '');
 			this.showRelatedSection(0);
-			this.loadRelatedProducts({ tag: selectNoRx.value || '', seedName: '' }, 0);
+			this.loadRelatedProducts({ tag: selectedTag, seedName: '' }, 0);
 		});
 
-		// La select con-ricetta è già popolata nell'HTML; aggiunge solo il listener
-		const selectRx = document.querySelector('#related-seed-tag-prescription');
 		selectRx?.addEventListener('change', () => {
+			const selectedTag = this.canonicalizeTagValue(selectRx.value || '');
 			this.showRelatedSection(1);
-			this.loadRelatedProducts({ tag: selectRx.value || '', seedName: '' }, 1);
+			this.loadRelatedProducts({ tag: selectedTag, seedName: '' }, 1);
 		});
 	},
 
@@ -1256,18 +1273,23 @@ function setSubOrderTypeByUrl() {
 		if (type === 'senza-ricetta')  ReservationForm.setSubOrderType(0);
 	}
 
-	const rawTag = String(params.get('tag') || '').trim().toLowerCase();
-	if (!rawTag) return;
+	const canonicalTag = ReservationForm.canonicalizeTagValue(params.get('tag') || '');
+	if (!canonicalTag) return;
 
-	const canonicalTag = rawTag.replace(/[-\s]+/g, '_');
+	if (!ReservationForm.isAllowedRelatedTag(canonicalTag)) {
+		if (typeof showToast === 'function') {
+			showToast('Tag non valido: seleziona una categoria disponibile.', 'warning');
+		} else {
+			console.warn('Tag non valido in URL:', canonicalTag);
+		}
+		return;
+	}
+
 	const mode = ReservationForm.getSubOrderChecked();
 	const selectId = mode === 1 ? '#related-seed-tag-prescription' : '#related-tag-select';
 	const select = document.querySelector(selectId);
 	if (select) {
-		const option = Array.from(select.options || []).find((opt) => String(opt.value).toLowerCase() === canonicalTag);
-		if (option) {
-			select.value = canonicalTag;
-		}
+		select.value = canonicalTag;
 	}
 
 	ReservationForm.showRelatedSection(mode);
