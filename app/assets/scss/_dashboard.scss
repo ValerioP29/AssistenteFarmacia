@@ -271,20 +271,10 @@ body.page-dashboard {
         }
     }
 
-    @media (min-width: 768px) {
         .slider-promo > .product-card {
             flex-basis: calc(50% - 18px);
         }
-    }
-
-    @media (max-width: 443px) {
-        .slider-promo-container,
-        .slider-promo,
-        .slider-promo > .product-card {
-            height: auto;
-            min-height: 0;
-        }
-    }
+    
 }
 
 	.promo-card {

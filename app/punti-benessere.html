@@ -25,10 +25,6 @@
 			<app-header></app-header>
 			<app-goback></app-goback>
 			<app-body>
-				<button type="button" class="btn btn-primary w-100 mb-3" data-bs-toggle="modal" data-bs-target="#pointsLegendModal" id="openPointsLegendBtn" aria-label="Scopri come ottenere punti">
-					<i class="bi bi-info-circle"></i>
-					Scopri come ottenere punti
-				</button>
 				<app-card>
 					<h1 class='wellness-title'>
 						<i class="fas fa-star"></i>
@@ -39,28 +35,6 @@
 					</div>
 				</app-card>
 			</app-body>
-			<div class="modal fade" id="pointsLegendModal" tabindex="-1" aria-labelledby="pointsLegendLabel" aria-hidden="true">
-				<div class="modal-dialog modal-dialog-scrollable modal-lg">
-					<div class="modal-content">
-						<div class="modal-header">
-							<h5 class="modal-title d-flex align-items-center gap-2" id="pointsLegendLabel">
-								<i class="bi bi-stars"></i>
-								Come ottenere punti
-							</h5>
-							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
-						</div>
-
-						<div class="modal-body">
-							<div id="legendContainer"></div>
-						</div>
-
-						<div class="modal-footer">
-							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
-						</div>
-					</div>
-				</div>
-			</div>
-
 			<app-footer></app-footer>
 		</div>
 		<script type="module" src="./assets/components/layout.js?v=1.1.1"></script>
