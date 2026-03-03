@@ -235,22 +235,67 @@ document.addEventListener('appLoaded', () => {
 		if (dotsContainer) dotsContainer.classList.add('d-none');
 
 		track.setAttribute('tabindex', '0');
+		track.dataset.promoInitialized = '1';
 
-		const getScrollStep = () => {
-			const firstCard = track.querySelector('.product-card');
-			if (!firstCard) return track.clientWidth;
-			const cardRect = firstCard.getBoundingClientRect();
-			const trackStyle = window.getComputedStyle(track);
-			const gap = parseFloat(trackStyle.columnGap || trackStyle.gap || '0') || 0;
-			return cardRect.width + gap;
+		let currentIndex = 0;
+		let resizeRaf = null;
+
+		const getPerSlide = () => (window.matchMedia('(max-width: 768px)').matches ? 1 : 2);
+
+		const syncCardPoolFromDOM = () => {
+			track._promoCards = Array.from(track.querySelectorAll('.product-card'));
+			return track._promoCards;
 		};
 
-		const scrollByStep = (direction = 1) => {
-			track.scrollBy({left: getScrollStep() * direction, behavior: 'smooth'});
+		const getCardsFromPool = () => {
+			if (!Array.isArray(track._promoCards)) {
+				return syncCardPoolFromDOM();
+			}
+			return track._promoCards;
 		};
 
-		const onPrev = () => scrollByStep(-1);
-		const onNext = () => scrollByStep(1);
+		const buildSlides = () => {
+			const cards = getCardsFromPool();
+			const perSlide = getPerSlide();
+
+			if (cards.length === 0) {
+				track.innerHTML = '';
+				currentIndex = 0;
+				track.style.transform = 'translateX(0%)';
+				btnPrev.classList.add('d-none');
+				btnNext.classList.add('d-none');
+				return;
+			}
+
+			track.innerHTML = '';
+			for (let i = 0; i < cards.length; i += perSlide) {
+				const slide = document.createElement('div');
+				slide.className = 'promo-slide';
+				cards.slice(i, i + perSlide).forEach((card) => slide.appendChild(card));
+				track.appendChild(slide);
+			}
+
+			const totalSlides = track.children.length;
+			currentIndex = Math.max(0, Math.min(currentIndex, totalSlides - 1));
+			track.style.transform = `translateX(-${currentIndex * 100}%)`;
+			const many = totalSlides > 1;
+			btnPrev.classList.toggle('d-none', !many);
+			btnNext.classList.toggle('d-none', !many);
+		};
+
+		const update = () => {
+			track.style.transform = `translateX(-${currentIndex * 100}%)`;
+		};
+
+		const move = (direction = 1) => {
+			const totalSlides = track.children.length;
+			if (totalSlides <= 1) return;
+			currentIndex = (currentIndex + direction + totalSlides) % totalSlides;
+			update();
+		};
+
+		const onPrev = () => move(-1);
+		const onNext = () => move(1);
 		const onKeydown = (e) => {
 			if (e.key === 'ArrowLeft') {
 				e.preventDefault();
@@ -268,10 +313,35 @@ document.addEventListener('appLoaded', () => {
 		btnNext.addEventListener('click', onNext);
 		track.addEventListener('keydown', onKeydown);
 
+		const onResize = () => {
+			if (resizeRaf) window.cancelAnimationFrame(resizeRaf);
+			resizeRaf = window.requestAnimationFrame(() => {
+				buildSlides();
+				resizeRaf = null;
+			});
+		};
+
+		window.addEventListener('resize', onResize);
+
+		const onPromotionsLoaded = (evt) => {
+			const loadedProducts = evt?.detail?.data?.products;
+			if (!Array.isArray(loadedProducts)) return;
+			syncCardPoolFromDOM();
+			currentIndex = 0;
+			buildSlides();
+		};
+
+		document.addEventListener('loadPromotionsSuccess', onPromotionsLoaded);
+		syncCardPoolFromDOM();
+		buildSlides();
+
 		root._promoCleanup = () => {
 			btnPrev.removeEventListener('click', onPrev);
 			btnNext.removeEventListener('click', onNext);
 			track.removeEventListener('keydown', onKeydown);
+			window.removeEventListener('resize', onResize);
+			document.removeEventListener('loadPromotionsSuccess', onPromotionsLoaded);
+			if (resizeRaf) window.cancelAnimationFrame(resizeRaf);
 		};
 	}
 
