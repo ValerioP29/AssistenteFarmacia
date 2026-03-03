@@ -152,6 +152,7 @@ async function loadPromotions(options = {}) {
 	try {
 		const paramsUrl = new URLSearchParams(window.location.search);
 		const tipo = paramsUrl.get('tipo');
+		const tag = paramsUrl.get('tag');
 		const params = new URLSearchParams();
 
 		const isDashboard = containerId === 'promo-list';
@@ -161,6 +162,7 @@ async function loadPromotions(options = {}) {
 			params.append('limit', '100');
 		}
 		if (tipo) params.append('tipo', tipo);
+		if (tag) params.append('tag', tag);
 		if (isDashboard) params.append('ref', 'home');
 
 		const url = AppURLs.api.getPromos() + (params.toString() ? `?${params.toString()}` : '');
@@ -174,6 +176,10 @@ async function loadPromotions(options = {}) {
 			document.body.classList.add('filtered-promos');
 		}  else {
 			document.body.classList.remove('filtered-promos');
+		}
+
+		if (!isDashboard) {
+			updatePromotionsHeading({tipo, tag: json?.data?.tag || tag, isFiltered});
 		}
 
 		if (!json.status || !Array.isArray(prodottiData)) {
@@ -225,6 +231,39 @@ async function loadPromotions(options = {}) {
 		document.dispatchEvent(new CustomEvent('loadPromotionsError', {detail: {error: err}}));
 		throw err;
 	}
+}
+
+function humanizeTagLabel(value = '') {
+	if (!value) return '';
+	return value
+		.replace(/[_-]+/g, ' ')
+		.split(' ')
+		.filter(Boolean)
+		.map((chunk) => chunk.charAt(0).toUpperCase() + chunk.slice(1))
+		.join(' ');
+}
+
+function updatePromotionsHeading({tipo = '', tag = '', isFiltered = false} = {}) {
+	const titleEl = document.getElementById('promo-title');
+	const subtitleEl = document.getElementById('promo-subtitle');
+	if (!titleEl || !subtitleEl) return;
+
+	if (tag) {
+		titleEl.textContent = `Promozioni: ${humanizeTagLabel(tag)}`;
+		subtitleEl.textContent = isFiltered
+			? 'Stai visualizzando solo i prodotti in promozione per il tag selezionato.'
+			: 'Nessun prodotto trovato per il tag selezionato.';
+		return;
+	}
+
+	if (tipo) {
+		titleEl.textContent = 'Promozioni in evidenza';
+		subtitleEl.textContent = 'Selezione promozionale filtrata dalla dashboard.';
+		return;
+	}
+
+	titleEl.textContent = 'Tutte le promozioni';
+	subtitleEl.textContent = 'Scopri le offerte attive della tua farmacia.';
 }
 
 document.addEventListener('appLoaded', () => {

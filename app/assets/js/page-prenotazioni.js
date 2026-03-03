@@ -1250,10 +1250,28 @@ document.addEventListener('appLoaded', () => bootReservationForm());
 
 function setSubOrderTypeByUrl() {
 	const params = new URLSearchParams(window.location.search);
-	if (!params.has('tipo')) return;
-	const type = params.get('tipo');
-	if (type === 'ricetta')        ReservationForm.setSubOrderType(1);
-	if (type === 'senza-ricetta')  ReservationForm.setSubOrderType(0);
+	if (params.has('tipo')) {
+		const type = params.get('tipo');
+		if (type === 'ricetta')        ReservationForm.setSubOrderType(1);
+		if (type === 'senza-ricetta')  ReservationForm.setSubOrderType(0);
+	}
+
+	const rawTag = String(params.get('tag') || '').trim().toLowerCase();
+	if (!rawTag) return;
+
+	const canonicalTag = rawTag.replace(/[-\s]+/g, '_');
+	const mode = ReservationForm.getSubOrderChecked();
+	const selectId = mode === 1 ? '#related-seed-tag-prescription' : '#related-tag-select';
+	const select = document.querySelector(selectId);
+	if (select) {
+		const option = Array.from(select.options || []).find((opt) => String(opt.value).toLowerCase() === canonicalTag);
+		if (option) {
+			select.value = canonicalTag;
+		}
+	}
+
+	ReservationForm.showRelatedSection(mode);
+	ReservationForm.loadRelatedProducts({ tag: canonicalTag, seedName: '' }, mode);
 }
 
 document.addEventListener('reservationFormReset', setSubOrderTypeByUrl);

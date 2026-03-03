@@ -10,12 +10,15 @@ let totalProducts = 0;
 let currentFilters = {};
 let productToDelete = null;
 let selectedGlobalProduct = null;
+let cachedTagSuggestions = [];
 
 // Inizializzazione
 document.addEventListener('DOMContentLoaded', function() {
     loadProducts();
     setupEventListeners();
     loadFilters();
+    loadTagSuggestions();
+    renderTagsPreview();
 });
 
 // Setup event listeners
@@ -62,6 +65,16 @@ function setupEventListeners() {
     const productForm = document.getElementById('productForm');
     if (productForm) {
         productForm.addEventListener('submit', handleProductSubmit);
+    }
+
+    const productTags = document.getElementById('productTags');
+    if (productTags) {
+        productTags.addEventListener('input', () => renderTagsPreview());
+        productTags.addEventListener('blur', () => {
+            const tags = parseTagsInput(productTags.value);
+            productTags.value = tags.join(', ');
+            renderTagsPreview(tags);
+        });
     }
     
     // Preview immagine
@@ -296,6 +309,11 @@ function showAddProductModal() {
     selectedGlobalProduct = null;
     hideGlobalProductResults();
     hideImagePreview();
+    const tagsField = document.getElementById('productTags');
+    if (tagsField) tagsField.value = '';
+    const form = document.getElementById('productForm');
+    if (form) form.dataset.initialTags = JSON.stringify([]);
+    renderTagsPreview([]);
     
     // Nascondi sezione creazione nuovo prodotto globale
     document.getElementById('newGlobalProductSection').style.display = 'none';
@@ -326,6 +344,14 @@ function editProduct(id) {
 
                 document.getElementById('productSku').value = product.sku || '';
                 document.getElementById('productDescription').value = product.description || '';
+                const tagsField = document.getElementById('productTags');
+                if (tagsField) {
+                    const tags = normalizeTagsPayload(product.tags);
+                    tagsField.value = tags.join(', ');
+                    const form = document.getElementById('productForm');
+                    if (form) form.dataset.initialTags = JSON.stringify(tags);
+                    renderTagsPreview(tags);
+                }
                 document.getElementById('productPrice').value = product.price;
                 document.getElementById('isActive').checked = product.is_active;
                 
@@ -359,6 +385,18 @@ function handleProductSubmit(e) {
     e.preventDefault();
     
     const formData = new FormData(e.target);
+
+    const tagsInput = document.getElementById('productTags');
+    const normalizedTags = parseTagsInput(tagsInput?.value || '');
+    const initialTags = normalizeTagsPayload(e.target?.dataset?.initialTags || '[]');
+
+    if (arraysEqualTags(normalizedTags, initialTags)) {
+        // Non modificato: backend preserva i tags esistenti.
+        formData.delete('tags');
+    } else {
+        // Modificato (anche a []): applica replace lato backend.
+        formData.set('tags', JSON.stringify(normalizedTags));
+    }
     
     // Verifica se stiamo creando un nuovo prodotto globale
     const isCreatingGlobalProduct = document.getElementById('newGlobalProductSection').style.display !== 'none';
@@ -626,6 +664,108 @@ function createNewGlobalProduct() {
     }
     
     showAlert('Sezione creazione nuovo prodotto globale attivata', 'info');
+}
+
+function getCurrentPharmaId() {
+    const form = document.getElementById('productForm');
+    const val = parseInt(form?.dataset?.pharmaId || '0', 10);
+    return Number.isFinite(val) && val > 0 ? val : 0;
+}
+
+function normalizeTagValue(tag) {
+    return String(tag || '')
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '_');
+}
+
+function parseTagsInput(raw) {
+    return Array.from(new Set(
+        String(raw || '')
+            .split(',')
+            .map(normalizeTagValue)
+            .filter(Boolean)
+    ));
+}
+
+function arraysEqualTags(a = [], b = []) {
+    const normalizeList = (list) => Array.from(new Set((Array.isArray(list) ? list : [])
+        .map(normalizeTagValue)
+        .filter(Boolean))).sort();
+
+    const left = normalizeList(a);
+    const right = normalizeList(b);
+    if (left.length !== right.length) return false;
+    for (let i = 0; i < left.length; i++) {
+        if (left[i] !== right[i]) return false;
+    }
+    return true;
+}
+
+function normalizeTagsPayload(rawTags) {
+    if (Array.isArray(rawTags)) return rawTags.map(normalizeTagValue).filter(Boolean);
+    if (typeof rawTags === 'string') {
+        const trimmed = rawTags.trim();
+        if (!trimmed) return [];
+        try {
+            const decoded = JSON.parse(trimmed);
+            if (Array.isArray(decoded)) return decoded.map(normalizeTagValue).filter(Boolean);
+        } catch (e) {}
+        return parseTagsInput(trimmed);
+    }
+    return [];
+}
+
+function renderTagsPreview(tags = null) {
+    const preview = document.getElementById('productTagsPreview');
+    if (!preview) return;
+
+    const normalizedTags = Array.isArray(tags) ? tags : parseTagsInput(document.getElementById('productTags')?.value || '');
+    preview.replaceChildren();
+
+    if (!normalizedTags.length) {
+        const empty = document.createElement('span');
+        empty.className = 'text-muted small';
+        empty.textContent = 'Nessun tag selezionato';
+        preview.appendChild(empty);
+        return;
+    }
+
+    normalizedTags.forEach((tag) => {
+        const chip = document.createElement('span');
+        chip.className = 'badge bg-light text-dark border';
+        chip.textContent = tag;
+        preview.appendChild(chip);
+    });
+}
+
+function loadTagSuggestions() {
+    const pharmaId = getCurrentPharmaId();
+    if (!pharmaId) return;
+
+    fetch(`api/pharma-products/tags-suggest.php?pharma_id=${pharmaId}&limit=250`)
+        .then((response) => response.json())
+        .then((data) => {
+            if (!data.success || !Array.isArray(data.data)) return;
+            const pool = new Set();
+            data.data.forEach((item) => {
+                (item.current_tags || []).forEach((tag) => pool.add(normalizeTagValue(tag)));
+                (item.suggested_tags || []).forEach((tag) => pool.add(normalizeTagValue(tag)));
+            });
+            cachedTagSuggestions = Array.from(pool).filter(Boolean).sort();
+
+            const list = document.getElementById('productTagsSuggestions');
+            if (!list) return;
+            list.replaceChildren();
+            cachedTagSuggestions.forEach((tag) => {
+                const option = document.createElement('option');
+                option.value = tag;
+                list.appendChild(option);
+            });
+        })
+        .catch((error) => {
+            console.warn('Tags suggest non disponibile:', error);
+        });
 }
 
 // Mostra alert

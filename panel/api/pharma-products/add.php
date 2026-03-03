@@ -99,7 +99,12 @@ try {
     $isFeatured = $isFeaturedInputProvided ? parseBoolishValue($_POST['is_featured']) : null;
     $tagsInputProvided = array_key_exists('tags', $_POST);
     $normalizedTags = $tagsInputProvided ? normalizeProductTagsInput($_POST['tags']) : null;
-    $tagsForDb = $normalizedTags !== null ? json_encode($normalizedTags, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null;
+    // Campo presente => replace esplicito; [] / stringa vuota devono svuotare a [] e non preservare.
+    if ($tagsInputProvided) {
+        $tagsForDb = json_encode($normalizedTags ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    } else {
+        $tagsForDb = null;
+    }
     $productId = intval($_POST['product_id'] ?? 0); // ID del prodotto globale associato
     $createGlobalProduct = isset($_POST['create_global_product']) && $_POST['create_global_product'] === '1';
     

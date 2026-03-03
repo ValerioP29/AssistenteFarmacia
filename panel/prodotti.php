@@ -13,6 +13,7 @@ checkAccess(['pharmacist']);
 
 $current_page = 'prodotti';
 $page_title = 'Gestione Prodotti';
+$currentPharmacy = getCurrentPharmacy();
 
 // Gestione messaggi
 $message = $_GET['message'] ?? '';
@@ -124,7 +125,7 @@ include 'includes/header.php';
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form id="productForm" enctype="multipart/form-data">
+            <form id="productForm" enctype="multipart/form-data" data-pharma-id="<?= (int)($currentPharmacy['id'] ?? 0) ?>">
                 <div class="modal-body">
                     <input type="hidden" id="productId" name="id">
                     <input type="hidden" id="selectedGlobalProductId" name="product_id">
@@ -267,6 +268,24 @@ include 'includes/header.php';
                     <div class="mb-3">
                         <label for="productDescription" class="form-label">Descrizione</label>
                         <textarea class="form-control" id="productDescription" name="description" rows="3"></textarea>
+                    </div>
+
+
+                    <div class="mb-3">
+                        <label for="productTags" class="form-label">Tags prodotto</label>
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="productTags"
+                            name="tags"
+                            list="productTagsSuggestions"
+                            placeholder="Es: celiachia, consiglio_farmacista, dermocosmesi"
+                        >
+                        <datalist id="productTagsSuggestions"></datalist>
+                        <div class="form-text">
+                            Inserisci uno o più tag separati da virgola. Formato consigliato: lowercase + underscore.
+                        </div>
+                        <div id="productTagsPreview" class="mt-2 d-flex flex-wrap gap-1"></div>
                     </div>
 
                     <div class="row">
