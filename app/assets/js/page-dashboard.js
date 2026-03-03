@@ -237,61 +237,36 @@ document.addEventListener('appLoaded', () => {
 		track.setAttribute('tabindex', '0');
 		track.dataset.promoInitialized = '1';
 
-		let currentIndex = 0;
-		let resizeRaf = null;
+		const getSlides = () => Array.from(track.children).filter((node) => node.classList?.contains('product-card'));
 
-		const getPerSlide = () => (window.matchMedia('(max-width: 768px)').matches ? 1 : 2);
-
-		const syncCardPoolFromDOM = () => {
-			track._promoCards = Array.from(track.querySelectorAll('.product-card'));
-			return track._promoCards;
+		const getStep = () => {
+			const firstSlide = getSlides()[0];
+			if (!firstSlide) return 0;
+			const style = window.getComputedStyle(track);
+			const gap = parseFloat(style.columnGap || style.gap || '0') || 0;
+			return firstSlide.getBoundingClientRect().width + gap;
 		};
 
-		const getCardsFromPool = () => {
-			if (!Array.isArray(track._promoCards)) {
-				return syncCardPoolFromDOM();
-			}
-			return track._promoCards;
-		};
-
-		const buildSlides = () => {
-			const cards = getCardsFromPool();
-			const perSlide = getPerSlide();
-
-			if (cards.length === 0) {
-				track.innerHTML = '';
-				currentIndex = 0;
-				track.style.transform = 'translateX(0%)';
+		const updateArrows = () => {
+			const slides = getSlides();
+			const many = slides.length > 1;
+			if (!many) {
 				btnPrev.classList.add('d-none');
 				btnNext.classList.add('d-none');
 				return;
 			}
 
-			track.innerHTML = '';
-			for (let i = 0; i < cards.length; i += perSlide) {
-				const slide = document.createElement('div');
-				slide.className = 'promo-slide';
-				cards.slice(i, i + perSlide).forEach((card) => slide.appendChild(card));
-				track.appendChild(slide);
-			}
-
-			const totalSlides = track.children.length;
-			currentIndex = Math.max(0, Math.min(currentIndex, totalSlides - 1));
-			track.style.transform = `translateX(-${currentIndex * 100}%)`;
-			const many = totalSlides > 1;
-			btnPrev.classList.toggle('d-none', !many);
-			btnNext.classList.toggle('d-none', !many);
-		};
-
-		const update = () => {
-			track.style.transform = `translateX(-${currentIndex * 100}%)`;
+			const maxScrollLeft = Math.max(track.scrollWidth - track.clientWidth, 0);
+			const canGoPrev = track.scrollLeft > 2;
+			const canGoNext = track.scrollLeft < maxScrollLeft - 2;
+			btnPrev.classList.toggle('d-none', !canGoPrev);
+			btnNext.classList.toggle('d-none', !canGoNext);
 		};
 
 		const move = (direction = 1) => {
-			const totalSlides = track.children.length;
-			if (totalSlides <= 1) return;
-			currentIndex = (currentIndex + direction + totalSlides) % totalSlides;
-			update();
+			const step = getStep();
+			if (!step) return;
+			track.scrollBy({left: direction * step, behavior: 'smooth'});
 		};
 
 		const onPrev = () => move(-1);
@@ -307,41 +282,32 @@ document.addEventListener('appLoaded', () => {
 			}
 		};
 
-		btnPrev.classList.remove('d-none');
-		btnNext.classList.remove('d-none');
 		btnPrev.addEventListener('click', onPrev);
 		btnNext.addEventListener('click', onNext);
 		track.addEventListener('keydown', onKeydown);
+		track.addEventListener('scroll', updateArrows, {passive: true});
 
-		const onResize = () => {
-			if (resizeRaf) window.cancelAnimationFrame(resizeRaf);
-			resizeRaf = window.requestAnimationFrame(() => {
-				buildSlides();
-				resizeRaf = null;
-			});
-		};
+		const onResize = () => updateArrows();
 
 		window.addEventListener('resize', onResize);
 
 		const onPromotionsLoaded = (evt) => {
 			const loadedProducts = evt?.detail?.data?.products;
 			if (!Array.isArray(loadedProducts)) return;
-			syncCardPoolFromDOM();
-			currentIndex = 0;
-			buildSlides();
+			track.scrollTo({left: 0, behavior: 'auto'});
+			window.requestAnimationFrame(updateArrows);
 		};
 
 		document.addEventListener('loadPromotionsSuccess', onPromotionsLoaded);
-		syncCardPoolFromDOM();
-		buildSlides();
+		updateArrows();
 
 		root._promoCleanup = () => {
 			btnPrev.removeEventListener('click', onPrev);
 			btnNext.removeEventListener('click', onNext);
 			track.removeEventListener('keydown', onKeydown);
+			track.removeEventListener('scroll', updateArrows);
 			window.removeEventListener('resize', onResize);
 			document.removeEventListener('loadPromotionsSuccess', onPromotionsLoaded);
-			if (resizeRaf) window.cancelAnimationFrame(resizeRaf);
 		};
 	}
 
