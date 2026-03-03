@@ -160,42 +160,24 @@ body.page-dashboard {
 #promo-carousel {
 	.slider-promo {
 		display: flex;
+		overflow: hidden;
+		transition: transform 0.35s ease;
+	}
+
+	.promo-slide {
+		flex: 0 0 100%;
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: 8px;
-		overflow-x: auto;
-		overflow-y: hidden;
-		scroll-snap-type: x mandatory;
-		scroll-behavior: smooth;
-		-webkit-overflow-scrolling: touch;
-		padding-bottom: 4px;
-		transform: none !important;
-		transition: none;
-
-		&::-webkit-scrollbar {
-			display: none;
-		}
-		scrollbar-width: none;
 	}
 
-	.slider-promo > .product-card {
-		flex: 0 0 calc((100% - 40px) / 6);
-		scroll-snap-align: start;
-	}
-
-	@media (max-width: 1024px) {
-		.slider-promo > .product-card {
-			flex-basis: calc((100% - 24px) / 4);
-		}
+	.promo-slide > .product-card {
+		min-width: 0;
 	}
 
 	@media (max-width: 768px) {
-		.slider-promo > .product-card {
-			flex-basis: calc((100% - 8px) / 2);
-		}
-	}
-
-	@media (max-width: 480px) {
-		.slider-promo > .product-card {
-			flex-basis: 100%;
+		.promo-slide {
+			grid-template-columns: minmax(0, 1fr);
 		}
 	}
 }
