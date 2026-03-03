@@ -256,22 +256,23 @@
 					</div>
 				</app-card>
 
-				<app-card class="pillole-container">
+				<!-- <app-card class="pillole-container">
 					<div class="card-header ">
 						<span>Ultime pillole informative</span>
 						<a role="button" class="link-page" onclick="goTo(AppURLs.page.pillArchive())">Vedi tutte &gt;</a>
 					</div>
-					<div id="pillole-latest" class="pillole-card"><!-- Le ultime 3 pillole appaiono qui --></div>
-				</app-card>
+					<div id="pillole-latest" class="pillole-card"> Le ultime 3 pillole appaiono qui</div>
+				</app-card> -->
 
 				<div id="farmacia" aria-hidden="true"></div>
 
 				<app-card>
 					<div class="card-header ">
-						<span id="namePharmacy"></span>
+						<span id="namePharmacy" class="fs-5"></span>
+						<p class="text-muted">Info rapide</p>
 					</div>
 
-					<div class="pharmacy-box">
+					<!-- <div class="pharmacy-box">
 						<div class="pharmacy-item" onclick="goTo(AppURLs.page.reservation())">Prenota prodotto</div>
 						<div class="pharmacy-item show-on-pharma--1 d-none" onclick="goTo(AppURLs.page.reminders())">Terapia personale</div>
 					</div>
@@ -284,6 +285,11 @@
 					<div class="pharmacy-box">
 						<div class="pharmacy-item waste-drugs" onclick="goTo(AppURLs.page.wasteDrugs())">Guida allo smaltimento</div>
 						<div class="pharmacy-item" onclick="goTo(AppURLs.page.pharmacy())">Info</div>
+					</div> -->
+
+					<div class="pharmacy-box">
+						<div class="pharmacy-item" onclick="goTo(AppURLs.page.pharmacy())">Info</div>
+						<div class="pharmacy-item" onclick="goTo(AppURLs.page.pharmacy())">Orari</div>
 					</div>
 
 					<div class="cta-buttons">

@@ -112,15 +112,14 @@ function createPromoCardDashboard(item) {
 	const showDiscount = item.is_on_sale && Number(item.price_sale) < Number(item.price_regular);
 	const hidePrice = item.price_hidden === true;
 
-	div.innerHTML += `
+	div.innerHTML += `<div class="pr-container">
 		<a class="product-name" href="${AppURLs.page.promotions() + '?id=' + item.id}">${img.outerHTML}</a>
 		<a class="product-name" href="${AppURLs.page.promotions() + '?id=' + item.id}">${item.name}</a>
 		${hidePrice ? '' : `
 		<div class="product-prices">
 			${showDiscount ? `<s>€${item.price_regular.toFixed(2)}</s>` : ''}
-			<span class="price">€${(item.is_on_sale ? item.price_sale : item.price_regular).toFixed(2)}€</span>
+			<span class="price">€${(item.is_on_sale ? item.price_sale : item.price_regular).toFixed(2)}</span>
 		</div>`}
-
 		<button type="button"
 			class="btn btn-primary"
 			data-add-to-cart
@@ -129,6 +128,7 @@ function createPromoCardDashboard(item) {
 		>
 			Aggiungi
 		</button>
+		</div>
 	`;
 
 	return div;

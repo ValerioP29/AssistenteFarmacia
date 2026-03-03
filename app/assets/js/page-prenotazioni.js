@@ -747,25 +747,20 @@ const ReservationForm = {
 		if (el.tomselect) { this.ts = el.tomselect; this._tsElRef = el; return; }
 
 		this.ts = new TomSelect('#product-name', {
-			maxItems:      1,
+			maxItems: 1,
 			dropdownParent: 'body',
-			valueField:    'id',
-			labelField:    'name',
-			searchField:   ['name', 'code'],
-
-			create(input) {
-				const prod = {
-					id: input, name: input, code: 'NUOVO',
-					thumbnail: AppURLs.api.base + '/uploads/images/placeholder-product.jpg',
-					price: null, quantity: null, sale_price: null,
-				};
-				document.dispatchEvent(new CustomEvent('productSuggestionCreated', { detail: prod }));
-				return prod;
-			},
+			valueField: 'id',
+			labelField: 'name',
+			searchField: ['name', 'code'],
+			
+			minChars: 3,
+			loadThrottle: 300,
+			preload: false,
+			shouldLoad: (query) => query.length >= 3,
 
 			load(query, callback) {
-			try {
-				if (!query || query.length < 2) return callback([]);
+				try {
+					if (!query || query.length < 3) return callback([]);
 
 				const pharmaId = ReservationForm.getPharmaId();
 				if (!pharmaId) {
