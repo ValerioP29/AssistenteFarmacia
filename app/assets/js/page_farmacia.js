@@ -45,20 +45,11 @@ document.addEventListener('appLoaded', function () {
 	}
 
 	function getOrariAccordion() {
-		const fromStableSelector = document.querySelector('.accordion[data-accordion="orari"]') || document.getElementById('accordion-orari');
-		if (fromStableSelector) return fromStableSelector;
-
-		const turniCalendar = document.getElementById('turni-calendar');
-		if (!turniCalendar) return null;
-
-		const panel = turniCalendar.closest('.panel') || turniCalendar.parentElement;
-		if (!panel) return null;
-
-		const previousAccordion = panel.previousElementSibling;
-		if (previousAccordion?.classList?.contains('accordion')) return previousAccordion;
-
-		return null;
-	}
+  // usa SOLO un selector stabile
+  return document.getElementById('pharmaOrari')
+    || document.querySelector('.accordion[data-accordion="orari"]')
+    || document.getElementById('accordion-orari');
+}
 
 	function openAccordion(accordionItem) {
 		if (!accordionItem) return;
@@ -80,16 +71,15 @@ document.addEventListener('appLoaded', function () {
 
 		openAccordion(orariAccordion);
 
-		orariAccordion.scrollIntoView({behavior: 'smooth', block: 'start'});
+		orariAccordion.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
 		if (typeof orariAccordion.focus === 'function') {
 			if (!orariAccordion.hasAttribute('tabindex')) {
-				orariAccordion.setAttribute('tabindex', '-1');
+			orariAccordion.setAttribute('tabindex', '-1');
 			}
-			orariAccordion.focus({preventScroll: true});
+			orariAccordion.focus({ preventScroll: true });
 		}
 	}
-
 	// Helpers
 	const capitalize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 	const MESE_LABEL_IT = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
