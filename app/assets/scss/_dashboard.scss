@@ -197,7 +197,8 @@ body.page-dashboard {
         gap: 0 !important;
         background: #fff !important;
         border-radius: 16px !important;
-		border: 1px solid #8031aa;
+		box-shadow: 0 2px 8px rgba(128,49,170,0.4);
+		border: none;
 		overflow: hidden;
 
         a.product-name {
