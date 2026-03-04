@@ -184,17 +184,21 @@ body.page-dashboard {
         scroll-snap-stop: always;
     }
 
-	.pr-container {
-		background-color: #8031aa;
+	.slider-promo .pr-container {
+		background-color: #fff;
+		display: flex;
+		flex-direction: column;
+		padding-bottom: 12px;
 	}
 
     // Override grid-item quando è dentro il carousel
-    .product-card.grid-item {
+    .slider-promo .product-card.grid-item {
         padding: 0 !important;
         gap: 0 !important;
         background: #fff !important;
         border-radius: 16px !important;
 		border: 1px solid #8031aa;
+		overflow: hidden;
 
         a.product-name {
             display: block;
@@ -262,7 +266,7 @@ body.page-dashboard {
             font-size: 14px;
             font-weight: 700;
             cursor: pointer;
-            margin: 8px 10px 12px;
+            margin: 8px 10px 0;
             width: calc(100% - 20px);
 
             &:hover {
