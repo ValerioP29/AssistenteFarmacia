@@ -112,6 +112,9 @@ function fetchSendOrder(orderPayload) {
 document.addEventListener('orderSentSuccess', () => {
 	clearCart();
 	document.querySelector('app-cart')?.closeModal();
+	document.dispatchEvent(new CustomEvent('points:refreshRequested', {
+		detail: { source: 'order_checkout' },
+	}));
 });
 
 // Eventi storage

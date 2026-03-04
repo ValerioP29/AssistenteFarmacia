@@ -214,11 +214,11 @@ document.addEventListener('appLoaded', () => {
 			const imageFormat = file.name.split('.').pop().toLowerCase();
 
 			// Chiama l'endpoint
-            const result = await callCheckupEndpoint(finalPrompt, imageBase64, imageFormat, checkupType);
+			const result = await callCheckupEndpoint(finalPrompt, imageBase64, imageFormat, checkupType);
 			
 			if (result?.message) {
              showToast(result.message, 'success'); // oppure 'info' se vuoi più neutro
-            }
+			}
 			
 			// Mostra i risultati
 			displayCheckupResults(result, resultDiv);

@@ -250,8 +250,21 @@ $wa_response = app_wa_send( $message );
 
 $request_response = 'La farmacia ha ricevuto la tua richiesta. Ti avviseremo quando la tua richiesta sarà confermata.';
 
+$points_awarded = 0;
+$points_value = (int) get_option('point--request_reservation', 10);
+if ($points_value > 0) {
+	$added = UserPointsModel::addPoints((int) $user['id'], (int) $pharma['id'], $points_value, 'reservation_request');
+	if ($added) {
+		$points_awarded = $points_value;
+	}
+}
+
 echo json_encode([
 	'code'      => 200,
 	'status'    => TRUE,
 	'message'   => $request_response,
+	'data'      => [
+		'request_id' => (int) $request_id,
+		'points_awarded' => $points_awarded,
+	],
 ]);

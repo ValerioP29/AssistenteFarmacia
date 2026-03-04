@@ -66,16 +66,7 @@ if( ! $is_updated ){
 $count_progress = ChallengeProgressModel::getCompletedDaysCount($user['id'], $challenge['id']);
 $message = 'Salvato';
 
-$can_give_points = ! UserPointsModel::hasEntryForDate($user['id'], $pharma['id'], 'challenge_daily');
-if( $can_give_points ){
-	UserPointsModel::addPoints($user['id'], $pharma['id'], $challenge['points'], 'challenge_daily');
-	$message = '+'.$challenge['points'];
-
-	if( $count_progress == 5 ){
-		UserPointsModel::addPoints($user['id'], $pharma['id'], 5, 'challenge_threshold');
-		$message .= ' +5';
-	}
-}
+// Nota: la sfida settimanale non assegna più punti.
 
 echo json_encode([
 	'code'    => 200,

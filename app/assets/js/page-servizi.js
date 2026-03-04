@@ -184,6 +184,9 @@ document.addEventListener('appLoaded', () => {
 			if (res.message) showToast(res.message, res.status ? 'success' : 'warning');
 
 			if (res.status === true) {
+				document.dispatchEvent(new CustomEvent('points:refreshRequested', {
+					detail: { source: 'service_booking' },
+				}));
 				document.dispatchEvent(new CustomEvent('serviceRequestSuccess', {detail: res}));
 			} else {
 				throw new Error(res.message || 'Errore dal server');

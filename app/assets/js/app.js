@@ -354,6 +354,9 @@ async function prepareAndSendBooking(params) {
 		//if (json?.message) showToast(json.message);
 
 		if (json?.success || json?.status) {
+			document.dispatchEvent(new CustomEvent('points:refreshRequested', {
+				detail: { source: type === 'event' ? 'event_booking' : 'service_booking' },
+			}));
 			document.dispatchEvent(
 				new CustomEvent('bookServiceSuccess', {
 					detail: json,
@@ -799,6 +802,52 @@ function gestisciWellnessPoints(puntiBase) {
 	//	label.textContent = varianti[i];
 	//}, 3000);
 }
+
+let pointsRefreshPromise = null;
+
+function refreshUserPointsState(meta = {}) {
+	if (pointsRefreshPromise) return pointsRefreshPromise;
+
+	pointsRefreshPromise = appFetchWithToken(AppURLs.api.getWellnessPoints(), {method: 'GET'})
+		.then((res) => {
+			if (!res?.status || !res?.data) return null;
+
+			const data = res.data;
+			const totalPoints = Number(data.points_total ?? data.points ?? 0);
+
+			if (!dataStore.user) dataStore.user = {};
+			dataStore.user.points_current_month = totalPoints;
+			dataStore.user.points = totalPoints;
+			dataStore.user.wellness_points = totalPoints;
+
+			gestisciWellnessPoints(String(totalPoints));
+
+			document.dispatchEvent(new CustomEvent('user:dataReady', {detail: dataStore.user}));
+			document.dispatchEvent(new CustomEvent('wellnessSuccess', {detail: data}));
+			document.dispatchEvent(new CustomEvent('points:updated', {
+				detail: {
+					source: meta?.source || 'unknown',
+					points_total: totalPoints,
+					payload: data,
+				},
+			}));
+
+			return data;
+		})
+		.catch((err) => {
+			console.warn('Impossibile aggiornare i punti utente in tempo reale:', err);
+			return null;
+		})
+		.finally(() => {
+			pointsRefreshPromise = null;
+		});
+
+	return pointsRefreshPromise;
+}
+
+document.addEventListener('points:refreshRequested', (event) => {
+	refreshUserPointsState(event?.detail || {});
+});
 
 // Gestione globale dei bottoni "Chiedi all'AI"
 document.addEventListener('click', (e) => {
