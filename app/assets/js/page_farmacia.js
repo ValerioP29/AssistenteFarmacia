@@ -2,31 +2,91 @@ document.addEventListener('appLoaded', function () {
 
 	async function getPharmaProfileById(id) {
 		try {
-			const url = AppURLs.api.getPharmacyProfile(id ?? '')
+			const url = AppURLs.api.getPharmacyProfile(id ?? '');
 			const res = await appFetchWithToken(url);
 
 			if (!res || !res.status || !res.data) {
 				const error = (res?.message || 'Errore caricamento sondaggio.');
-				document.dispatchEvent(new CustomEvent('pharmaProfile:fetch:error', {detail: { pharma_id: id, error: error }}));
+				document.dispatchEvent(new CustomEvent('pharmaProfile:fetch:error', {detail: {pharma_id: id, error: error}}));
 				return;
 			}
 
 			const data = res.data;
-			document.dispatchEvent(new CustomEvent('pharmaProfile:fetch:success', {detail: { pharma_id: id, profile: data }}));
+			document.dispatchEvent(new CustomEvent('pharmaProfile:fetch:success', {detail: {pharma_id: id, profile: data}}));
 		} catch (err) {
 			const error = 'Errore di rete.';
-			document.dispatchEvent(new CustomEvent('pharmaProfile:fetch:error', {detail: { pharma_id: id, error: error }}));
+			document.dispatchEvent(new CustomEvent('pharmaProfile:fetch:error', {detail: {pharma_id: id, error: error}}));
 		}
 	}
 
-	function initAccordion(){
+	function getPanelOpenDisplay(panel) {
+		if (!panel) return 'block';
+		const storedDisplay = panel.dataset.display;
+		if (storedDisplay) return storedDisplay;
+
+		const computedDisplay = window.getComputedStyle(panel).display;
+		const openDisplay = computedDisplay === 'none' ? 'block' : computedDisplay;
+		panel.dataset.display = openDisplay;
+		return openDisplay;
+	}
+
+	function initAccordion() {
 		const acc = document.getElementsByClassName('accordion');
 		for (let i = 0; i < acc.length; i++) {
 			acc[i].addEventListener('click', function () {
 				this.classList.toggle('active');
 				const panel = this.nextElementSibling;
-				panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+				if (!panel) return;
+
+				const openDisplay = getPanelOpenDisplay(panel);
+				panel.style.display = this.classList.contains('active') ? openDisplay : 'none';
 			});
+		}
+	}
+
+	function getOrariAccordion() {
+		const fromStableSelector = document.querySelector('.accordion[data-accordion="orari"]') || document.getElementById('accordion-orari');
+		if (fromStableSelector) return fromStableSelector;
+
+		const turniCalendar = document.getElementById('turni-calendar');
+		if (!turniCalendar) return null;
+
+		const panel = turniCalendar.closest('.panel') || turniCalendar.parentElement;
+		if (!panel) return null;
+
+		const previousAccordion = panel.previousElementSibling;
+		if (previousAccordion?.classList?.contains('accordion')) return previousAccordion;
+
+		return null;
+	}
+
+	function openAccordion(accordionItem) {
+		if (!accordionItem) return;
+		const panel = accordionItem.nextElementSibling;
+		if (!panel) return;
+
+		const isOpen = accordionItem.classList.contains('active') || window.getComputedStyle(panel).display !== 'none';
+		if (isOpen) return;
+
+		accordionItem.classList.add('active');
+		panel.style.display = getPanelOpenDisplay(panel);
+	}
+
+	function focusOrari() {
+		if (window.location.hash !== '#orari') return;
+
+		const orariAccordion = getOrariAccordion();
+		if (!orariAccordion) return;
+
+		openAccordion(orariAccordion);
+
+		orariAccordion.scrollIntoView({behavior: 'smooth', block: 'start'});
+
+		if (typeof orariAccordion.focus === 'function') {
+			if (!orariAccordion.hasAttribute('tabindex')) {
+				orariAccordion.setAttribute('tabindex', '-1');
+			}
+			orariAccordion.focus({preventScroll: true});
 		}
 	}
 
@@ -71,19 +131,19 @@ document.addEventListener('appLoaded', function () {
 
 		let html = `<table class="table table-bordered table-striped text-center"><tbody>`;
 
-			for (const month in byMonth) {
-				const dates = byMonth[month].map((it) => `${it.dayNum} ${capitalize(it.weekday)}`);
+		for (const month in byMonth) {
+			const dates = byMonth[month].map((it) => `${it.dayNum} ${capitalize(it.weekday)}`);
 
-				// intestazione mese
-				html += `
+			// intestazione mese
+			html += `
 					<tr class="table-light">
 						<td colspan="3" class="text-capitalize fw-bold">${capitalize(month)}</td>
 					</tr>
 				`;
 
-				// riga date
-				html += `<tr>${dates.map((d) => `<td>${d}</td>`).join('')}</tr>`;
-			}
+			// riga date
+			html += `<tr>${dates.map((d) => `<td>${d}</td>`).join('')}</tr>`;
+		}
 
 		html += `</tbody></table>`;
 		container.innerHTML = html;
@@ -91,21 +151,23 @@ document.addEventListener('appLoaded', function () {
 
 	function buildPharmaProfileHTML(pharmaData) {
 		const main = document.querySelector('#app main');
-		if( ! main ) return;
+		if (!main) return;
 		main.innerHTML = pharmaData.profile;
 
 		initAccordion();
 		renderTurniCalendar(pharmaData.turni);
+		focusOrari();
 	}
 
-
-	document.addEventListener('pharmaProfile:fetch:success', function(e){
+	document.addEventListener('pharmaProfile:fetch:success', function (e) {
 		buildPharmaProfileHTML(e.detail.profile);
 	});
 
-	document.addEventListener('pharmaProfile:fetch:error', function(e){
+	document.addEventListener('pharmaProfile:fetch:error', function (e) {
 		showSurveyError(e.detail.error);
 	});
+
+	window.addEventListener('hashchange', focusOrari);
 
 	getPharmaProfileById(dataStore.pharma.id);
 });
