@@ -184,6 +184,9 @@ function sendQuizAnswers(payload) {
 document.addEventListener('quizResultSuccess', (event) => {
 	// const data = event.detail;
 	// showToast('Quiz completato', 'success');
+	document.dispatchEvent(new CustomEvent('points:refreshRequested', {
+		detail: { source: 'quiz_result_success' },
+	}));
 });
 
 function quizCalculateProfile(letters) {

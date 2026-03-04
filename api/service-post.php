@@ -83,15 +83,32 @@ if( $service_id ){
 	$message = filter_comm_message( $message, get_my_id(), $pharma['id'], 'request--custom-service' );
 }
 
-RequestModel::insert([
+$request_id = RequestModel::insert([
 	'request_type' => 'service',
 	'user_id'      => get_my_id(),
 	'pharma_id'    => $pharma['id'],
 	'message'      => $message,
 ]);
 
+if( ! $request_id ){
+	echo json_encode([
+		'code'    => 500,
+		'status'  => FALSE,
+		'error'   => 'Error',
+		'message' => 'La prenotazione servizio non è stata salvata. Riprova.',
+	]);
+	exit;
+}
+
 
 $wa_response = app_wa_send( $message );
+
+$points_awarded = 0;
+$points_value = (int) get_option('point--service_booking', 10);
+if( $points_value > 0 ){
+	$added = UserPointsModel::addPoints((int) $user['id'], (int) $pharma['id'], $points_value, 'service_booking');
+	if( $added ) $points_awarded = $points_value;
+}
 
 
 
@@ -99,5 +116,9 @@ echo json_encode([
 	'code'    => 200,
 	'status'  => TRUE,
 	'message' => $request_response,
+	'data'    => [
+		'request_id' => (int) $request_id,
+		'points_awarded' => $points_awarded,
+	],
 ]);
 exit();

@@ -63,13 +63,7 @@ $valid_checkup_ids = [
 	'labbra',
 	'armocromia',
 ];
-if( ! empty($checkup_type) && in_array($checkup_type, $valid_checkup_ids) ){
-	$pharma = getMyPharma();
-	$can_give_points = ! UserPointsModel::hasEntryForDate($user['id'], $pharma['id'], 'checkup_daily--'.$checkup_type);
-	if( $can_give_points ){
-		UserPointsModel::addPoints($user['id'], $pharma['id'], 1, 'checkup_daily--'.$checkup_type);
-		$final_response['message'] = '+1';
-	}
-}
+
+// Nota: checkup non assegna più punti.
 
 echo json_encode($final_response); 

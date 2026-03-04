@@ -318,20 +318,6 @@ function get_points_legend(){
 			'hidden' => FALSE,
 		],
 		[
-			'id'     => 'challenge_daily',
-			'title'  => 'Sfida del benessere',
-			'desc'   => 'Completare la sfida del benessere. Punti attribuiti massimo una volta al giorno.',
-			'value'  => 1,
-			'hidden' => FALSE,
-		],
-		[
-			'id'     => 'challenge_threshold',
-			'title'  => 'Sfida del benessere extra',
-			'desc'   => 'Completare in una settimane la sfida del benessere almeno 5 volte.',
-			'value'  => 5,
-			'hidden' => FALSE,
-		],
-		[
 			'id'     => 'login_daily',
 			'title'  => 'Accesso giornaliero',
 			'desc'   => 'Accedere all\'app ogni giorno. Punti attribuiti massimo una volta al giorno.',
@@ -346,19 +332,33 @@ function get_points_legend(){
 			'hidden' => FALSE,
 		],
 		[
-			'id'     => 'checkup_daily',
-			'title'  => 'Checkup',
-			'desc'   => 'Checkup. Punti attribuiti massimo una volta al giorno per ogni tipo di checkup.',
-			'value'  => 1,
-			'hidden' => FALSE,
-		],
-		[
-			'id'     => 'request_completed',
-			'title'  => 'Richiesta completata',
-			'desc'   => 'Per prenotazione eventi, servizi, prodotti, ricette. I punti saranno attribuiti dopo il completo svolgimento della richiesta da parte della Farmacia.',
+			'id'     => 'reservation_request',
+			'title'  => 'Richiesta prodotti/ricette inviata',
+			'desc'   => 'Inviare una richiesta prodotti o ricette assegna punti immediati.',
 			'value'  => 10,
 			'hidden' => FALSE,
 		], 
+		[
+			'id'     => 'event_booking',
+			'title'  => 'Prenotazione evento',
+			'desc'   => 'Prenotare un evento assegna punti immediati.',
+			'value'  => 10,
+			'hidden' => FALSE,
+		],
+		[
+			'id'     => 'service_booking',
+			'title'  => 'Prenotazione servizio',
+			'desc'   => 'Prenotare un servizio assegna punti immediati.',
+			'value'  => 10,
+			'hidden' => FALSE,
+		],
+		[
+			'id'     => 'order_checkout',
+			'title'  => 'Ordine carrello prodotti',
+			'desc'   => 'Inviare l\'ordine dal carrello assegna punti (anche prodotti in promozione).',
+			'value'  => 10,
+			'hidden' => FALSE,
+		],
 		[
 			'id'     => 'weekly_survey',
 			'title'  => 'Sondaggio settimanale',
@@ -427,5 +427,3 @@ function filter_comm_message( $message = '', $user_id = NULL, $pharma_id = NULL,
 
 	return $message;
 }
-
-

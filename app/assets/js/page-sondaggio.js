@@ -284,6 +284,9 @@ async function submitSurveyResults(payload) {
 		}
 
 		if(res.status){
+			document.dispatchEvent(new CustomEvent('points:refreshRequested', {
+				detail: { source: 'survey_sent_success' },
+			}));
 			document.dispatchEvent(new CustomEvent('survey:sent:success', {detail: { survey_id: payload.survey_id, counts: payload.counts }}));
 		}else{
 			document.dispatchEvent(new CustomEvent('survey:sent:error', {detail: { survey_id: payload.survey_id, error: res?.message }}));

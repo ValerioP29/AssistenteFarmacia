@@ -65,7 +65,7 @@ $pharma = getMyPharma();
 $message = $orderSummary;
 $message = filter_comm_message( $message, get_my_id(), $pharma['id'], 'request--order' );
 
-RequestModel::insert([
+$request_id = RequestModel::insert([
 	'request_type' => 'promos',
 	'user_id'      => get_my_id(),
 	'pharma_id'    => $pharma['id'],
@@ -73,13 +73,53 @@ RequestModel::insert([
 	'metadata'     => $input,
 ]);
 
+if( ! $request_id ){
+	echo json_encode([
+		'code'    => 500,
+		'status'  => FALSE,
+		'error'   => 'Error',
+		'message' => 'L\'ordine non è stato salvato. Riprova.',
+	]);
+	exit;
+}
+
 
 $wa_response = app_wa_send( $message );
 
 $request_response = 'Grazie per le tue prenotazioni. Avrai notizie dal Farmacista appena possibile.';
 
+$points_awarded = 0;
+$points_value = (int) get_option('point--order_checkout', 10);
+
+// Idempotenza senza modificare schema: fingerprint stabile del carrello giornaliero.
+$items_fingerprint = array_map(function($item){
+	return [
+		'id' => (int) ($item['id'] ?? 0),
+		'quantity' => (int) ($item['quantity'] ?? 0),
+		'price_sale' => (float) ($item['price_sale'] ?? 0),
+	];
+}, $items);
+usort($items_fingerprint, function($a, $b){ return $a['id'] <=> $b['id']; });
+
+$hash_payload = [
+	'user_id' => (int) $user['id'],
+	'pharma_id' => (int) $pharma['id'],
+	'items' => $items_fingerprint,
+];
+$checkout_source = 'order_checkout--' . substr(sha1(json_encode($hash_payload)), 0, 16);
+
+$already_tracked = UserPointsModel::hasEntryForDate((int) $user['id'], (int) $pharma['id'], $checkout_source);
+if( ! $already_tracked && $points_value > 0 ){
+	$added = UserPointsModel::addPoints((int) $user['id'], (int) $pharma['id'], $points_value, $checkout_source);
+	if( $added ) $points_awarded = $points_value;
+}
+
 echo json_encode([
 	'code'      => 200,
 	'status'    => TRUE,
 	'message'   => $request_response,
+	'data'      => [
+		'request_id' => (int) $request_id,
+		'points_awarded' => $points_awarded,
+	],
 ]);

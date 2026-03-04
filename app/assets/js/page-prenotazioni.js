@@ -51,6 +51,8 @@ const ReservationForm = {
 
 	/** Flag per evitare che onClear azzeri i suggerimenti durante un addProduct */
 	_suppressRelatedClear: false,
+	/** Flag per evitare refresh globale quando aggiorniamo solo uno slot suggerimento */
+	_suppressRelatedGlobalReload: false,
 
 	relatedProductAddedListenerAttached: false,
 	isInitialized: false,
@@ -336,6 +338,7 @@ const ReservationForm = {
 		this.relatedProductAddedListenerAttached = true;
 
 		document.addEventListener('reservationProductAdded', (e) => {
+			if (ReservationForm._suppressRelatedGlobalReload) return;
 			const p = e?.detail || {};
 			const mode = ReservationForm.getSubOrderChecked();
 			// Ricarica i suggerimenti basandosi sul prodotto appena aggiunto,
@@ -431,16 +434,25 @@ const ReservationForm = {
 			return;
 		}
 
-		const buildUrl = (tagValue = '') => {
+		const buildUrl = (tagValue = '', options = {}) => {
+			const {
+				limit = 3,
+				extraExcludeIds = [],
+			} = options;
 		const url = this.buildApiUrl(AppURLs?.api?.productSuggestions?.());
 		if (!url) return '';
 			url.searchParams.set('pharma_id', pharmaId);
 			url.searchParams.set('related_mode', '1');
-			url.searchParams.set('limit', '3');
+			url.searchParams.set('limit', String(limit));
 			if (tagValue) url.searchParams.set('related_tag', tagValue);
 			else if (seed) url.searchParams.set('related_seed', seed);
 
-			const excludeIds = this.getSelectedProductIdsForRelated();
+			const excludeIds = [
+				...this.getSelectedProductIdsForRelated(),
+				...extraExcludeIds,
+			]
+				.map((id) => parseInt(id, 10))
+				.filter((id) => Number.isFinite(id) && id > 0);
 			if (excludeIds.length) url.searchParams.set('exclude_ids', excludeIds.join(','));
 
 			return url.toString();
@@ -487,6 +499,59 @@ const ReservationForm = {
 			.catch(() => {
 				this.setRelatedLoading(mode, false);
 				this.renderRelatedProducts([], mode);
+			});
+	},
+
+	refreshRelatedProductSlot(slot = -1, mode = null) {
+		const effectiveMode = mode === null ? this.getSubOrderChecked() : mode;
+		const currentProducts = Array.isArray(this.relatedState?.[effectiveMode]?.products)
+			? this.relatedState[effectiveMode].products
+			: [];
+		if (!Number.isInteger(slot) || slot < 0 || slot >= currentProducts.length) return;
+
+		const target = currentProducts[slot];
+		const { lastTag, lastSeed } = this.relatedState[effectiveMode] || {};
+		const seedCriteria = {
+			tag: lastTag || this.pickRelatedTagFromProduct(target || {}) || '',
+			seedName: lastSeed || target?.name || '',
+		};
+
+		const otherSuggestedIds = currentProducts
+			.map((item, idx) => (idx === slot ? null : item?.id))
+			.filter((id) => Number.isFinite(parseInt(id, 10)));
+
+		const pharmaId = this.getPharmaId();
+		if (!pharmaId) return;
+
+		const url = this.buildApiUrl(AppURLs?.api?.productSuggestions?.());
+		if (!url) return;
+
+		url.searchParams.set('pharma_id', pharmaId);
+		url.searchParams.set('related_mode', '1');
+		url.searchParams.set('limit', '6');
+		if (seedCriteria.tag) url.searchParams.set('related_tag', seedCriteria.tag);
+		else if (seedCriteria.seedName) url.searchParams.set('related_seed', seedCriteria.seedName);
+
+		const excludeIds = [
+			...this.getSelectedProductIdsForRelated(),
+			...otherSuggestedIds,
+			parseInt(target?.id, 10),
+		]
+			.map((id) => parseInt(id, 10))
+			.filter((id) => Number.isFinite(id) && id > 0);
+
+		if (excludeIds.length) url.searchParams.set('exclude_ids', excludeIds.join(','));
+
+		appFetchWithToken(url.toString(), { method: 'GET' })
+			.then((data) => {
+				const candidate = this.extractProductsList(data)
+					.map((item) => this.normalizeRelatedProduct(item))
+					.find((item) => item?.id && item?.name);
+				if (!candidate) return;
+
+				const updatedProducts = [...currentProducts];
+				updatedProducts[slot] = candidate;
+				this.renderRelatedProducts(updatedProducts, effectiveMode);
 			});
 	},
 
@@ -588,7 +653,7 @@ const ReservationForm = {
 			return;
 		}
 		emptyEl.classList.add('d-none');
-		safe.forEach((item) => listEl.appendChild(this.createRelatedProductCard(item)));
+		safe.forEach((item, slot) => listEl.appendChild(this.createRelatedProductCard(item, { mode, slot })));
 	},
 
 	formatCurrency(value) {
@@ -622,9 +687,12 @@ const ReservationForm = {
 			}	
 		},
 
-	createRelatedProductCard(item) {
+	createRelatedProductCard(item, options = {}) {
+		const mode = Number.isInteger(options?.mode) ? options.mode : this.getSubOrderChecked();
+		const slot = Number.isInteger(options?.slot) ? options.slot : -1;
 		const card = document.createElement('article');
 		card.className = 'related-product-card';
+		if (slot >= 0) card.dataset.slot = String(slot);
 		const fp  = this.formatRelatedPrice(item);
 		const src = this.resolveRelatedProductImage(item?.image || '');
 
@@ -685,8 +753,14 @@ const ReservationForm = {
 			// che a sua volta chiama ts.clear() → onClear → renderRelatedProducts([]).
 			// Il flag evita quel reset; i suggerimenti verranno aggiornati dall'evento.
 			this._suppressRelatedClear = true;
+			this._suppressRelatedGlobalReload = true;
 			this.addProduct(relatedData);
 			this._suppressRelatedClear = false;
+			this._suppressRelatedGlobalReload = false;
+
+			if (slot >= 0) {
+				this.refreshRelatedProductSlot(slot, mode);
+			}
 
 			showToast?.('Suggerimento aggiunto', 'success');
 		});
@@ -1200,6 +1274,13 @@ function attachReservationGlobalListeners() {
 		ReservationForm.resetForm();
 		const msg = e.detail?.message;
 		if (msg) showToast?.(msg, 'success');
+		document.dispatchEvent(new CustomEvent('points:refreshRequested', {
+			detail: {
+				source: 'reservation_success',
+				request_id: e?.detail?.data?.request_id || null,
+				points_awarded: e?.detail?.data?.points_awarded || 0,
+			},
+		}));
 	});
 
 	document.addEventListener('reservationError', (e) => {
