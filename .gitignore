@@ -1,1 +1,4 @@
 .env
+config.local.php
+api/config.local.php
+panel/config/config.local.php

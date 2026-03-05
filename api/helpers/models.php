@@ -588,6 +588,67 @@ function normalize_user_profile_data($user_db) {
 	return $user;
 }
 
+function normalize_asset_url(?string $rawPath, string $defaultBase = 'panel', string $fallbackPath = ''): string {
+	$path = trim((string) ($rawPath ?? ''));
+	if ($path === '') {
+		$path = $fallbackPath;
+	}
+
+	if ($path === '') {
+		return '';
+	}
+
+	if (preg_match('#^https?://#i', $path)) {
+		return $path;
+	}
+
+	$base = $defaultBase === 'api' ? api_base_url() : panel_base_url();
+	return rtrim($base, '/') . '/' . ltrim($path, '/');
+}
+
+function get_pharma_img_src( $pharma_id = NULL, $filename = NULL ){
+	if (!isset($pharma_id, $filename)) {
+		return;
+	}
+
+	$filename = trim((string) $filename);
+	if ($filename === '') {
+		return;
+	}
+
+	if (preg_match('#^https?://#i', $filename)) {
+		return $filename;
+	}
+
+	if (str_starts_with($filename, '/uploads/') || str_starts_with($filename, 'uploads/')) {
+		return normalize_asset_url($filename, 'panel');
+	}
+
+	return normalize_asset_url('uploads/pharmacies/' . (int) $pharma_id . '/' . ltrim($filename, '/'), 'api');
+}
+
+function get_service_img_src($pharma_id = NULL, $serviceCover = NULL) {
+	if (empty($serviceCover)) {
+		return '';
+	}
+
+	$src = is_array($serviceCover) ? trim((string) ($serviceCover['src'] ?? '')) : trim((string) $serviceCover);
+	if ($src === '') {
+		return '';
+	}
+
+	if (preg_match('#^https?://#i', $src)) {
+		return $src;
+	}
+
+	if (str_starts_with($src, '/uploads/') || str_starts_with($src, 'uploads/')) {
+		return normalize_asset_url($src, 'panel');
+	}
+
+	$srcNoExt = preg_replace('/\.[a-zA-Z0-9]{2,5}$/', '', $src);
+	return normalize_asset_url('uploads/pharmacies/' . (int) $pharma_id . '/services/' . ltrim((string) $srcNoExt, '/') . '.jpg', 'api');
+}
+
 function normalize_pharma_data( $pharma_db ){
 	if( ! $pharma_db ) return FALSE;
 
@@ -603,9 +664,9 @@ function normalize_pharma_data( $pharma_db ){
 		// 'image_bot'    => site_url().'/assets/pharmacies/'.$pharma_db['id'].'/'.$pharma_db['img_bot'],
 		// 'image_avatar' => site_url().'/assets/pharmacies/'.$pharma_db['id'].'/'.$pharma_db['img_avatar'],
 		// 'image_cover'  => site_url().'/assets/pharmacies/'.$pharma_db['id'].'/'.$pharma_db['img_cover'],
-		'image_logo'   => rtrim(panel_url(), '/').'/'.ltrim((string)$pharma_db['logo'], '/'),
+		'image_logo'   => normalize_asset_url((string) ($pharma_db['logo'] ?? ''), 'panel'),
 		// 'image_bot'    => get_pharma_img_src($pharma_db['id'], $pharma_db['img_bot']),
-		'image_bot'    => 'https://assistentefarmacia.it/app-cliente-farmacia/img/Raffaella.jpg',
+		'image_bot'    => get_pharma_img_src($pharma_db['id'], $pharma_db['img_bot']),
 		'image_avatar' => get_pharma_img_src($pharma_db['id'], $pharma_db['img_avatar']),
 		'image_cover'  => get_pharma_img_src($pharma_db['id'], $pharma_db['img_cover']),
 		'social_list'  => [],
@@ -614,31 +675,6 @@ function normalize_pharma_data( $pharma_db ){
 			'data'  => json_decode($pharma_db['working_info'], TRUE),
 		],
 	];
-
-	if( $pharma_db['id'] == 1 ){
-		// $pharma['social_list']['fb'] = [
-		// 	'name' => 'Facebook',
-		// 	'aria' => 'Visita la nostra pagina Facebook',
-		// 	'url'  => 'https://www.facebook.com/p/Farmacia-Giovinazzi-100063672513586/'
-		// ];
-		// $pharma['social_list']['ig'] = [
-		// 	'name' => 'Instagram',
-		// 	'aria' => 'Visita il nostro profilo Instagram',
-		// 	'url'  => 'https://www.instagram.com/farmaciagiovinazzi/'
-		// ];
-
-		$pharma['image_bot']    = 'https://assistentefarmacia.it/app-cliente-farmacia/img/Raffaella.jpg';
-		$pharma['image_logo']   = rtrim(panel_url(), '/').'/'.ltrim((string)$pharma_db['logo'], '/');
-		$pharma['image_avatar'] = 'https://api.assistentefarmacia.it/uploads/pharmacies/1/logo_farmacia_giovinazzi.png';
-		$pharma['image_cover']  = 'https://api.assistentefarmacia.it/uploads/pharmacies/1/logo_farmacia_giovinazzi.png';
-
-	}elseif( $pharma_db['id'] == 2 ){
-	}elseif( $pharma_db['id'] == 3 ){
-		$pharma['image_bot']    = 'https://api.assistentefarmacia.it/uploads/pharmacies/3/bot_aigemelli.jpg';
-		$pharma['image_logo']   = rtrim(panel_url(), '/').'/'.ltrim((string)$pharma_db['logo'], '/');
-		$pharma['image_avatar'] = 'https://api.assistentefarmacia.it/uploads/pharmacies/3/logo_farmacia_aigemelli.png';
-		$pharma['image_cover']  = 'https://api.assistentefarmacia.it/uploads/pharmacies/3/logo_farmacia_aigemelli.png';
-	}
 
 	return $pharma;
 }
@@ -656,11 +692,11 @@ function normalize_service_data( $service_db ){
 	];
 
 	if( $service['cover_image'] ){
-		$service['cover_image']['src'] = rtrim(site_url(), '/').'/uploads/pharmacies/'.$service_db['pharma_id'].'/services/'.$service_db['img_cover']['src'].'.jpg';
+		$service['cover_image']['src'] = get_service_img_src($service_db['pharma_id'], $service_db['img_cover']);
 		$service['cover_image']['is_default'] = FALSE;
 	}else{
 		$service['cover_image'] = [
-			'src'    => rtrim(site_url(), '/').'/uploads/images/placeholder-service.jpg',
+			'src'    => normalize_asset_url('/uploads/images/placeholder-service.jpg', 'panel'),
 			'alt'    => 'Immagine servizio',
 			'width'  => 1200,
 			'height' => 600,
@@ -757,7 +793,7 @@ function normalize_product_data(array $prod): array {
 	// Gestione immagine
 	if (empty($prod['image'])) {
 		$image = [
-			'src'        => site_url() . '/uploads/images/placeholder-product.jpg',
+			'src'        => normalize_asset_url('/uploads/images/placeholder-product.jpg', 'panel'),
 			'alt'        => 'Prodotto senza immagine',
 			'width'      => 1024,
 			'height'     => 1024,
@@ -767,16 +803,12 @@ function normalize_product_data(array $prod): array {
 		$image = [
 			// 'src'    => site_url() . '/uploads/drugs/' . $prod['image'],
 			// 'src'    => site_url() . '/panel/' . $prod['image'],
-			'src'        => rtrim(panel_url(), '/') . '/' . ltrim((string)$prod['image'], '/'),
+			'src'        => normalize_asset_url((string) $prod['image'], 'panel'),
 			'alt'        => 'Immagine prodotto ' . trim($prod['name']),
 			'width'      => 1000,
 			'height'     => 1000,
 			'is_default' => FALSE,
 		];
-
-		if( $_SERVER['REMOTE_ADDR'] == '127.0.0.1' ){
-			$image['src'] = str_replace('assistente_farmacia_api', 'assistente_farmacia_app', $image['src']);
-		}
 
 	}
 
@@ -1135,9 +1167,3 @@ function normalize_reminder_expiry_data( $reminder_db ){
 	return $reminder;
 }
 
-function get_pharma_img_src( $pharma_id = NULL, $filename = NULL ){
-	if( isset($pharma_id, $filename) ){
-		return rtrim(site_url(), '/').'/uploads/pharmacies/'.$pharma_id.'/'.$filename;
-	}
-	return;
-}

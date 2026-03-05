@@ -233,6 +233,24 @@ function getFileExtension($filename) {
     return strtolower(pathinfo($filename, PATHINFO_EXTENSION));
 }
 
+
+function normalizePanelUploadSrc($path) {
+    $path = trim((string) $path);
+    if ($path === '') {
+        return '';
+    }
+
+    if (preg_match('#^https?://#i', $path)) {
+        return $path;
+    }
+
+    if (str_starts_with($path, '/uploads/') || str_starts_with($path, 'uploads/')) {
+        return '/' . ltrim($path, '/');
+    }
+
+    return $path;
+}
+
 function isImageFile($filename) {
     $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
     return in_array(getFileExtension($filename), $allowed_extensions);
