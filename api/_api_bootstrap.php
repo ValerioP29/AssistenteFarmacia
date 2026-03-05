@@ -48,6 +48,22 @@ function site_url(){
 	return $scheme . '://' . $host . ($path ? $path : '');
 }
 
+function panel_url(){
+	$configuredPanelUrl = $_ENV['PANEL_URL'] ?? getenv('PANEL_URL');
+	if (!empty($configuredPanelUrl)) {
+		return rtrim($configuredPanelUrl, '/');
+	}
+
+	$base = site_url();
+	$host = $_SERVER['HTTP_HOST'] ?? '';
+
+	if (strpos($host, 'localhost:8002') !== false || strpos($host, '127.0.0.1:8002') !== false) {
+		return preg_replace('/:8002$/', ':8001', $base);
+	}
+
+	return rtrim(str_replace('api.', 'app.', $base), '/') . '/panel';
+}
+
 function site_path(){
 	$url = realpath(__DIR__);
 	$url = str_replace('\\', '/', $url);
