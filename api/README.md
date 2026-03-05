@@ -27,6 +27,7 @@ Online all'indirizzo [https://api.assistentefarmacia.it](https://api.assistentef
    DB_NAME=<DB_NAME>
    DB_USER=<DB_USER>
    DB_PSW=<DB_PSW>
+   PANEL_URL=http://localhost:8001
    ```
 
 4. **Configura il database** eseguendo gli script SQL per le tabelle dei promemoria:

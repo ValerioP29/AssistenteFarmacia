@@ -603,7 +603,7 @@ function normalize_pharma_data( $pharma_db ){
 		// 'image_bot'    => site_url().'/assets/pharmacies/'.$pharma_db['id'].'/'.$pharma_db['img_bot'],
 		// 'image_avatar' => site_url().'/assets/pharmacies/'.$pharma_db['id'].'/'.$pharma_db['img_avatar'],
 		// 'image_cover'  => site_url().'/assets/pharmacies/'.$pharma_db['id'].'/'.$pharma_db['img_cover'],
-		'image_logo'   => 'https://app.assistentefarmacia.it/panel/'.$pharma_db['logo'],
+		'image_logo'   => rtrim(panel_url(), '/').'/'.ltrim((string)$pharma_db['logo'], '/'),
 		// 'image_bot'    => get_pharma_img_src($pharma_db['id'], $pharma_db['img_bot']),
 		'image_bot'    => 'https://assistentefarmacia.it/app-cliente-farmacia/img/Raffaella.jpg',
 		'image_avatar' => get_pharma_img_src($pharma_db['id'], $pharma_db['img_avatar']),
@@ -628,14 +628,14 @@ function normalize_pharma_data( $pharma_db ){
 		// ];
 
 		$pharma['image_bot']    = 'https://assistentefarmacia.it/app-cliente-farmacia/img/Raffaella.jpg';
-		$pharma['image_logo']   = 'https://app.assistentefarmacia.it/panel/'.$pharma_db['logo'];
+		$pharma['image_logo']   = rtrim(panel_url(), '/').'/'.ltrim((string)$pharma_db['logo'], '/');
 		$pharma['image_avatar'] = 'https://api.assistentefarmacia.it/uploads/pharmacies/1/logo_farmacia_giovinazzi.png';
 		$pharma['image_cover']  = 'https://api.assistentefarmacia.it/uploads/pharmacies/1/logo_farmacia_giovinazzi.png';
 
 	}elseif( $pharma_db['id'] == 2 ){
 	}elseif( $pharma_db['id'] == 3 ){
 		$pharma['image_bot']    = 'https://api.assistentefarmacia.it/uploads/pharmacies/3/bot_aigemelli.jpg';
-		$pharma['image_logo']   = 'https://app.assistentefarmacia.it/panel/'.$pharma_db['logo'];
+		$pharma['image_logo']   = rtrim(panel_url(), '/').'/'.ltrim((string)$pharma_db['logo'], '/');
 		$pharma['image_avatar'] = 'https://api.assistentefarmacia.it/uploads/pharmacies/3/logo_farmacia_aigemelli.png';
 		$pharma['image_cover']  = 'https://api.assistentefarmacia.it/uploads/pharmacies/3/logo_farmacia_aigemelli.png';
 	}
@@ -767,7 +767,7 @@ function normalize_product_data(array $prod): array {
 		$image = [
 			// 'src'    => site_url() . '/uploads/drugs/' . $prod['image'],
 			// 'src'    => site_url() . '/panel/' . $prod['image'],
-			'src'        => str_replace('api.' , 'app.', site_url()) . '/panel/' . $prod['image'],
+			'src'        => rtrim(panel_url(), '/') . '/' . ltrim((string)$prod['image'], '/'),
 			'alt'        => 'Immagine prodotto ' . trim($prod['name']),
 			'width'      => 1000,
 			'height'     => 1000,

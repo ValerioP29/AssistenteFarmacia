@@ -89,7 +89,9 @@ const AppURLs = {
 		getSurvey: (id) => AppURLs.api.base + `/survey-get.php?id=${id ?? ''}`,
 	},
 	panel: {
-		base: 'https://panel.assistentefarmacia.it',
+		base: (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+			? 'http://localhost:8001'
+			: 'https://app.assistentefarmacia.it/panel',
 	},
 };
 
