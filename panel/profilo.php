@@ -129,7 +129,7 @@ include 'includes/header.php';
                                     <div class="col-md-3 text-center">
                                         <div class="logo-preview mb-3">
                                             <?php if (!empty($pharmacy['logo'])): ?>
-                                                <img src="<?= h($pharmacy['logo']) ?>" alt="Logo Farmacia" 
+                                                <img src="<?= h(normalizePanelUploadSrc($pharmacy['logo'])) ?>" alt="Logo Farmacia" 
                                                      class="img-fluid rounded" style="max-height: 150px; max-width: 200px;">
                                             <?php else: ?>
                                                 <div class="placeholder-logo bg-light border rounded d-flex align-items-center justify-content-center" 

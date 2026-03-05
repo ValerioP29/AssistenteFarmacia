@@ -48,7 +48,7 @@ $visible_menu_items = array_filter($menu_items, function($item) use ($user_role)
                 <div class="card border-0 bg-transparent">
                     <div class="card-body text-center p-3">
                         <?php if (!empty($pharmacy['logo'])): ?>
-                            <img src="<?= h($pharmacy['logo']) ?>" alt="Logo <?= h($pharmacy['nice_name']) ?>" 
+                            <img src="<?= h(normalizePanelUploadSrc($pharmacy['logo'])) ?>" alt="Logo <?= h($pharmacy['nice_name']) ?>" 
                                  class="pharmacy-logo mb-2" style="height: 60px; width: auto; max-width: 150px; object-fit: contain; border-radius: 8px;">
                         <?php else: ?>
                             <div class="pharmacy-logo-placeholder mb-2 d-flex align-items-center justify-content-center" 

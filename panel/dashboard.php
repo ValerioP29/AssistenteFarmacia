@@ -194,7 +194,7 @@ $nextOpening = getNextOpeningTime();
                         <div class="card-body">
                             <?php if (!empty($pharmacy['logo'])): ?>
                                 <div class="text-center mb-3">
-                                    <img src="<?= h($pharmacy['logo']) ?>" alt="Logo <?= h($pharmacy['nice_name']) ?>" 
+                                    <img src="<?= h(normalizePanelUploadSrc($pharmacy['logo'])) ?>" alt="Logo <?= h($pharmacy['nice_name']) ?>" 
                                          class="pharmacy-logo" style="height: 80px; width: auto; max-width: 200px; object-fit: contain; border-radius: 8px;">
                                 </div>
                             <?php endif; ?>

@@ -11,7 +11,18 @@ date_default_timezone_set('Europe/Rome');
 require_once('vendor/autoload.php');
 
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
-$dotenv->load();
+$dotenv->safeLoad();
+
+$localConfigCandidates = [
+	__DIR__ . '/../config.local.php',
+	__DIR__ . '/config.local.php',
+];
+
+foreach ($localConfigCandidates as $localConfigFile) {
+	if (is_readable($localConfigFile)) {
+		require_once $localConfigFile;
+	}
+}
 
 require_once('helpers/db_connect.php');
 require_once('helpers/models.php');
@@ -48,20 +59,62 @@ function site_url(){
 	return $scheme . '://' . $host . ($path ? $path : '');
 }
 
-function panel_url(){
-	$configuredPanelUrl = $_ENV['PANEL_URL'] ?? getenv('PANEL_URL');
-	if (!empty($configuredPanelUrl)) {
-		return rtrim($configuredPanelUrl, '/');
+function configured_base_url(string $constName, string $envName): string {
+	if (defined($constName) && constant($constName)) {
+		return rtrim((string) constant($constName), '/');
 	}
 
-	$base = site_url();
+	$configuredUrl = $_ENV[$envName] ?? getenv($envName);
+	if (!empty($configuredUrl)) {
+		return rtrim((string) $configuredUrl, '/');
+	}
+
+	return '';
+}
+
+function api_base_url(): string {
+	$configured = configured_base_url('API_URL', 'API_URL');
+	if ($configured !== '') {
+		return $configured;
+	}
+
+	return rtrim(site_url(), '/');
+}
+
+function panel_base_url(): string {
+	$configured = configured_base_url('PANEL_URL', 'PANEL_URL');
+	if ($configured !== '') {
+		return $configured;
+	}
+
 	$host = $_SERVER['HTTP_HOST'] ?? '';
+	$hostName = strtolower((string) preg_replace('/:\\d+$/', '', $host));
 
-	if (strpos($host, 'localhost:8002') !== false || strpos($host, '127.0.0.1:8002') !== false) {
-		return preg_replace('/:8002$/', ':8001', $base);
+	if (in_array($hostName, ['localhost', '127.0.0.1'], true)) {
+		$resolvedPanelBaseUrl = 'http://localhost:8001';
+
+		// Trace temporaneo per debug locale (abilitabile da config.local.php con define('PANEL_BASE_URL_TRACE', true);)
+		if ((defined('PANEL_BASE_URL_TRACE') && PANEL_BASE_URL_TRACE) || isset($_GET['trace_panel_base_url'])) {
+			error_log('[panel_base_url] HTTP_HOST=' . $host . ' | panel_base_url=' . $resolvedPanelBaseUrl);
+		}
+
+		return $resolvedPanelBaseUrl;
 	}
 
-	return rtrim(str_replace('api.', 'app.', $base), '/') . '/panel';
+	if (str_contains($host, 'api.assistentefarmacia.it')) {
+		return 'https://app.assistentefarmacia.it/panel';
+	}
+
+	$base = rtrim(str_replace('api.', 'app.', site_url()), '/');
+	if (!str_contains($base, '/panel')) {
+		$base .= '/panel';
+	}
+
+	return $base;
+}
+
+function panel_url(){
+	return panel_base_url();
 }
 
 function site_path(){

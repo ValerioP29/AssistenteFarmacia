@@ -5,6 +5,17 @@
  */
 
 // Configurazione Database (solo se non già definite)
+$panelLocalConfigCandidates = [
+    dirname(__DIR__, 2) . '/config.local.php',
+    __DIR__ . '/config.local.php',
+];
+
+foreach ($panelLocalConfigCandidates as $panelLocalConfigFile) {
+    if (is_readable($panelLocalConfigFile)) {
+        require_once $panelLocalConfigFile;
+    }
+}
+
 if (!defined('DB_HOST')) define('DB_HOST', 'localhost');
 if (!defined('DB_NAME')) define('DB_NAME', 'jt_assistente_farmacia');
 if (!defined('DB_USER')) define('DB_USER', 'jta_master_user');
@@ -14,7 +25,7 @@ if (!defined('DB_CHARSET')) define('DB_CHARSET', 'utf8mb4');
 // Configurazione Applicazione (solo se non già definite)
 if (!defined('APP_NAME')) define('APP_NAME', 'Assistente Farmacia Panel');
 if (!defined('APP_VERSION')) define('APP_VERSION', '1.0.0');
-if (!defined('APP_URL')) define('APP_URL', 'https://app.assistentefarmacia.it/panel');
+if (!defined('APP_URL')) define('APP_URL', defined('PANEL_URL') ? PANEL_URL : 'https://app.assistentefarmacia.it/panel');
 if (!defined('APP_PATH')) define('APP_PATH', __DIR__ . '/../');
 
 // Configurazione Sessione (solo se non già definite)
