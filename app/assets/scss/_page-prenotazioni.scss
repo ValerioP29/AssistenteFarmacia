@@ -342,7 +342,7 @@ body.page-reservation {
 		&__content {
 			display: flex;
 			flex-direction: column;
-			gap: 5px;
+			justify-content: space-between;
 			flex: 1;
 			min-width: 0;
 		}
@@ -361,7 +361,8 @@ body.page-reservation {
 		&__meta {
 			display: flex;
 			align-items: center;
-			gap: 6px;
+			justify-content: space-between;
+			gap: 8px;
 			min-width: 0;
 		}
 
