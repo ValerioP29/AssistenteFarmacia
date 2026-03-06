@@ -728,6 +728,7 @@ const ReservationForm = {
 		const fp  = this.formatRelatedPrice(item);
 		const src = this.resolveRelatedProductImage(item?.image || '');
 		const isAdded = this.isProductAlreadyInCart(item?.id);
+		const itemName = item?.name || 'Prodotto';
 
 		card.innerHTML = `
 			<div class="related-product-card__image-wrap">
@@ -737,14 +738,16 @@ const ReservationForm = {
 					loading="lazy" />
 			</div>
 			<div class="related-product-card__content">
-				<div class="related-product-card__name">${escapeHtml(item.name || 'Prodotto')}</div>
+				<div class="related-product-card__name">${escapeHtml(itemName)}</div>
+				<div class="related-product-card__meta">
 				${fp?.hasDiscount
 					? `<div class="related-product-card__price-row">
 						<span class="related-product-card__price--original">${escapeHtml(fp.original)}</span>
 						<span class="related-product-card__price--discounted">${escapeHtml(fp.discounted)}</span>
 					   </div>`
 					: (fp?.single ? `<div class="related-product-card__price">${escapeHtml(fp.single)}</div>` : '')}
-				<button class="btn btn-primary related-product-card__cta" type="button" ${isAdded ? 'disabled' : ''}>${isAdded ? 'Aggiunto' : 'Aggiungi'}</button>
+				</div>
+				<button class="btn btn-primary related-product-card__cta" type="button" aria-label="${escapeHtml((isAdded ? 'Prodotto già aggiunto: ' : 'Aggiungi prodotto: ') + itemName)}" ${isAdded ? 'disabled' : ''}>${isAdded ? 'Aggiunto' : 'Aggiungi'}</button>
 			</div>`;
 
 		// Fallback immagine
