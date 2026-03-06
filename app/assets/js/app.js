@@ -396,6 +396,11 @@ function createResponsiveImage(image = {}, options = {}) {
 	img.src = fixUrl(image?.src) || placeholder;
 	img.alt = image?.alt || 'Immagine non disponibile';
 	img.loading = 'lazy';
+	img.onerror = () => {
+		if (img.dataset.fallbackApplied === '1') return;
+		img.dataset.fallbackApplied = '1';
+		img.src = placeholder;
+	};
 
 	img.classList.add('img-fluid', 'w-100');
 

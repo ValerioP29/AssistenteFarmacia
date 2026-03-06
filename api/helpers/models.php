@@ -602,8 +602,16 @@ function normalize_asset_url(?string $rawPath, string $defaultBase = 'panel', st
 		return $path;
 	}
 
+	if (str_starts_with($path, '/panel/uploads/') || str_starts_with($path, 'panel/uploads/')) {
+		$path = preg_replace('#^/?panel/#', '/', $path);
+	}
+
+	$path = '/' . ltrim($path, '/');
+	$path = preg_replace('#/+#', '/', $path);
+	$path = preg_replace('#^/uploads/uploads/#', '/uploads/', $path);
+
 	$base = $defaultBase === 'api' ? api_base_url() : panel_base_url();
-	return rtrim($base, '/') . '/' . ltrim($path, '/');
+	return rtrim($base, '/') . $path;
 }
 
 function get_pharma_img_src( $pharma_id = NULL, $filename = NULL ){
@@ -755,11 +763,11 @@ function normalize_event_data( $event_db ){
 	];
 
 	if( $event['cover_image'] ){
-		$event['cover_image']['src'] = rtrim(site_url(), '/').'/uploads/pharmacies/'.$event_db['pharma_id'].'/events/'.$event_db['img_cover']['src'].'.jpg';
+		$event['cover_image']['src'] = get_service_img_src($event_db['pharma_id'], $event_db['img_cover']);
 		$event['cover_image']['is_default'] = FALSE;
 	}else{
 		$event['cover_image'] = [
-			'src'    => rtrim(site_url(), '/').'/uploads/images/placeholder-event.jpg',
+			'src'    => normalize_asset_url('/uploads/images/placeholder-event.jpg', 'panel'),
 			'alt'    => 'Immagine evento',
 			'width'  => 1200,
 			'height' => 600,
@@ -1166,4 +1174,3 @@ function normalize_reminder_expiry_data( $reminder_db ){
 
 	return $reminder;
 }
-
