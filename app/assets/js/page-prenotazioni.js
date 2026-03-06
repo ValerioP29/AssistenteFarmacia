@@ -339,10 +339,13 @@ const ReservationForm = {
 			const p = e?.detail || {};
 			const mode = Number.isInteger(p?.mode) ? p.mode : ReservationForm.getSubOrderChecked();
 
-			// Se l'aggiunta arriva da una card suggerita, aggiorna solo la card cliccata
-			// senza ricaricare tutta la lista (evita side effect sulle altre card visibili).
+			// Se l'aggiunta arriva da una card suggerita, rimuove solo il prodotto cliccato
+			// dalla lista visibile e prova a rimpiazzarlo senza alterare le altre card.
 			if (p?.source === 'related-card' && p?.id) {
-				ReservationForm.markRelatedProductAsAdded(p.id, mode);
+				ReservationForm.replaceAddedRelatedProduct(p.id, mode, {
+					tag: ReservationForm.pickRelatedTagFromProduct(p),
+					seedName: p.name || '',
+				});
 				return;
 			}
 
@@ -368,26 +371,58 @@ const ReservationForm = {
 		});
 	},
 
-	markRelatedProductAsAdded(productId, mode = null) {
+	replaceAddedRelatedProduct(productId, mode = null, fallbackCriteria = {}) {
 		const parsedId = parseInt(productId, 10);
+		const effectiveMode = [0, 1].includes(mode) ? mode : this.getSubOrderChecked();
 		if (Number.isNaN(parsedId) || parsedId <= 0) return;
 
-		const updateButtonInMode = (targetMode) => {
-			const { listEl } = this.getRelatedElementsByMode(targetMode);
-			if (!listEl) return;
-			const btn = listEl.querySelector(`[data-related-product-id="${parsedId}"] .related-product-card__cta`);
-			if (!btn) return;
-			btn.disabled = true;
-			btn.textContent = 'Aggiunto';
-		};
+		const currentVisible = Array.isArray(this.relatedState[effectiveMode]?.products)
+			? this.relatedState[effectiveMode].products
+			: [];
+		const visibleWithoutAdded = this.filterUniqueRelatedProducts(
+			currentVisible.filter((item) => parseInt(item?.id, 10) !== parsedId)
+		);
 
-		if (mode === 0 || mode === 1) {
-			updateButtonInMode(mode);
+		const preservedVisible = visibleWithoutAdded.filter((item) => !this.isProductAlreadyInCart(item?.id));
+		const missingCount = Math.max(0, 3 - preservedVisible.length);
+		if (missingCount === 0) {
+			this.renderRelatedProducts(preservedVisible, effectiveMode);
 			return;
 		}
 
-		updateButtonInMode(0);
-		updateButtonInMode(1);
+		const state = this.relatedState[effectiveMode] || {};
+		const fallbackTag = this.canonicalizeTagValue(
+			typeof fallbackCriteria === 'object' ? (fallbackCriteria?.tag || '') : ''
+		);
+		const fallbackSeed = typeof fallbackCriteria === 'object' ? String(fallbackCriteria?.seedName || '').trim() : '';
+		const criteria = {
+			tag: state.lastTag || fallbackTag || '',
+			seedName: state.lastSeed || fallbackSeed || '',
+		};
+		if (!state.lastTag && criteria.tag) this.relatedState[effectiveMode].lastTag = criteria.tag;
+		if (!state.lastSeed && criteria.seedName) this.relatedState[effectiveMode].lastSeed = criteria.seedName;
+
+		const extraExcludeIds = [
+			parsedId,
+			...preservedVisible.map((item) => parseInt(item?.id, 10)),
+		].filter((id) => !Number.isNaN(id) && id > 0);
+
+		this.fetchRelatedProducts(
+			criteria,
+			effectiveMode,
+			missingCount,
+			extraExcludeIds
+		)
+			.then((replacements) => {
+				const merged = this.filterUniqueRelatedProducts([
+					...preservedVisible,
+					...replacements,
+				]).slice(0, 3);
+				this.renderRelatedProducts(merged, effectiveMode);
+			})
+			.catch(() => {
+				this.renderRelatedProducts(preservedVisible, effectiveMode);
+			});
 	},
 
 	showRelatedSection(mode = 0) {
@@ -446,6 +481,79 @@ const ReservationForm = {
 			.map((id) => parseInt(id, 10));
 	},
 
+	filterUniqueRelatedProducts(products = []) {
+		const seen = new Set();
+		return (Array.isArray(products) ? products : []).filter((item) => {
+			const id = parseInt(item?.id, 10);
+			if (Number.isNaN(id) || id <= 0 || seen.has(id)) return false;
+			seen.add(id);
+			return true;
+		});
+	},
+
+	buildRelatedSuggestionsUrl(criteria = {}, mode = 0, limit = 3, extraExcludeIds = []) {
+		const pharmaId = this.getPharmaId();
+		if (!pharmaId) return '';
+
+		const rawTag = typeof criteria === 'string' ? criteria : (criteria?.tag || '');
+		const rawSeed = typeof criteria === 'object' ? (criteria?.seedName || '') : '';
+		const tag = rawTag.trim().toLowerCase();
+		const seed = rawSeed.trim();
+
+		const url = this.buildApiUrl(AppURLs?.api?.productSuggestions?.());
+		if (!url) return '';
+
+		url.searchParams.set('pharma_id', pharmaId);
+		url.searchParams.set('related_mode', '1');
+		url.searchParams.set('limit', String(Math.max(1, parseInt(limit, 10) || 3)));
+		if (tag) url.searchParams.set('related_tag', tag);
+		else if (seed) url.searchParams.set('related_seed', seed);
+
+		const excludeIds = new Set(this.getSelectedProductIdsForRelated());
+		extraExcludeIds.forEach((id) => {
+			const parsed = parseInt(id, 10);
+			if (!Number.isNaN(parsed) && parsed > 0) excludeIds.add(parsed);
+		});
+		if (excludeIds.size) url.searchParams.set('exclude_ids', Array.from(excludeIds).join(','));
+
+		return url.toString();
+	},
+
+	fetchRelatedProducts(criteria = {}, mode = null, limit = 3, extraExcludeIds = []) {
+		const effectiveMode = mode === null ? this.getSubOrderChecked() : mode;
+		if (![0, 1].includes(effectiveMode)) return Promise.resolve([]);
+
+		const rawTag = typeof criteria === 'string' ? criteria : (criteria?.tag || '');
+		const rawSeed = typeof criteria === 'object' ? (criteria?.seedName || '') : '';
+		const tag = rawTag.trim().toLowerCase();
+		const seedName = rawSeed.trim();
+
+		const normalize = (data) => this.filterUniqueRelatedProducts(
+			this.extractProductsList(data)
+				.map((item) => this.normalizeRelatedProduct(item))
+				.filter((item) => item.id && item.name)
+		).slice(0, Math.max(1, parseInt(limit, 10) || 3));
+
+		const urlPrimary = this.buildRelatedSuggestionsUrl({ tag, seedName }, effectiveMode, limit, extraExcludeIds);
+		if (!urlPrimary) {
+			this.relatedState[effectiveMode].didInit = false;
+			this._schedulePharmaRetry(effectiveMode);
+			return Promise.resolve([]);
+		}
+
+		return appFetchWithToken(urlPrimary, { method: 'GET' })
+			.then((data) => {
+				const products = normalize(data);
+				if (products.length > 0 || !tag) return products;
+
+				const fallbackUrl = this.buildRelatedSuggestionsUrl({ tag: '', seedName }, effectiveMode, limit, extraExcludeIds);
+				if (!fallbackUrl) return [];
+				return appFetchWithToken(fallbackUrl, { method: 'GET' })
+					.then((fallbackData) => normalize(fallbackData))
+					.catch(() => []);
+			});
+	},
+
 	loadRelatedProducts(criteria = {}, mode = null) {
 		if (mode === null) mode = this.getSubOrderChecked();
 		if (![0, 1].includes(mode)) return;
@@ -470,56 +578,8 @@ const ReservationForm = {
 			return;
 		}
 
-		const buildUrl = (tagValue = '') => {
-		const url = this.buildApiUrl(AppURLs?.api?.productSuggestions?.());
-		if (!url) return '';
-			url.searchParams.set('pharma_id', pharmaId);
-			url.searchParams.set('related_mode', '1');
-			url.searchParams.set('limit', '3');
-			if (tagValue) url.searchParams.set('related_tag', tagValue);
-			else if (seed) url.searchParams.set('related_seed', seed);
-
-			const excludeIds = this.getSelectedProductIdsForRelated();
-			if (excludeIds.length) url.searchParams.set('exclude_ids', excludeIds.join(','));
-
-			return url.toString();
-		};
-
-		const normalize = (data) =>
-			this.extractProductsList(data)
-				.map((item) => this.normalizeRelatedProduct(item))
-				.filter((item) => item.id && item.name)
-				.slice(0, 3);
-
-				const urlPrimary = buildUrl(tag);
-			if (!urlPrimary) {
-				this.relatedState[mode].didInit = false;
-				this.setRelatedLoading(mode, false);
-				// retry: se AppURLs/dataStore non erano pronti
-				this._schedulePharmaRetry(mode);
-				return;
-			}
-
-			appFetchWithToken(urlPrimary, { method: 'GET' })
-			.then((data) => {
-				let products = normalize(data);
-
-				// Fallback: se nessun risultato con il tag, riprova senza
-				if (products.length === 0 && tag) {
-					const urlFallback = buildUrl('');
-					if (!urlFallback) throw new Error('URL fallback non valido');
-					return appFetchWithToken(urlFallback, { method: 'GET' })
-						.then((fallback) => {
-							products = normalize(fallback);
-							this.setRelatedLoading(mode, false);
-							this.renderRelatedProducts(products, mode);
-						})
-						.catch(() => {
-							this.setRelatedLoading(mode, false);
-							this.renderRelatedProducts([], mode);
-						});
-				}
-
+		this.fetchRelatedProducts({ tag, seedName: seed }, mode, 3)
+			.then((products) => {
 				this.setRelatedLoading(mode, false);
 				this.renderRelatedProducts(products, mode);
 			})
@@ -699,7 +759,7 @@ const ReservationForm = {
 		// CTA — aggiunge il prodotto suggerito al carrello
 		card.querySelector('button')?.addEventListener('click', () => {
 			if (this.isProductAlreadyInCart(item?.id)) {
-				this.markRelatedProductAsAdded(item?.id, this.getSubOrderChecked());
+				this.replaceAddedRelatedProduct(item?.id, this.getSubOrderChecked());
 				return;
 			}
 
