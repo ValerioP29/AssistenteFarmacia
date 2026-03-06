@@ -91,7 +91,7 @@ function panel_base_url(): string {
 	$hostName = strtolower((string) preg_replace('/:\\d+$/', '', $host));
 
 	if (in_array($hostName, ['localhost', '127.0.0.1'], true)) {
-		$resolvedPanelBaseUrl = 'http://localhost:8001';
+		$resolvedPanelBaseUrl = 'http://' . $hostName . ':8001';
 
 		// Trace temporaneo per debug locale (abilitabile da config.local.php con define('PANEL_BASE_URL_TRACE', true);)
 		if ((defined('PANEL_BASE_URL_TRACE') && PANEL_BASE_URL_TRACE) || isset($_GET['trace_panel_base_url'])) {
