@@ -337,7 +337,15 @@ const ReservationForm = {
 
 		document.addEventListener('reservationProductAdded', (e) => {
 			const p = e?.detail || {};
-			const mode = ReservationForm.getSubOrderChecked();
+			const mode = Number.isInteger(p?.mode) ? p.mode : ReservationForm.getSubOrderChecked();
+
+			// Se l'aggiunta arriva da una card suggerita, aggiorna solo la card cliccata
+			// senza ricaricare tutta la lista (evita side effect sulle altre card visibili).
+			if (p?.source === 'related-card' && p?.id) {
+				ReservationForm.markRelatedProductAsAdded(p.id, mode);
+				return;
+			}
+
 			// Ricarica i suggerimenti basandosi sul prodotto appena aggiunto,
 			// escludendo automaticamente i prodotti già nel carrello.
 			ReservationForm.showRelatedSection(mode);
@@ -349,6 +357,37 @@ const ReservationForm = {
 				mode
 			);
 		});
+	},
+
+	isProductAlreadyInCart(productId) {
+		const parsedId = parseInt(productId, 10);
+		if (Number.isNaN(parsedId) || parsedId <= 0) return false;
+		return (this.cart?.products || []).some((entry) => {
+			const id = parseInt(entry?.product?.id, 10);
+			return !Number.isNaN(id) && id === parsedId;
+		});
+	},
+
+	markRelatedProductAsAdded(productId, mode = null) {
+		const parsedId = parseInt(productId, 10);
+		if (Number.isNaN(parsedId) || parsedId <= 0) return;
+
+		const updateButtonInMode = (targetMode) => {
+			const { listEl } = this.getRelatedElementsByMode(targetMode);
+			if (!listEl) return;
+			const btn = listEl.querySelector(`[data-related-product-id="${parsedId}"] .related-product-card__cta`);
+			if (!btn) return;
+			btn.disabled = true;
+			btn.textContent = 'Aggiunto';
+		};
+
+		if (mode === 0 || mode === 1) {
+			updateButtonInMode(mode);
+			return;
+		}
+
+		updateButtonInMode(0);
+		updateButtonInMode(1);
 	},
 
 	showRelatedSection(mode = 0) {
@@ -625,8 +664,10 @@ const ReservationForm = {
 	createRelatedProductCard(item) {
 		const card = document.createElement('article');
 		card.className = 'related-product-card';
+		card.dataset.relatedProductId = String(item?.id ?? '');
 		const fp  = this.formatRelatedPrice(item);
 		const src = this.resolveRelatedProductImage(item?.image || '');
+		const isAdded = this.isProductAlreadyInCart(item?.id);
 
 		card.innerHTML = `
 			<div class="related-product-card__image-wrap">
@@ -643,7 +684,7 @@ const ReservationForm = {
 						<span class="related-product-card__price--discounted">${escapeHtml(fp.discounted)}</span>
 					   </div>`
 					: (fp?.single ? `<div class="related-product-card__price">${escapeHtml(fp.single)}</div>` : '')}
-				<button class="btn btn-primary related-product-card__cta" type="button">Aggiungi</button>
+				<button class="btn btn-primary related-product-card__cta" type="button" ${isAdded ? 'disabled' : ''}>${isAdded ? 'Aggiunto' : 'Aggiungi'}</button>
 			</div>`;
 
 		// Fallback immagine
@@ -657,6 +698,11 @@ const ReservationForm = {
 
 		// CTA — aggiunge il prodotto suggerito al carrello
 		card.querySelector('button')?.addEventListener('click', () => {
+			if (this.isProductAlreadyInCart(item?.id)) {
+				this.markRelatedProductAsAdded(item?.id, this.getSubOrderChecked());
+				return;
+			}
+
 			const basePrice = item.price_original ?? item.price;
 			const hasPrice  = basePrice !== null && basePrice !== undefined && basePrice !== '';
 			const hasDiscP  = item.has_discount && item.price_discounted !== null && item.price_discounted !== undefined && item.price_discounted !== '';
@@ -685,7 +731,10 @@ const ReservationForm = {
 			// che a sua volta chiama ts.clear() → onClear → renderRelatedProducts([]).
 			// Il flag evita quel reset; i suggerimenti verranno aggiornati dall'evento.
 			this._suppressRelatedClear = true;
-			this.addProduct(relatedData);
+			this.addProduct(relatedData, {
+				source: 'related-card',
+				mode: this.getSubOrderChecked(),
+			});
 			this._suppressRelatedClear = false;
 
 			showToast?.('Suggerimento aggiunto', 'success');
@@ -998,7 +1047,7 @@ const ReservationForm = {
 		return false;
 	},
 
-	addProduct(data) {
+	addProduct(data, options = {}) {
 		if (!data.uuid) data.uuid = generateUUID();
 		this.addProductToCart(data);
 		this.addProductToTable(data);
@@ -1016,6 +1065,8 @@ const ReservationForm = {
 					tags:     data.product.tags || null,
 					category: data.product.category || null,
 					type:     data.type,
+					source:   options?.source || null,
+					mode:     Number.isInteger(options?.mode) ? options.mode : this.getSubOrderChecked(),
 				},
 			}));
 		}
