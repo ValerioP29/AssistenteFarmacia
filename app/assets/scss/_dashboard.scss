@@ -20,8 +20,8 @@ body.page-dashboard {
 
 		&__title {
 		font-size: 1.05rem;
-		font-weight: 700;
-		color: #352243;
+		font-weight: 800;
+		color: $primary-color;
 		}
 	}
 
@@ -736,6 +736,8 @@ body.page-dashboard {
 
 	.slider-promo-title {
 		font-size: 16px;
+		font-weight: 800;
+		color: $primary-color;
 		margin-bottom: 8px;
 	}
 
