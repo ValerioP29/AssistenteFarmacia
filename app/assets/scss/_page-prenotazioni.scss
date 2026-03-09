@@ -414,28 +414,6 @@ body.page-reservation {
 		outline: 2px solid rgba(111, 66, 193, 0.35);
 		outline-offset: 2px;
 	}
-
-	@media (min-width: 768px) {
-		.related-products {
-			padding: 14px;
-
-			&__list {
-				grid-template-columns: repeat(2, minmax(0, 1fr));
-				gap: 10px;
-			}
-		}
-
-		.related-product-card {
-			min-height: 102px;
-
-			&__image-wrap {
-				width: 84px;
-				height: 84px;
-				min-width: 84px;
-			}
-		}
-	}
-
 	@media (min-width: 1200px) {
 		.related-products__list {
 			grid-template-columns: repeat(3, minmax(0, 1fr));
