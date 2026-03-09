@@ -431,8 +431,10 @@ document.addEventListener('appLoaded', () => {
 			el.dataset.promoTagBound = '1';
 
 			el.addEventListener('click', () => {
-				const tag = String(el.dataset.promoTag || el.dataset.tag || '').trim();
-				if (!tag) return;
+				const raw = String(el.dataset.promoTag || el.dataset.tag || '').trim();
+				if (!raw) return;
+				// Risolve alias legacy → slug canonico prima di passarlo nell'URL
+				const tag = window.ProductTagsTaxonomy?.canonicalize(raw) ?? raw;
 				goTo(`${AppURLs.page.promotions()}?tag=${encodeURIComponent(tag)}`);
 			});
 		});
@@ -479,12 +481,13 @@ function ScrollToInfoCard(e) {
 
 window.addEventListener('pageshow', function(e){
     if (e.persisted) {
-		appCheckAuth();
+        appCheckAuth();
         return;
     }
 
-    if (performance && performance.navigation && performance.navigation.type === 2) {
-		appCheckAuth();
+    const navEntry = performance?.getEntriesByType?.('navigation')?.[0];
+    if (navEntry?.type === 'back_forward') {
+        appCheckAuth();
         return;
     }
 });

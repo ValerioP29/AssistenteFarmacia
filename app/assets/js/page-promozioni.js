@@ -71,8 +71,11 @@ function createPromoCardFull(item) {
 
 	const hasDescription = !!(item.description && item.description.trim());
 
-	const showDiscount = item.is_on_sale && Number(item.price_sale) < Number(item.price_regular);
-	const hidePrice = item.price_hidden === true;
+	const _sale = parseFloat(item.price_sale);
+	const _reg  = parseFloat(item.price_regular);
+	const showDiscount = item.is_on_sale && isFinite(_sale) && _sale > 0 && isFinite(_reg) && _sale < _reg;
+	const _display = showDiscount ? _sale : (isFinite(_reg) && _reg > 0 ? _reg : null);
+	const hidePrice = item.price_hidden === true || !_display;
 
 	card.innerHTML = `
 		<div class="product-name">${item.name}</div>
@@ -81,8 +84,8 @@ function createPromoCardFull(item) {
 		<div class="price">
 			${
 				showDiscount
-					? `<span class="old-price">${item.price_regular.toFixed(2)}€</span><span class="promo-price">${item.price_sale.toFixed(2)}€</span>`
-					: `<span class="promo-price">${(item.is_on_sale ? item.price_sale : item.price_regular).toFixed(2)}€</span>`
+					? `<span class="old-price">${_reg.toFixed(2)}€</span><span class="promo-price">${_sale.toFixed(2)}€</span>`
+					: `<span class="promo-price">${_display.toFixed(2)}€</span>`
 			}
 		</div>`}
 		<div class="d-flex justify-content-end btn-ai-wrapper">
@@ -117,16 +120,19 @@ function createPromoCardDashboard(item) {
 	const imgObj = typeof item.image === 'string' ? {src: item.image, alt: item.name} : item.image;
 	const img = createResponsiveImage(imgObj, {class: 'promo-img'});
 
-	const showDiscount = item.is_on_sale && Number(item.price_sale) < Number(item.price_regular);
-	const hidePrice = item.price_hidden === true;
+	const _sale = parseFloat(item.price_sale);
+	const _reg  = parseFloat(item.price_regular);
+	const showDiscount = item.is_on_sale && isFinite(_sale) && _sale > 0 && isFinite(_reg) && _sale < _reg;
+	const _display = showDiscount ? _sale : (isFinite(_reg) && _reg > 0 ? _reg : null);
+	const hidePrice = item.price_hidden === true || !_display;
 
 	div.innerHTML += `<div class="pr-container">
 		<a class="product-name" href="${AppURLs.page.promotions() + '?id=' + item.id}">${img.outerHTML}</a>
 		<a class="product-name" href="${AppURLs.page.promotions() + '?id=' + item.id}">${item.name}</a>
 		${hidePrice ? '' : `
 		<div class="product-prices">
-			${showDiscount ? `<s>€${item.price_regular.toFixed(2)}</s>` : ''}
-			<span class="price">€${(item.is_on_sale ? item.price_sale : item.price_regular).toFixed(2)}</span>
+			${showDiscount ? `<s>€${_reg.toFixed(2)}</s>` : ''}
+			<span class="price">€${_display.toFixed(2)}</span>
 		</div>`}
 		<button type="button"
 			class="btn btn-primary"
@@ -162,7 +168,8 @@ async function loadPromotions(options = {}) {
 		const paramsUrl = new URLSearchParams(window.location.search);
 		const tipo = paramsUrl.get('tipo');
 		const queryTag = paramsUrl.get('tag');
-		const tag = forcedTag || queryTag;
+		// Risolve alias legacy → slug canonico (es. "dermocosmetica" → "dermocosmesi")
+		const tag = forcedTag || (queryTag ? (window.ProductTagsTaxonomy?.canonicalize(queryTag) ?? queryTag) : '');
 		const params = new URLSearchParams();
 
 		const isDashboard = containerId === 'promo-list';
@@ -243,6 +250,13 @@ async function loadPromotions(options = {}) {
 	}
 }
 
+
+function formatPrice(value) {
+	const n = parseFloat(value);
+	if (!isFinite(n) || n <= 0) return null;
+	return n.toFixed(2);
+}
+
 function humanizeTagLabel(value = '') {
 	if (!value) return '';
 	return value
@@ -259,7 +273,10 @@ function updatePromotionsHeading({tipo = '', tag = '', isFiltered = false, force
 	if (!titleEl || !subtitleEl) return;
 
 	if (tag) {
-		titleEl.textContent = forcedTitle || `Promozioni: ${humanizeTagLabel(tag)}`;
+		// Usa la label dalla taxonomy se disponibile (es. "Dermocosmesi" invece di "Dermocosmesi")
+		// Fallback a humanizeTagLabel per tag non in taxonomy
+		const taxonomyLabel = window.ProductTagsTaxonomy?.getAll?.()?.find((t) => t.value === tag)?.label ?? '';
+		titleEl.textContent = forcedTitle || `Promozioni: ${taxonomyLabel || humanizeTagLabel(tag)}`;
 		subtitleEl.textContent = isFiltered
 			? 'Stai visualizzando solo i prodotti in promozione per il tag selezionato.'
 			: 'Nessun prodotto trovato per il tag selezionato.';

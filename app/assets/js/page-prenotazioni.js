@@ -33,15 +33,11 @@ const ReservationForm = {
 	selectedProduct: null,
 	sending: false,
 
-	// Dizionario locale categorie/consigli: value canonico (tag), label umana.
-	relatedTagsPreset: [
-		{ value: '', label: 'Seleziona una categoria' },
-		{ value: 'dolore_febbre', label: 'Dolore e febbre' },
-		{ value: 'gastro', label: 'Gastro' },
-		{ value: 'dermocosmesi', label: 'Dermocosmesi' },
-		{ value: 'vitamine_integratori', label: 'Vitamine e integratori' },
-		{ value: 'bambino', label: 'Bambino' },
-	],
+	get relatedTagsPreset() {
+		return window.ProductTagsTaxonomy?.getUiPreset() ?? [
+			{ value: '', label: 'Seleziona una categoria' },
+		];
+	},
 
 	/** Stato per i due blocchi suggerimenti: 0 = senza ricetta, 1 = con ricetta */
 	relatedState: {
@@ -127,19 +123,22 @@ const ReservationForm = {
 	},
 
 	canonicalizeTagValue(rawTag = '') {
-		return String(rawTag || '')
+		// Normalizza formato slug (lowercase, underscore, caratteri ammessi)
+		const normalized = String(rawTag || '')
 			.trim()
 			.toLowerCase()
 			.replace(/[-\s]+/g, '_')
 			.replace(/_+/g, '_')
 			.replace(/[^a-z0-9_]/g, '')
 			.replace(/^_+|_+$/g, '');
+		// Risolve alias legacy → slug canonico (es. "dermocosmetica" → "dermocosmesi")
+		return window.ProductTagsTaxonomy?.canonicalize(normalized) ?? normalized;
 	},
 
 	isAllowedRelatedTag(tag = '') {
 		const canonical = this.canonicalizeTagValue(tag);
 		if (!canonical) return false;
-		return this.relatedTagsPreset.some((entry) => entry.value === canonical);
+		return window.ProductTagsTaxonomy?.isKnown(canonical) ?? false;
 	},
 
 	populateRelatedTagSelect(selectEl) {
@@ -642,32 +641,8 @@ const ReservationForm = {
 		return this.inferRelatedTagFromName(String(product?.name || '').trim());
 	},
 
-	/**
-	 * Mappa parole chiave → tag.
-	 * Deve restare allineata con la funzione PHP related_tags_infer_from_product()
-	 * in api/helpers/_related_tags.php
-	 */
 	inferRelatedTagFromName(name = '') {
-		const n = name.toLowerCase();
-		if (!n) return '';
-		const map = {
-			dolore_febbre:        ['dolore', 'febbre', 'antidolorifici', 'analgesici', 'antinfiammatori', 'paracetamolo', 'ibuprofene'],
-			raffreddore_influenza:['raffreddore', 'influenza', 'decongestionante', 'seno', 'paranasali'],
-			gola:                 ['gola', 'mal di gola', 'pastiglie gola', 'spray gola', 'angina'],
-			tosse:                ['tosse', 'mucolitico', 'espettorante', 'sedativo tosse', 'sciroppo'],
-			naso:                 ['naso', 'spray nasale', 'rinite', 'sinusite', 'nasale'],
-			gastro:               ['gastro', 'digestione', 'acidita', 'reflusso', 'probiotici', 'diarrea', 'nausea'],
-			occhi:                ['occhi', 'oculare', 'lacrimazione', 'congiuntivite', 'collirio'],
-			igiene_orale:         ['igiene orale', 'dentifricio', 'collutorio', 'gengive', 'alito'],
-			vitamine_integratori: ['vitamine', 'integratori', 'magnesio', 'ferro', 'difese immunitarie', 'vitamina c', 'vitamina d', 'zinco'],
-			dermocosmesi:         ['dermo', 'cosmesi', 'pelle', 'crema', 'solare', 'idratante', 'cicatrice'],
-			bambino:              ['bambino', 'pediatrico', 'neonato', 'infanzia', 'bimbo'],
-			medicazione:          ['medicazione', 'cerotti', 'garze', 'disinfettante', 'benda'],
-		};
-		for (const [tag, keywords] of Object.entries(map)) {
-			if (keywords.some((k) => n.includes(k))) return tag;
-		}
-		return '';
+		return window.ProductTagsTaxonomy?.inferTag(name) ?? '';
 	},
 
 	// ─────────────────────────────────────────────

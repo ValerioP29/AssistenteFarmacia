@@ -1,6 +1,7 @@
 <?php
 
 require_once(__DIR__ . '/_related_tags.php');
+// taxonomy/tags.php è già caricata transitivamente da _related_tags.php
 
 class ProductsModel {
 
@@ -38,8 +39,22 @@ class ProductsModel {
 	private static function prepareAutoTagsForUpdate($id, array &$params){
 		global $pdo;
 
+		/**
+		 * FIX: canonicalizeTag() su ciascun elemento prima dell'encode.
+		 * Risolve alias legacy (es. "dermocosmetica" → "dermocosmesi") quando
+		 * il panel passa tag a mano via array. La logica shouldAutoTag, la query
+		 * di lettura e tutto il resto rimangono invariati.
+		 * Prima: array_map('strval', ...) — nessuna canonicalizzazione.
+		 */
 		if (isset($params['tags']) && is_array($params['tags'])) {
-			$params['tags'] = json_encode(array_values(array_unique(array_filter(array_map('strval', $params['tags'])))), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+			$canonicalized = array_map(
+				function($t){ return canonicalizeTag((string)$t); },  // ← FIX
+				$params['tags']
+			);
+			$params['tags'] = json_encode(
+				array_values(array_unique(array_filter($canonicalized))),
+				JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+			);
 		}
 
 		$forceAutotag = !empty($params['force_autotag']);
@@ -60,6 +75,8 @@ class ProductsModel {
 		$name = $params['name'] ?? $current['name'] ?? '';
 		$description = $params['description'] ?? $current['description'] ?? '';
 		$category = ($columns['category'] ? ($params['category'] ?? $current['category'] ?? '') : '');
+
+		// related_tags_infer_from_product() restituisce già slug canonici (taxonomy)
 		$autoTags = related_tags_infer_from_product($name, $description, $category);
 
 		if (!empty($autoTags)) {
@@ -72,39 +89,7 @@ class ProductsModel {
 	 * @return int|false
 	 */
 	/*
-	public static function insert(array $data) {
-		global $pdo;
-
-		try {
-			$stmt = $pdo->prepare("INSERT INTO jta_pharma_prods (
-				pharma_id, product_id, price, sale_price, num_items, sku,
-				description, image, name, is_active, is_on_sale, sale_start_date, sale_end_date
-			) VALUES (
-				:pharma_id, :product_id, :price, :sale_price, :num_items, :sku,
-				:description, :image, :name, :is_active, :is_on_sale, :sale_start_date, :sale_end_date
-			)");
-
-			$stmt->execute([
-				':pharma_id' => $data['pharma_id'],
-				':product_id' => $data['product_id'],
-				':price' => $data['price'],
-				':sale_price' => $data['sale_price'],
-				':num_items' => $data['num_items'],
-				':sku' => $data['sku'],
-				':description' => $data['description'],
-				':image' => $data['image'],
-				':name' => $data['name'],
-				':is_active' => isset($data['is_active']) ? $data['is_active'] : 1,
-				':is_on_sale' => isset($data['is_on_sale']) ? $data['is_on_sale'] : 0,
-				':sale_start_date' => $data['sale_start_date'],
-				':sale_end_date' => $data['sale_end_date']
-			]);
-
-			return (int) $pdo->lastInsertId();
-		} catch (Exception $e) {
-			return false;
-		}
-	}
+	public static function insert(array $data) { ... }
 	*/
 
 	public static function update($id, array $params) {
@@ -122,24 +107,11 @@ class ProductsModel {
 				$values[":$key"] = $value;
 			}
 
-			// $fields[] = "updated_at = NOW()";
 			$values[":id"] = $id;
 
 			$sql = "UPDATE jta_pharma_prods SET " . implode(", ", $fields) . " WHERE id = :id";
 			$stmt = $pdo->prepare($sql);
 			return $stmt->execute($values);
-		} catch (Exception $e) {
-			return false;
-		}
-	}
-
-	/*
-	public static function delete($id) {
-		global $pdo;
-
-		try {
-			$stmt = $pdo->prepare("DELETE FROM jta_pharma_prods WHERE id = :id");
-			return $stmt->execute([':id' => $id]);
 		} catch (Exception $e) {
 			return false;
 		}
@@ -208,16 +180,7 @@ class ProductsModel {
 
 	/**
 	 * Restituisce tutte le promozioni attive di una farmacia.
-	 * Una promozione è considerata valida se:
-	 * - il prodotto è attivo (is_active = 1)
-	 * - è contrassegnato come in promozione (is_on_sale = 1)
-	 * - ha un sale_price definito
-	 * - eventuali date di inizio/fine promozione sono rispettate
-	 *
-	 * @param int $pharma_id ID della farmacia
-	 * @param int|null $limit Numero massimo di risultati da restituire
-	 * @param int|null $offset Offset per la paginazione
-	 * @return array Elenco dei prodotti in promozione validi
+	 * @return array
 	 */
 	public static function findPromosByPharma($pharma_id, $limit = null, $offset = null) {
 		global $pdo;
@@ -292,16 +255,6 @@ class ProductsModel {
 		}
 	}
 
-	/**
-	 * Verifica se un prodotto è una promozione valida.
-	 * Una promo è valida se:
-	 * - è contrassegnata come promozione (is_on_sale = 1)
-	 * - ha un prezzo promozionale definito e numerico
-	 * - eventuali date di inizio/fine rientrano nell'intervallo attuale (se presenti)
-	 *
-	 * @param array $product Dati del prodotto
-	 * @return bool True se il prodotto è una promo valida, false altrimenti
-	 */
 	public static function isPromo(array $product): bool {
 		if (
 			empty($product['is_on_sale']) ||
@@ -313,12 +266,10 @@ class ProductsModel {
 
 		$now = date('Y-m-d H:i:s');
 
-		// Se c'è una data di inizio, il prodotto deve essere attivo da quella data
 		if (!empty($product['sale_start_date']) && $now < $product['sale_start_date']) {
 			return false;
 		}
 
-		// Se c'è una data di fine, il prodotto non deve essere scaduto
 		if (!empty($product['sale_end_date']) && $now > $product['sale_end_date']) {
 			return false;
 		}
@@ -326,13 +277,6 @@ class ProductsModel {
 		return true;
 	}
 
-	/**
-	 * Restituisce una descrizione testuale del motivo per cui una promo è valida o non valida.
-	 * Utile per debugging o per mostrare messaggi all’utente/amministratore.
-	 *
-	 * @param array $product Dati del prodotto
-	 * @return string Messaggio che descrive lo stato della promozione
-	 */
 	public static function getPromoStatusMessage(array $product): string {
 		if (empty($product['is_on_sale']) || (int)$product['is_on_sale'] !== 1) {
 			return "Il prodotto non è contrassegnato come promo.";
@@ -354,6 +298,4 @@ class ProductsModel {
 
 		return "Promo valida";
 	}
-
-
 }

@@ -1,13 +1,21 @@
 <?php
 /**
+ * panel/api/pharma-products/tags-suggest.php
+ *
  * API Suggerimento Tags Prodotti Farmacia (rule-based)
  * Assistente Farmacia Panel
+ *
+ * FIX rispetto alla versione precedente:
+ *   - require taxonomy/tags.php (transitivo via tags_catalog.php — già ok)
+ *   - allowed_tags ora contiene TUTTI i tag della taxonomy, non solo i 9 UI
+ *   - normalizeTagsListCanonical() risolve alias legacy nei tag già salvati in DB
  */
 
 require_once '../../config/database.php';
 require_once '../../includes/auth_middleware.php';
 require_once '../../includes/product_tags_engine.php';
 require_once '../../lib/tags_catalog.php';
+// taxonomy/tags.php è già caricata transitivamente da tags_catalog.php
 
 checkAccess(['pharmacist']);
 header('Content-Type: application/json');
@@ -53,6 +61,11 @@ try {
 
     $products = db_fetch_all($sql, $params);
 
+    /**
+     * FIX: getAllowedCanonicalTags() ora restituisce tutti i tag della taxonomy
+     * (prima era hardcoded a 9 tag UI).
+     * Il pool di suggerimenti nel response riflette quindi l'intera tassonomia.
+     */
     $allowedTags = getAllowedCanonicalTags();
     $suggestionPool = [];
     foreach ($allowedTags as $tag) {
@@ -61,42 +74,48 @@ try {
 
     $data = array_map(function ($product) use (&$suggestionPool) {
         $suggestion = suggestTagsFromName((string)($product['name'] ?? ''));
-        $currentTags = normalizeTagsListCanonical(normalizeTagArray($product['tags'] ?? null));
+
+        /**
+         * FIX: normalizeTagsListCanonical() chiama canonicalizeTag() su ogni tag,
+         * risolvendo alias legacy (es. "dermocosmetica" → "dermocosmesi")
+         * nei tag già salvati in DB prima di mostrarli al panel.
+         */
+        $currentTags   = normalizeTagsListCanonical(normalizeTagArray($product['tags'] ?? null));
         $suggestedTags = normalizeTagsListCanonical($suggestion['suggested_tags'] ?? []);
 
         foreach ($currentTags as $tag) {
             $suggestionPool[$tag] = true;
         }
-
         foreach ($suggestedTags as $tag) {
             $suggestionPool[$tag] = true;
         }
 
         return [
-            'id' => (int)$product['id'],
-            'sku' => $product['sku'] !== null ? (string)$product['sku'] : null,
-            'name' => (string)$product['name'],
-            'image' => $product['image'] ?: null,
-            'current_tags' => $currentTags,
-            'suggested_tags' => $suggestedTags,
-            'confidence' => $suggestion['confidence'],
+            'id'               => (int)$product['id'],
+            'sku'              => $product['sku'] !== null ? (string)$product['sku'] : null,
+            'name'             => (string)$product['name'],
+            'image'            => $product['image'] ?: null,
+            'current_tags'     => $currentTags,
+            'suggested_tags'   => $suggestedTags,
+            'confidence'       => $suggestion['confidence'],
             'matched_keywords' => $suggestion['matched_keywords'],
-            'is_featured' => (int)($product['is_featured'] ?? 0),
+            'is_featured'      => (int)($product['is_featured'] ?? 0),
         ];
     }, $products);
 
     echo json_encode([
-        'success' => true,
-        'count' => count($data),
+        'success'     => true,
+        'count'       => count($data),
         'allowed_tags' => $allowedTags,
         'suggestions' => array_keys($suggestionPool),
-        'data' => $data,
-        'meta' => [
+        'data'        => $data,
+        'meta'        => [
             'pharma_id' => $pharmaId,
-            'limit' => $limit,
-            'search' => $search,
+            'limit'     => $limit,
+            'search'    => $search,
         ],
     ]);
+
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode([

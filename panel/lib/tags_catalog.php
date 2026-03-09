@@ -1,47 +1,68 @@
 <?php
+/**
+ * panel/lib/tags_catalog.php
+ *
+ * Whitelist canonicale dei tag prodotto per il panel.
+ * Deriva da taxonomy/tags.php — NON aggiungere tag qui direttamente.
+ *
+ * Compatibilità: mantiene le stesse firme delle funzioni esistenti
+ * (getTagsCatalog, getAllowedCanonicalTags, normalizeTagsListCanonical,
+ *  canonicalizeTagValue) per non rompere le chiamate nel panel.
+ */
 
-function canonicalizeTagValue($tag): string {
-    $tagValue = strtolower(trim((string)$tag));
-    if ($tagValue === '') {
-        return '';
-    }
+require_once __DIR__ . '/../../taxonomy/tags.php';
 
-    $tagValue = str_replace(['-', ' '], '_', $tagValue);
-    $tagValue = preg_replace('/_+/', '_', $tagValue);
-    $tagValue = preg_replace('/[^a-z0-9_]/', '', $tagValue);
-
-    return trim($tagValue, '_');
+/**
+ * Mappa slug → label per tutti i tag nel catalogo.
+ * (In passato conteneva solo 9 tag hardcoded; ora include tutti quelli
+ *  della taxonomy, con le label già definite centralmente.)
+ */
+function getTagsCatalog(): array
+{
+    return getTagsLabelMap();
 }
 
-function getTagsCatalog(): array {
-    return [
-        'celiachia' => 'Celiachia',
-        'consiglio_farmacista' => 'Consiglio farmacista',
-        'consiglio_prenotazione' => 'Consiglio prenotazione',
-        'in_evidenza' => 'In evidenza',
-        'dermocosmesi' => 'Dermocosmesi',
-        'bambino' => 'Bambino',
-        'gastro' => 'Gastro',
-        'dolore_febbre' => 'Dolore e febbre',
-        'vitamine_integratori' => 'Vitamine e integratori',
-    ];
+/**
+ * Slug canonici ammessi.
+ * Il panel usa questo per validare i tag in ingresso.
+ */
+function getAllowedCanonicalTags(): array
+{
+    return array_keys(getTagsTaxonomy());
 }
 
-function getAllowedCanonicalTags(): array {
-    return array_keys(getTagsCatalog());
+/**
+ * Canonicalizza il formato di un singolo tag grezzo.
+ * Alias + normalizzazione formato, identico alla logica JS.
+ *
+ * @deprecated Usa canonicalizeTag() da taxonomy/tags.php direttamente.
+ */
+function canonicalizeTagValue(string $tag): string
+{
+    return canonicalizeTag($tag);
 }
 
-function normalizeTagsListCanonical(array $tags): array {
+/**
+ * Canonicalizza un array di tag grezzi, deduplica, rimuove vuoti.
+ * Risolve automaticamente gli alias (es. 'dermocosmetica' → 'dermocosmesi').
+ */
+function normalizeTagsListCanonical(array $tags): array
+{
     $normalized = [];
-
     foreach ($tags as $tag) {
-        $canonicalTag = canonicalizeTagValue($tag);
-        if ($canonicalTag === '') {
-            continue;
+        $canonical = canonicalizeTag((string) $tag);
+        if ($canonical !== '') {
+            $normalized[$canonical] = true;
         }
-
-        $normalized[$canonicalTag] = true;
     }
-
     return array_keys($normalized);
+}
+
+/**
+ * Solo i tag visibili nel dropdown filtro dell'app (UI).
+ * Usato dal panel per costruire la select "filtro promozioni".
+ */
+function getUiTagsCatalog(): array
+{
+    return array_map(fn($v) => $v['label'], getUiTags());
 }

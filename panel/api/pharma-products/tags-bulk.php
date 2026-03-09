@@ -1,12 +1,20 @@
 <?php
 /**
+ * panel/api/pharma-products/tags-bulk.php
+ *
  * API Bulk update tags / is_featured per prodotti farmacia
  * Assistente Farmacia Panel
+ *
+ * FIX rispetto alla versione precedente:
+ *   - normalizeProductTagsInput() ora chiama canonicalizeTag() internamente
+ *     (via product_tags_engine.php aggiornato) → alias legacy risolti in scrittura
+ *   - Nessuna modifica alla logica di autenticazione, loop items, o DB update
  */
 
 require_once '../../config/database.php';
 require_once '../../includes/auth_middleware.php';
 require_once '../../includes/product_tags_engine.php';
+// taxonomy/tags.php è già caricata transitivamente da product_tags_engine.php
 
 checkAccess(['pharmacist']);
 header('Content-Type: application/json');
@@ -28,7 +36,7 @@ try {
     }
 
     $pharmaId = (int)($payload['pharma_id'] ?? ($payload['pharmacy_id'] ?? 0));
-    $items = $payload['items'] ?? null;
+    $items    = $payload['items'] ?? null;
 
     if ($pharmaId <= 0) {
         http_response_code(400);
@@ -42,7 +50,7 @@ try {
         exit;
     }
 
-    $pharmacy = getCurrentPharmacy();
+    $pharmacy        = getCurrentPharmacy();
     $sessionPharmaId = (int)($pharmacy['id'] ?? 0);
 
     if ($sessionPharmaId <= 0 || $sessionPharmaId !== $pharmaId) {
@@ -53,7 +61,7 @@ try {
 
     $updated = 0;
     $skipped = 0;
-    $errors = [];
+    $errors  = [];
 
     foreach ($items as $index => $item) {
         if (!is_array($item)) {
@@ -62,7 +70,7 @@ try {
             continue;
         }
 
-        $productId = (int)($item['id'] ?? 0);
+        $productId  = (int)($item['id'] ?? 0);
         $productSku = isset($item['sku']) ? trim((string)$item['sku']) : '';
 
         if ($productId <= 0 && $productSku === '') {
@@ -95,6 +103,11 @@ try {
         $fields = [];
 
         if (array_key_exists('tags', $item)) {
+            /**
+             * normalizeProductTagsInput() chiama canonicalizeTag() su ogni slug
+             * (via product_tags_engine.php aggiornato), quindi alias come
+             * "dermocosmetica" vengono scritti in DB come "dermocosmesi".
+             */
             $normalizedTags = normalizeProductTagsInput($item['tags']);
             $fields['tags'] = $normalizedTags !== null
                 ? json_encode($normalizedTags, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
@@ -121,13 +134,14 @@ try {
     }
 
     echo json_encode([
-        'success' => true,
-        'pharma_id' => $pharmaId,
-        'updated' => $updated,
-        'skipped' => $skipped,
+        'success'     => true,
+        'pharma_id'   => $pharmaId,
+        'updated'     => $updated,
+        'skipped'     => $skipped,
         'total_items' => count($items),
-        'errors' => $errors,
+        'errors'      => $errors,
     ]);
+
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode([

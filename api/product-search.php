@@ -1,6 +1,7 @@
 <?php
 require_once('_api_bootstrap.php');
 require_once(__DIR__ . '/helpers/_related_tags.php');
+// taxonomy/tags.php è già caricata transitivamente da _related_tags.php
 setHeadersAPI();
 $decoded = protectFileWithJWT();
 
@@ -37,6 +38,11 @@ if ($exclude_ids_raw !== '') {
 	}));
 }
 
+/**
+ * FIX: canonicalizeTag() risolve gli alias legacy (es. "dermocosmetica" → "dermocosmesi")
+ * sui tag letti dal DB, così il JS riceve sempre slug canonici.
+ * Prima: strtolower(trim()) — non risolveva alias.
+ */
 function decode_tags_array($rawTags){
 	if ($rawTags === null) return [];
 	if (is_array($rawTags)) return $rawTags;
@@ -46,11 +52,11 @@ function decode_tags_array($rawTags){
 	$decoded = json_decode($rawTags, true);
 	if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
 		return array_values(array_filter(array_map(function($tag){
-			return strtolower(trim((string)$tag));
+			return canonicalizeTag(trim((string)$tag));   // ← FIX
 		}, $decoded)));
 	}
 	return array_values(array_filter(array_map(function($tag){
-		return strtolower(trim((string)$tag));
+		return canonicalizeTag(trim((string)$tag));       // ← FIX
 	}, explode(',', $rawTags))));
 }
 
@@ -124,7 +130,6 @@ function build_related_discount_expr($priceExpr, $tableAlias = 'pp'){
  *                                ('base' per il branch tag/seed, 'ranked' per il generic)
  */
 function build_related_order_by($nameExpr, $imageExpr, $priceExpr, $scoreExpr = null, $tableAlias = 'pp'){
-	// FIX: passa $tableAlias correttamente — prima veniva passato un array per errore
 	$discountConfig = build_related_discount_expr($priceExpr, $tableAlias);
 
 	$imageTextExpr    = "CONVERT({$imageExpr} USING utf8mb4) COLLATE utf8mb4_unicode_ci";
@@ -224,11 +229,10 @@ function build_product_base_select_sql($global_table_exists, $pharma_columns_map
 			"0    AS requires_prescription",
 		];
 
-		$where = [
+	$where = [
 		'pp.pharma_id = :pharma_id',
 	];
 
-	// is_active solo se la colonna esiste davvero
 	if (!empty($pharma_columns_map['is_active'])) {
 		$where[] = 'pp.is_active = 1';
 	}
@@ -252,7 +256,6 @@ function build_product_base_select_sql($global_table_exists, $pharma_columns_map
 			$searchExprs[] = "LOWER(CONVERT(COALESCE(gp.sku, '') USING utf8mb4) COLLATE utf8mb4_unicode_ci) LIKE LOWER(:search_term)";
 		}
 
-		// Se non ho nulla su cui cercare, non devo mai tornare "tutto"
 		if (empty($searchExprs)) {
 			$where[] = '0=1';
 		} else {
@@ -277,7 +280,12 @@ function build_product_base_select_sql($global_table_exists, $pharma_columns_map
 	" . build_where_sql($where);
 }
 
-$related_tag_normalized = normalize_related_text($related_tag);
+/**
+ * FIX: canonicalizeTag() risolve alias (es. "dermocosmetica" → "dermocosmesi")
+ * sul tag in ingresso dal JS, così la ricerca keyword usa il set corretto dalla taxonomy.
+ * Prima: normalize_related_text() → solo lowercase + replace, nessuna risoluzione alias.
+ */
+$related_tag_normalized = canonicalizeTag($related_tag);    // ← FIX (era normalize_related_text)
 $related_seed_normalized = trim(mb_strtolower((string)$related_seed, 'UTF-8'));
 $is_featured_tag = is_featured_related_tag($related_tag_normalized);
 
@@ -313,8 +321,6 @@ try {
 		$global_table_exists = false;
 	}
 
-	// Legge le colonne effettivamente presenti nella tabella —
-	// evita SQLSTATE 42S22 se la struttura del DB diverge dallo schema atteso.
 	$stmtColumns = $pdo->prepare(
 		"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
 		 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'jta_pharma_prods'"
@@ -359,7 +365,6 @@ try {
 		if (!$is_featured_tag && !empty($related_tag_normalized)) {
 			$tagConditions = [];
 
-			// Nella outer query l'alias è 'base'
 			$tagsSearchExpr = "CONVERT((
 				CASE
 					WHEN base.tags IS NULL THEN NULL
@@ -424,14 +429,12 @@ try {
 				ELSE 0 END";
 		}
 
-		// FIX: alias 'base' passato come $tableAlias — before this was an array
-		// being passed as the 5th arg, leaving $tableAlias='pp' (hardcoded) → 42S22
 		$orderConfig = build_related_order_by(
 			'base.name',
 			'base.image',
 			'COALESCE(base.sale_price, base.price)',
 			$scoreExpr,
-			'base'          // ← $tableAlias corretto
+			'base'
 		);
 
 		$select_sql = "SELECT base.*,
@@ -468,18 +471,16 @@ try {
 			$products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 		}
 
-		// Fallback generic: nessun risultato con tag/seed → mostra prodotti in evidenza
 		if (count($products) === 0) {
 			$branch       = 'generic';
 			$genericScore = "CASE WHEN ranked.is_featured = 1 THEN 2 ELSE 1 END";
 
-			// FIX: alias 'ranked' — stesso problema di prima
 			$orderGeneric = build_related_order_by(
 				'ranked.name',
 				'ranked.image',
 				'COALESCE(ranked.sale_price, ranked.price)',
 				$genericScore,
-				'ranked'        // ← $tableAlias corretto
+				'ranked'
 			);
 
 			$sql_generic = "SELECT ranked.*,
