@@ -414,11 +414,6 @@ body.page-reservation {
 		outline: 2px solid rgba(111, 66, 193, 0.35);
 		outline-offset: 2px;
 	}
-	@media (min-width: 1200px) {
-		.related-products__list {
-			grid-template-columns: repeat(3, minmax(0, 1fr));
-		}
-	}
 
 	@keyframes relatedShimmer {
 		0% {
