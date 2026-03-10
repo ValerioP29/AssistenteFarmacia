@@ -433,13 +433,18 @@ function fillPointsLegend(data) {
 		return;
 	}
 
-	legendWrap.innerHTML = visible.map((item) => `
+	legendWrap.innerHTML = visible.map((item) => {
+		const pts = item?.value_label
+			? item.value_label
+			: `+${Number(item.value ?? 0)} pt`;
+
+		return `
 		<div class="wb-legend-item">
 			<div class="wb-legend-item__text">
 				<div class="wb-legend-item__title">${item.title ?? 'Attività'}</div>
 				<div class="wb-legend-item__desc">${(item.desc ?? '').replace(/\n/g, '<br>')}</div>
 			</div>
-			<span class="wb-legend-item__pts">+${Number(item.value ?? 0)} pt</span>
-		</div>`
-	).join('');
+			<span class="wb-legend-item__pts">${pts}</span>
+		</div>`;
+	}).join('');
 }

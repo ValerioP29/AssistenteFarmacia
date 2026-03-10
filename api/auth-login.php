@@ -79,10 +79,8 @@ insertAuthRefreshToken($user['id'], $refresh_token);
 
 $pharma = get_fav_pharma_by_user_id($user['id']);
 if ($pharma && isset($pharma['id'])) {
-    $can_give_points = !UserPointsModel::hasEntryForDate($user['id'], $pharma['id'], 'login_daily');
-    if ($can_give_points) {
-        UserPointsModel::addPoints($user['id'], $pharma['id'], 1, 'login_daily');
-    }
+    $login_points = UserPointsModel::getPointsForAction('login_daily');
+    UserPointsModel::addPointsOncePerDay($user['id'], $pharma['id'], $login_points, 'login_daily');
 }
 
 http_response_code(200);

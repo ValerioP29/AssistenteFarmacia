@@ -47,6 +47,82 @@ class PointsModel {
 }
 
 class UserPointsModel {
+	public static function getActionRules(): array {
+		return [
+			'request_service' => [
+				'title' => 'Richiesta servizio',
+				'desc' => 'Invio richiesta per un servizio selezionato tra quelli disponibili.',
+				'option' => 'points_request_service',
+				'default_points' => 10,
+			],
+			'request_service_free' => [
+				'title' => 'Richiesta servizio libero',
+				'desc' => 'Invio richiesta servizio da input libero.',
+				'option' => 'points_request_service_free',
+				'default_points' => 10,
+			],
+			'request_event' => [
+				'title' => 'Eventi',
+				'desc' => 'Invio richiesta/prenotazione relativa a un evento.',
+				'option' => 'points_request_event',
+				'default_points' => 10,
+			],
+			'reservation_cart' => [
+				'title' => 'Prenotazione prodotto da carrello',
+				'desc' => 'Prenotazione prodotti inviata dal carrello.',
+				'option' => 'points_reservation_cart',
+				'default_points' => 10,
+			],
+			'reservation_page' => [
+				'title' => 'Prenotazione prodotto da pagina prenotazioni',
+				'desc' => 'Prenotazione prodotti inviata dalla pagina prenotazioni.',
+				'option' => 'points_reservation_page',
+				'default_points' => 10,
+			],
+			'quiz_daily' => [
+				'title' => 'Quiz del giorno',
+				'desc' => 'Completamento quiz del giorno (massimo una volta al giorno). Punteggio variabile in base al quiz pubblicato.',
+				'option' => 'point--quiz_daily',
+				'default_points' => 3,
+				'is_variable' => true,
+			],
+			'login_daily' => [
+				'title' => 'Accesso quotidiano all\'app',
+				'desc' => 'Primo accesso giornaliero in app (massimo una volta al giorno).',
+				'option' => 'points_login_daily',
+				'default_points' => 1,
+			],
+		];
+	}
+
+	public static function getPointsForAction(string $actionId): int {
+		$rules = self::getActionRules();
+		$rule = $rules[$actionId] ?? null;
+		if (!$rule) return 0;
+		return (int) get_option($rule['option'], $rule['default_points']);
+	}
+
+	public static function getLegendForActions(array $actionIds): array {
+		$rules = self::getActionRules();
+		$legend = [];
+
+		foreach ($actionIds as $actionId) {
+			if (!isset($rules[$actionId])) continue;
+			$rule = $rules[$actionId];
+			$isVariable = !empty($rule['is_variable']);
+			$legend[] = [
+				'id' => $actionId,
+				'title' => $rule['title'],
+				'desc' => $rule['desc'],
+				'value' => $isVariable ? null : self::getPointsForAction($actionId),
+				'value_label' => $isVariable ? 'Variabile' : null,
+				'hidden' => false,
+			];
+		}
+
+		return $legend;
+	}
+
 	private static function baseSelect(): string {
 		return "SELECT * FROM jta_user_points_log WHERE deleted_at IS NULL";
 	}
@@ -127,6 +203,7 @@ class UserPointsModel {
 	 * Aggiunge punti (usando PointsModel::insert()) e aggiorna riepilogo.
 	 */
 	public static function addPoints(int $userId, int $pharmaId, int $pointsVal, string $source, ?string $date = null): bool {
+		if ($pointsVal <= 0) return false;
 		$date = $date ?: date('Y-m-d');
 
 		$success = PointsModel::insert([
@@ -210,6 +287,88 @@ class UserPointsModel {
 		]);
 
 		return (bool) $stmt->fetchColumn();
+	}
+
+	private static function executeInsertIfNotExists(array $insertData, string $whereClause, array $whereParams): bool {
+		global $pdo;
+
+		if (($insertData['points'] ?? 0) <= 0) {
+			return false;
+		}
+
+		$sql = "INSERT INTO jta_user_points_log (user_id, pharma_id, date, points, source, created_at)
+				SELECT :user_id, :pharma_id, :date, :points, :source, :created_at
+				WHERE NOT EXISTS (
+					SELECT 1 FROM jta_user_points_log
+					WHERE deleted_at IS NULL {$whereClause}
+				)";
+
+		$params = array_merge($insertData, $whereParams);
+		$stmt = $pdo->prepare($sql);
+		$success = $stmt->execute($params);
+
+		if ($success && $stmt->rowCount() > 0) {
+			PointsSummaryModel::updateCurrentMonthPoints((int)$insertData['user_id'], (int)$insertData['pharma_id']);
+			PointsSummaryModel::regenerateByUser((int)$insertData['user_id']);
+			return true;
+		}
+
+		return false;
+	}
+
+	public static function addPointsOnceBySource(int $userId, int $pharmaId, int $pointsVal, string $source, ?string $date = null): bool {
+		$date = $date ?: date('Y-m-d');
+		$insertData = [
+			'user_id' => $userId,
+			'pharma_id' => $pharmaId,
+			'date' => $date,
+			'points' => $pointsVal,
+			'source' => $source,
+			'created_at' => date('Y-m-d H:i:s'),
+		];
+
+		return self::executeInsertIfNotExists(
+			$insertData,
+			' AND user_id = :check_user_id AND pharma_id = :check_pharma_id AND source = :check_source',
+			[
+				'check_user_id' => $userId,
+				'check_pharma_id' => $pharmaId,
+				'check_source' => $source,
+			]
+		);
+	}
+
+	public static function addPointsOncePerDay(int $userId, int $pharmaId, int $pointsVal, string $source, ?string $date = null): bool {
+		$date = $date ?: date('Y-m-d');
+		$insertData = [
+			'user_id' => $userId,
+			'pharma_id' => $pharmaId,
+			'date' => $date,
+			'points' => $pointsVal,
+			'source' => $source,
+			'created_at' => date('Y-m-d H:i:s'),
+		];
+
+		return self::executeInsertIfNotExists(
+			$insertData,
+			' AND user_id = :check_user_id AND pharma_id = :check_pharma_id AND source = :check_source AND date = :check_date',
+			[
+				'check_user_id' => $userId,
+				'check_pharma_id' => $pharmaId,
+				'check_source' => $source,
+				'check_date' => $date,
+			]
+		);
+	}
+
+	public static function addPointsOnceByActionReference(int $userId, int $pharmaId, int $pointsVal, string $actionId, string $referenceKey, ?string $date = null): bool {
+		$cleanRef = trim($referenceKey);
+		if ($cleanRef === '') {
+			return false;
+		}
+
+		$source = $actionId . ':' . $cleanRef;
+		return self::addPointsOnceBySource($userId, $pharmaId, $pointsVal, $source, $date);
 	}
 
 }

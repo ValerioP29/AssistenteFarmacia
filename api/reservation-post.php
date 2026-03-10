@@ -213,6 +213,9 @@ if( ! $request_id ){
 	exit;
 }
 
+$points = UserPointsModel::getPointsForAction('reservation_page');
+UserPointsModel::addPointsOnceByActionReference($user['id'], $pharma['id'], $points, 'reservation_page', (string)$request_id);
+
 //-------------------------------------
 // UPLOAD FILES
 //-------------------------------------

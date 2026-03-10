@@ -66,12 +66,17 @@ if( $type == 'promo' ) $type = 'promos';
 
 $message = filter_comm_message( $message, get_my_id(), $pharma['id'], 'request--custom-'.$type.'' );
 
-RequestModel::insert([
+$request_id = RequestModel::insert([
 	'request_type' => $type,
 	'user_id'      => get_my_id(),
 	'pharma_id'    => $pharma['id'],
 	'message'      => $message,
 ]);
+
+if( $request_id && $type === 'service' ) {
+	$points = UserPointsModel::getPointsForAction('request_service_free');
+	UserPointsModel::addPointsOnceByActionReference($user['id'], $pharma['id'], $points, 'request_service_free', (string)$request_id);
+}
 
 $wa_response = app_wa_send( $message );
 

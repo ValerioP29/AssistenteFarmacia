@@ -56,12 +56,17 @@ $message = "Hai prenotato per: {$event['title']}\n\n📅 {$event_date}\n⏰ Orar
 
 $message = filter_comm_message( $message, get_my_id(), $pharma['id'], 'request--event' );
 
-RequestModel::insert([
+$request_id = RequestModel::insert([
 	'request_type' => 'event',
 	'user_id'      => get_my_id(),
 	'pharma_id'    => $pharma['id'],
 	'message'      => $message,
 ]);
+
+if( $request_id ) {
+	$points = UserPointsModel::getPointsForAction('request_event');
+	UserPointsModel::addPointsOnceByActionReference($user['id'], $pharma['id'], $points, 'request_event', (string)$request_id);
+}
 
 $wa_response = app_wa_send( $message );
 

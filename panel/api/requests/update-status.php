@@ -51,11 +51,6 @@ try {
     
     $db->update('jta_requests', $updateData, 'id = ?', [$requestId]);
     
-    // Se la richiesta è stata completata (status = 2), inserisci i punti nel log
-    if ($status == 2) {
-        insertUserPointsLog($request['user_id'], $request['pharma_id'], $request['request_type']);
-    }
-    
     // Aggiungi nota ai metadata se fornita
     if (!empty($note)) {
         $metadata = json_decode($request['metadata'], true) ?: [];
