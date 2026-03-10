@@ -398,7 +398,7 @@ class AppMenu extends HTMLElement {
         <div class="menu app-menu" id="appMenu">
           <nav>
             <a role="button" onclick="goTo(AppURLs.page.profile())"><i class="fa-solid fa-user mx-2"></i> Gestione profilo</a>
-            <a role="button" onclick="goTo(AppURLs.page.pillArchive())"><i class="fas fa-info-circle mx-2"></i> Archivio pillole informative</a>
+            <!--<a role="button" onclick="goTo(AppURLs.page.pillArchive())"><i class="fas fa-info-circle mx-2"></i> Archivio pillole informative</a> -->
             <a role="button" onclick="goTo(AppURLs.page.archiveOrder())"><i class="fas fa-box mx-2"></i> Archivio ordini</a>
             <a role="button" onclick="goTo(AppURLs.page.preferPharma())"><i class="fas fa-map-marker-alt mx-2"></i> Gestione farmacia preferita</a>
             <a role="button" id="add-to-home-menu-btn" onclick="showAddToHomeBanner(); return false;"><i class="fas fa-home mx-2"></i> Installa App</a>
