@@ -45,8 +45,10 @@ $access_payload = [
 $access_token = getJwtEncoded($access_payload);
 
 $pharma = get_fav_pharma_by_user_id($user['id']);
-$can_give_points = ! UserPointsModel::hasEntryForDate($user['id'], $pharma['id'], 'login_daily');
-if( $can_give_points ) UserPointsModel::addPoints($user['id'], $pharma['id'], 1, 'login_daily');
+if( $pharma && isset($pharma['id']) ) {
+	$login_points = UserPointsModel::getPointsForAction('login_daily');
+	UserPointsModel::addPointsOncePerDay($user['id'], $pharma['id'], $login_points, 'login_daily');
+}
 
 echo json_encode([
 	'code' => 200,

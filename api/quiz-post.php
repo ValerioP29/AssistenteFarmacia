@@ -45,11 +45,10 @@ if ($now >= $start && $now <= $end) {
 // $input = json_decode(file_get_contents("php://input"), TRUE);
 
 $quiz = QuizzesModel::getLastAvailable((int) $pharma['id']);
-$points = $quiz? $quiz['points'] : 0;
+$quiz_points = $quiz ? (int)($quiz['points'] ?? 0) : 0;
 
-$can_give_points = ! UserPointsModel::hasEntryForDate($user['id'], $pharma['id'], 'quiz_daily');
-if( $can_give_points ){
-	UserPointsModel::addPoints($user['id'], $pharma['id'], $points, 'quiz_daily');
+if ($quiz_points > 0) {
+	UserPointsModel::addPointsOncePerDay($user['id'], $pharma['id'], $quiz_points, 'quiz_daily');
 }
 
 echo json_encode([

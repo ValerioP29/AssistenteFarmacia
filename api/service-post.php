@@ -83,12 +83,18 @@ if( $service_id ){
 	$message = filter_comm_message( $message, get_my_id(), $pharma['id'], 'request--custom-service' );
 }
 
-RequestModel::insert([
+$request_id = RequestModel::insert([
 	'request_type' => 'service',
 	'user_id'      => get_my_id(),
 	'pharma_id'    => $pharma['id'],
 	'message'      => $message,
 ]);
+
+if( $request_id ) {
+	$action_id = $service_id ? 'request_service' : 'request_service_free';
+	$points = UserPointsModel::getPointsForAction($action_id);
+	UserPointsModel::addPointsOnceByActionReference($user['id'], $pharma['id'], $points, $action_id, (string)$request_id);
+}
 
 
 $wa_response = app_wa_send( $message );

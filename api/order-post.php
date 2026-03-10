@@ -65,13 +65,18 @@ $pharma = getMyPharma();
 $message = $orderSummary;
 $message = filter_comm_message( $message, get_my_id(), $pharma['id'], 'request--order' );
 
-RequestModel::insert([
+$request_id = RequestModel::insert([
 	'request_type' => 'promos',
 	'user_id'      => get_my_id(),
 	'pharma_id'    => $pharma['id'],
 	'message'      => $message,
 	'metadata'     => $input,
 ]);
+
+if( $request_id ) {
+	$points = UserPointsModel::getPointsForAction('reservation_cart');
+	UserPointsModel::addPointsOnceByActionReference($user['id'], $pharma['id'], $points, 'reservation_cart', (string)$request_id);
+}
 
 
 $wa_response = app_wa_send( $message );

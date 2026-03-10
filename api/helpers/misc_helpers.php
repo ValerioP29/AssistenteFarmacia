@@ -309,65 +309,19 @@ function esc_attr($text) {
  * Restituisce l'elenco dei punteggi in base alle azioni/altro
  */
 function get_points_legend(){
-	return [
-		[
-			'id'     => 'quiz_daily',
-			'title'  => 'Quiz del giorno',
-			'desc'   => 'Completare il quiz del giorno (punti attribuiti massimo una volta al giorno.',
-			'value'  => 3,
-			'hidden' => FALSE,
-		],
-		[
-			'id'     => 'challenge_daily',
-			'title'  => 'Sfida del benessere',
-			'desc'   => 'Completare la sfida del benessere. Punti attribuiti massimo una volta al giorno.',
-			'value'  => 1,
-			'hidden' => FALSE,
-		],
-		[
-			'id'     => 'challenge_threshold',
-			'title'  => 'Sfida del benessere extra',
-			'desc'   => 'Completare in una settimane la sfida del benessere almeno 5 volte.',
-			'value'  => 5,
-			'hidden' => FALSE,
-		],
-		[
-			'id'     => 'login_daily',
-			'title'  => 'Accesso giornaliero',
-			'desc'   => 'Accedere all\'app ogni giorno. Punti attribuiti massimo una volta al giorno.',
-			'value'  => 1,
-			'hidden' => FALSE,
-		],
-		[
-			'id'     => 'chatbot_daily',
-			'title'  => 'Messaggio al chabot',
-			'desc'   => 'Scrivere al chatbot almeno una volta al giorno. Punti attribuiti massimo una volta al giorno.',
-			'value'  => 5,
-			'hidden' => FALSE,
-		],
-		[
-			'id'     => 'checkup_daily',
-			'title'  => 'Checkup',
-			'desc'   => 'Checkup. Punti attribuiti massimo una volta al giorno per ogni tipo di checkup.',
-			'value'  => 1,
-			'hidden' => FALSE,
-		],
-		[
-			'id'     => 'request_completed',
-			'title'  => 'Richiesta completata',
-			'desc'   => 'Per prenotazione eventi, servizi, prodotti, ricette. I punti saranno attribuiti dopo il completo svolgimento della richiesta da parte della Farmacia.',
-			'value'  => 10,
-			'hidden' => FALSE,
-		], 
-		[
-			'id'     => 'weekly_survey',
-			'title'  => 'Sondaggio settimanale',
-			'desc'   => 'Completa il sondaggio 1 volta a settimana per ottenere punti.',
-			'value'  => 10,
-			'hidden' => FALSE,
-		],
+	$actions = [
+		'request_service',
+		'request_service_free',
+		'request_event',
+		'reservation_cart',
+		'reservation_page',
+		'quiz_daily',
+		'login_daily',
 	];
+
+	return UserPointsModel::getLegendForActions($actions);
 }
+
 
 //function jta_send_email(string $to, string $subject, string $body, string $headers = ''): bool {
 //   return mail($to, $subject, $body, $headers);
