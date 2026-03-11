@@ -204,7 +204,7 @@ function save_chat_message(int $user_id, int $pharma_id, string $session_id, str
                 'content_type' => $content_type,
                 'image_data' => null, // Temporaneamente null
                 'tokens_used' => $tokens_used,
-                'model_used' => $model_used
+                'model_used' => $data['model_used'] ?? (defined('OPENAI_MODEL_DEFAULT') ? OPENAI_MODEL_DEFAULT : 'gpt-5.4'),
             ]);
             
             // Salva l'immagine e ottieni il percorso
@@ -231,7 +231,7 @@ function save_chat_message(int $user_id, int $pharma_id, string $session_id, str
         'content_type' => $content_type,
         'image_data' => $image_data ? json_encode($image_data) : null,
         'tokens_used' => $tokens_used,
-        'model_used' => $model_used
+        'model_used' => $data['model_used'] ?? (defined('OPENAI_MODEL_DEFAULT') ? OPENAI_MODEL_DEFAULT : 'gpt-5.4'),
     ]);
 }
 

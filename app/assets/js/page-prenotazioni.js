@@ -41,8 +41,8 @@ const ReservationForm = {
 
 	/** Stato per i due blocchi suggerimenti: 0 = senza ricetta, 1 = con ricetta */
 	relatedState: {
-		0: { lastTag: '', lastSeed: '', products: [], didInit: false },
-		1: { lastTag: '', lastSeed: '', products: [], didInit: false },
+		0: { lastTag: '', lastSeed: '', products: [], didInit: false, tagCache: {} },
+		1: { lastTag: '', lastSeed: '', products: [], didInit: false, tagCache: {} },
 	},
 
 	/** Flag per evitare che onClear azzeri i suggerimenti durante un addProduct */
@@ -152,6 +152,14 @@ const ReservationForm = {
 		});
 	},
 
+    /**
+	 * Legge il valore corrente della select filtro per la modalità indicata.
+	 * Restituisce lo slug canonico o '' se nessuna selezione.
+	 */
+	getSelectedRelatedTag(mode = 0) {
+		const selectId = mode === 1 ? '#related-seed-tag-prescription' : '#related-tag-select';
+		return this.canonicalizeTagValue(document.querySelector(selectId)?.value || '');
+	},
 
 	init() {
 		const { ok, formChanged } = this.ensureDomRefs();
@@ -162,8 +170,8 @@ const ReservationForm = {
 			this.isInitialized = false;
 			this.suborderListenersBoundForm = null;
 			this.selectedProduct = null;
-			this.relatedState[0] = { lastTag: '', lastSeed: '', products: [], didInit: false };
-			this.relatedState[1] = { lastTag: '', lastSeed: '', products: [], didInit: false };
+			this.relatedState[0] = { lastTag: '', lastSeed: '', products: [], didInit: false, tagCache: {} };
+			this.relatedState[1] = { lastTag: '', lastSeed: '', products: [], didInit: false, tagCache: {} };
 			this._warnedNoPharmaId = false;
 		}
 
@@ -319,6 +327,9 @@ const ReservationForm = {
 
 		selectNoRx?.addEventListener('change', () => {
 			const selectedTag = this.canonicalizeTagValue(selectNoRx.value || '');
+			if (!this.selectedProduct) {
+				this.relatedState[0].tagCache = {};
+			}
 			this.showRelatedSection(0);
 			this.loadRelatedProducts({ tag: selectedTag, seedName: '' }, 0);
 		});
@@ -328,6 +339,85 @@ const ReservationForm = {
 			this.showRelatedSection(1);
 			this.loadRelatedProducts({ tag: selectedTag, seedName: '' }, 1);
 		});
+	},
+
+	getUserDemographics() {
+		try {
+			const raw = dataStore?.user?.init_profiling;
+			if (!raw) return { gender: '', age_range: '' };
+
+			const profiling = typeof raw === 'string' ? JSON.parse(raw) : raw;
+
+			// genere: 'Uomo' | 'Donna' | 'Non specificato' → normalizza a 'm' | 'f' | ''
+			const genderRaw = String(profiling?.genere || '').toLowerCase().trim();
+			const gender = genderRaw.startsWith('u') ? 'm'
+						: genderRaw.startsWith('d') ? 'f'
+						: '';
+
+			// fascia_eta: '18-30' | '31-50' | '51-70' | '70+' o simili — passato as-is
+			const age_range = String(profiling?.fascia_eta || '').trim();
+
+			return { gender, age_range };
+		} catch (e) {
+			return { gender: '', age_range: '' };
+		}
+	},
+
+
+	// ── NUOVO METODO 2 ─────────────────────────────────────────────
+	// Costruisce la URL per il nuovo endpoint AI.
+
+	buildAIRecommendationsUrl(mode = 0, seedProduct = null, extraExcludeIds = [], limit = 3) {
+		const pharmaId = this.getPharmaId();
+		if (!pharmaId) return '';
+
+		const url = this.buildApiUrl(AppURLs?.api?.productRecommendationsAI?.());
+		if (!url) return '';
+
+		url.searchParams.set('pharma_id', pharmaId);
+		url.searchParams.set('limit', String(Math.max(1, limit)));
+
+		if (mode === 0 && seedProduct) {
+			// Caso senza ricetta: prodotto selezionato dalla tom-select
+			url.searchParams.set('mode', 'product');
+			url.searchParams.set('seed_name', seedProduct.name || '');
+			if (seedProduct.description) url.searchParams.set('seed_description', seedProduct.description);
+			if (seedProduct.category)    url.searchParams.set('seed_category', seedProduct.category);
+
+			// Tags: array o stringa CSV
+			const tagsArr = Array.isArray(seedProduct.tags)
+				? seedProduct.tags
+				: (typeof seedProduct.tags === 'string' ? seedProduct.tags.split(',') : []);
+			if (tagsArr.length) url.searchParams.set('seed_tags', JSON.stringify(tagsArr));
+
+			// Se l'utente ha selezionato un tag dalla select, ha priorità assoluta
+			// come anchor della shortlist (override del tag del prodotto).
+			// Questo fa sì che l'AI ragioni sui prodotti di QUELLA categoria
+			// applicando comunque il suo giudizio semantico sul prodotto scelto.
+			const uiTag = this.getSelectedRelatedTag(mode);
+			const anchorTag = (uiTag && uiTag !== 'in_evidenza') ? uiTag
+				: (tagsArr[0] || seedProduct.tag || '');
+			if (anchorTag) url.searchParams.set('related_tag', anchorTag);
+
+		} else {
+			url.searchParams.set('mode', 'demographic');
+			const demo = this.getUserDemographics();
+			if (demo.gender)    url.searchParams.set('user_gender', demo.gender);
+			if (demo.age_range) url.searchParams.set('user_age_range', demo.age_range);
+			// ↓ AGGIUNTO — passa il tag della select come filtro categoria
+			const uiTag = this.getSelectedRelatedTag(mode);
+			if (uiTag && uiTag !== 'in_evidenza') url.searchParams.set('related_tag', uiTag);
+		}
+
+		// Escludi prodotti già nel carrello + eventuali extra
+		const excludeIds = new Set(this.getSelectedProductIdsForRelated());
+		extraExcludeIds.forEach((id) => {
+			const parsed = parseInt(id, 10);
+			if (!Number.isNaN(parsed) && parsed > 0) excludeIds.add(parsed);
+		});
+		if (excludeIds.size) url.searchParams.set('exclude_ids', Array.from(excludeIds).join(','));
+
+		return url.toString();
 	},
 
 	attachReservationProductAddedListener() {
@@ -429,18 +519,71 @@ const ReservationForm = {
 	},
 
 	/** Avvia il refresh dei suggerimenti partendo dal prodotto selezionato */
+	/**
+	 * Chiamato quando l'utente seleziona / deseleziona un prodotto dalla TomSelect.
+	 *
+	 * - Se prodotto presente:
+	 *     • Invalida la cache di "in_evidenza" e "__default__"
+	 *     • Se l'utente è già su "In evidenza" → fetch AI visibile subito
+	 *     • Se l'utente è su un'altra tab → fetch AI in background, cache pronta per dopo
+	 * - Se prodotto assente:
+	 *     • Invalida la cache di "in_evidenza" e "__default__"
+	 *     • Ricarica la tab corrente (deterministico generico)
+	 */
 	refreshSuggestionsFromSelectedProduct(product = null, mode = null) {
 		const effectiveMode = mode === null ? this.getSubOrderChecked() : mode;
 
+		// ── Prodotto deselezionato ─────────────────────────────────────
 		if (!product) {
-			// Nessun prodotto: ricarica i default (non svuota la lista)
-			this.loadRelatedProducts({ tag: '', seedName: '' }, effectiveMode);
+			if (this.relatedState[effectiveMode].tagCache) {
+				delete this.relatedState[effectiveMode].tagCache['in_evidenza'];
+				delete this.relatedState[effectiveMode].tagCache['__default__'];
+			}
+			const currentTag = this.getSelectedRelatedTag(effectiveMode);
+			this.loadRelatedProducts({ tag: currentTag, seedName: '' }, effectiveMode);
 			return;
 		}
 
+		// ── Prodotto selezionato ───────────────────────────────────────
 		const norm = this.normalizeProductForSelection(product);
 		this.showRelatedSection(effectiveMode);
-		this.loadRelatedProducts({ tag: norm.tag || '', seedName: norm.name || '' }, effectiveMode);
+
+		// Invalida sempre la cache AI precedente
+		if (!this.relatedState[effectiveMode].tagCache) {
+			this.relatedState[effectiveMode].tagCache = {};
+		}
+		this.relatedState[effectiveMode].tagCache = {};
+
+		const currentTag = this.getSelectedRelatedTag(effectiveMode);
+		const isOnEvidenza = !currentTag || currentTag === 'in_evidenza';
+
+		if (isOnEvidenza) {
+			// Utente guarda "In evidenza" → carica AI subito (con loading indicator)
+			this.loadRelatedProducts({ tag: 'in_evidenza', seedName: norm.name }, effectiveMode);
+		} else {
+			// Utente è su un'altra categoria → fetch AI silenzioso in background
+			// I risultati vengono cachati per quando tornerà su "In evidenza"
+			if (!AppURLs?.api?.productRecommendationsAI) return;
+			const aiUrl = this.buildAIRecommendationsUrl(effectiveMode, norm, [], 3);
+			if (!aiUrl) return;
+
+			appFetchWithToken(aiUrl, { method: 'GET' })
+				.then((data) => {
+					const products = this.filterUniqueRelatedProducts(
+						this.extractProductsList(data)
+							.map((item) => this.normalizeRelatedProduct(item))
+							.filter((item) => item.id && item.name)
+					).slice(0, 3);
+
+					if (products.length > 0) {
+						this.relatedState[effectiveMode].tagCache['in_evidenza'] = products;
+						this.relatedState[effectiveMode].tagCache['__default__']  = products;
+					}
+				})
+				.catch(() => {
+					// Silenzioso: l'utente vedrà il fetch quando clicca "In evidenza"
+				});
+		}
 	},
 
 	getRelatedElementsByMode(mode = 0) {
@@ -522,9 +665,9 @@ const ReservationForm = {
 		const effectiveMode = mode === null ? this.getSubOrderChecked() : mode;
 		if (![0, 1].includes(effectiveMode)) return Promise.resolve([]);
 
-		const rawTag = typeof criteria === 'string' ? criteria : (criteria?.tag || '');
-		const rawSeed = typeof criteria === 'object' ? (criteria?.seedName || '') : '';
-		const tag = rawTag.trim().toLowerCase();
+		const rawTag  = typeof criteria === 'string' ? criteria : (criteria?.tag || '');
+		const rawSeed = typeof criteria === 'object'  ? (criteria?.seedName || '') : '';
+		const tag      = rawTag.trim().toLowerCase();
 		const seedName = rawSeed.trim();
 
 		const normalize = (data) => this.filterUniqueRelatedProducts(
@@ -532,8 +675,54 @@ const ReservationForm = {
 				.map((item) => this.normalizeRelatedProduct(item))
 				.filter((item) => item.id && item.name)
 		).slice(0, Math.max(1, parseInt(limit, 10) || 3));
+		const isAiSlotRx = effectiveMode === 1;
+		const isAiSlotNoRx = effectiveMode === 0 && !this.selectedProduct?.name && !!tag && tag !== 'in_evidenza';
+		const useAI = AppURLs?.api?.productRecommendationsAI && (
+			(effectiveMode === 0 && this.selectedProduct?.name) ||
+			isAiSlotRx ||
+			isAiSlotNoRx
+		);
+		/* console.log('[DEBUG] useAI:', useAI, {
+			productRecommendationsAI: AppURLs?.api?.productRecommendationsAI,
+			effectiveMode,
+			tag,
+			selectedProduct: this.selectedProduct?.name,
+			isAiSlotNoRx,
+			isAiSlotRx
+		}); */
+		if (useAI) {
+			const seedForAI = effectiveMode === 0 ? this.selectedProduct : null;
+			const aiUrl = this.buildAIRecommendationsUrl(effectiveMode, seedForAI, extraExcludeIds, limit);
 
-		const urlPrimary = this.buildRelatedSuggestionsUrl({ tag, seedName }, effectiveMode, limit, extraExcludeIds);
+			if (!aiUrl) {
+				return this._fetchDeterministic(tag, seedName, effectiveMode, limit, extraExcludeIds, normalize);
+			}
+
+			return appFetchWithToken(aiUrl, { method: 'GET' })
+				.then((data) => {
+					const products = normalize(data);
+					if (products.length === 0) {
+						return this._fetchDeterministic(tag, seedName, effectiveMode, limit, extraExcludeIds, normalize);
+					}
+					return products;
+				})
+				.catch(() => {
+					return this._fetchDeterministic(tag, seedName, effectiveMode, limit, extraExcludeIds, normalize);
+				});
+		}
+
+		return this._fetchDeterministic(tag, seedName, effectiveMode, limit, extraExcludeIds, normalize);
+	},
+
+	// ── NUOVO METODO 3 (helper interno) ───────────────────────────
+	// Estrae la logica deterministica originale in un metodo separato
+	// così fetchRelatedProducts resta leggibile e il fallback è riusabile.
+
+	_fetchDeterministic(tag, seedName, effectiveMode, limit, extraExcludeIds, normalize) {
+		const urlPrimary = this.buildRelatedSuggestionsUrl(
+			{ tag, seedName }, effectiveMode, limit, extraExcludeIds
+		);
+
 		if (!urlPrimary) {
 			this.relatedState[effectiveMode].didInit = false;
 			this._schedulePharmaRetry(effectiveMode);
@@ -545,7 +734,10 @@ const ReservationForm = {
 				const products = normalize(data);
 				if (products.length > 0 || !tag) return products;
 
-				const fallbackUrl = this.buildRelatedSuggestionsUrl({ tag: '', seedName }, effectiveMode, limit, extraExcludeIds);
+				// Fallback seed (già esisteva nell'originale)
+				const fallbackUrl = this.buildRelatedSuggestionsUrl(
+					{ tag: '', seedName }, effectiveMode, limit, extraExcludeIds
+				);
 				if (!fallbackUrl) return [];
 				return appFetchWithToken(fallbackUrl, { method: 'GET' })
 					.then((fallbackData) => normalize(fallbackData))
@@ -562,15 +754,22 @@ const ReservationForm = {
 		const tag  = rawTag.trim().toLowerCase();
 		const seed = rawSeed.trim();
 
-		// Aggiorna lo stato locale
 		this.relatedState[mode].lastTag  = tag;
 		this.relatedState[mode].lastSeed = seed;
+
+		// ── Cache hit: render istantaneo senza fetch ──────────────────
+		const cacheKey = tag || '__default__';
+		const cached = this.relatedState[mode].tagCache?.[cacheKey];
+		if (cached?.length > 0) {
+			this.renderRelatedProducts(cached, mode);
+			return;
+		}
+
+		// ── Cache miss: fetch → salva in cache → render ───────────────
 		this.setRelatedLoading(mode, true);
 
 		const pharmaId = this.getPharmaId();
 		if (!pharmaId) {
-			// pharmaId non ancora disponibile (race condition con app.js):
-			// rimette didInit = false e schedula un retry tramite polling.
 			this.relatedState[mode].didInit = false;
 			this.setRelatedLoading(mode, false);
 			this._schedulePharmaRetry(mode);
@@ -580,6 +779,8 @@ const ReservationForm = {
 		this.fetchRelatedProducts({ tag, seedName: seed }, mode, 3)
 			.then((products) => {
 				this.setRelatedLoading(mode, false);
+				if (!this.relatedState[mode].tagCache) this.relatedState[mode].tagCache = {};
+				this.relatedState[mode].tagCache[cacheKey] = products;
 				this.renderRelatedProducts(products, mode);
 			})
 			.catch(() => {

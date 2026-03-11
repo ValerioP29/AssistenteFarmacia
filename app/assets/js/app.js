@@ -87,6 +87,7 @@ const AppURLs = {
 		getQuestionaryStatus: () => AppURLs.api.base + '/questionary-status.php',
 		saveSurvey: () => AppURLs.api.base + '/survey-post.php',
 		getSurvey: (id) => AppURLs.api.base + `/survey-get.php?id=${id ?? ''}`,
+		productRecommendationsAI: () => AppURLs.api.base + '/product-recommendations-ai.php',
 	},
 	panel: {
 		base: 'https://panel.assistentefarmacia.it',

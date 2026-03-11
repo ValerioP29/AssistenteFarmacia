@@ -1,32 +1,12 @@
 /**
  * assets/js/taxonomy-tags.js
- *
- * Source of truth JS per la tassonomia tag prodotti.
- * Deriva dalla stessa struttura di taxonomy/tags.php (lato PHP).
- *
- * COME USARE in page-prenotazioni.js:
- *   1. Includi questo file PRIMA di page-prenotazioni.js
- *   2. Sostituisci:
- *        - relatedTagsPreset   → ProductTagsTaxonomy.getUiPreset()
- *        - inferRelatedTagFromName(name) → ProductTagsTaxonomy.inferTag(name)
- *   3. Rimuovi le definizioni hardcoded in ReservationForm
- *
- * Per aggiungere/modificare tag: modifica taxonomy/tags.php (PHP)
- * e rispecchia la modifica qui. Le due strutture DEVONO restare allineate.
+ * MODIFICHE: consiglio_farmacista e consiglio_prenotazione → ui: false
+ * (non compaiono più nel dropdown; la logica resta per inferTag/canonicalize)
  */
 
 const ProductTagsTaxonomy = (() => {
 
-    /**
-     * Catalogo completo dei tag.
-     * ui: true        → appare nel dropdown filtro dell'app
-     * inferrable: true → usato da inferTag()
-     * keywords        → array flat di keyword (specific + generic uniti)
-     *
-     * SLUG CANONICI — non cambiare i 'value' senza aggiornare taxonomy/tags.php
-     */
     const TAXONOMY = [
-        // ── UI (dropdown) ──────────────────────────────────────────────
         {
             value: 'in_evidenza',
             label: 'In evidenza',
@@ -37,14 +17,14 @@ const ProductTagsTaxonomy = (() => {
         {
             value: 'consiglio_farmacista',
             label: 'Consiglio farmacista',
-            ui: true, inferrable: false,
+            ui: false, inferrable: false,   // ← rimosso dalla UI
             aliases: ['consiglio'],
             keywords: [],
         },
         {
             value: 'consiglio_prenotazione',
             label: 'Consiglio prenotazione',
-            ui: true, inferrable: false,
+            ui: false, inferrable: false,   // ← rimosso dalla UI
             aliases: [],
             keywords: [],
         },
@@ -109,8 +89,6 @@ const ProductTagsTaxonomy = (() => {
                 'celiachia', 'senza glutine', 'celiaci', 'glutine',
             ],
         },
-
-        // ── Inferibili (non nel dropdown) ──────────────────────────────
         {
             value: 'omeopatia',
             label: 'Omeopatia',
@@ -275,7 +253,6 @@ const ProductTagsTaxonomy = (() => {
         },
     ];
 
-    // ── Mappa alias → slug canonico (costruita una volta sola) ────────────
     const _aliasMap = (() => {
         const map = {};
         TAXONOMY.forEach(({ value, aliases }) => {
@@ -286,7 +263,6 @@ const ProductTagsTaxonomy = (() => {
         return map;
     })();
 
-    /** Normalizza formato slug: lowercase, underscore, solo a-z0-9_ */
     function _normalize(tag) {
         return String(tag || '')
             .trim()
@@ -298,25 +274,10 @@ const ProductTagsTaxonomy = (() => {
     }
 
     return {
-
-        /**
-         * Canonicalizza un tag grezzo: normalizza formato e risolve alias.
-         * Identico a canonicalizeTag() in taxonomy/tags.php.
-         *
-         * @param {string} raw
-         * @returns {string} slug canonico, o stringa vuota se non valido
-         */
         canonicalize(raw) {
             const n = _normalize(raw);
             return _aliasMap[n] ?? n;
         },
-
-        /**
-         * Preset per il dropdown filtro dell'app (solo tag UI).
-         * Sostituisce relatedTagsPreset hardcoded in ReservationForm.
-         *
-         * @returns {{ value: string, label: string }[]}
-         */
         getUiPreset() {
             const empty = [{ value: '', label: 'Seleziona una categoria' }];
             const ui = TAXONOMY
@@ -324,18 +285,9 @@ const ProductTagsTaxonomy = (() => {
                 .map(({ value, label }) => ({ value, label }));
             return [...empty, ...ui];
         },
-
-        /**
-         * Inferisce il tag più probabile dal nome di un prodotto.
-         * Sostituisce inferRelatedTagFromName() hardcoded in ReservationForm.
-         *
-         * @param {string} name  Nome prodotto (qualsiasi case)
-         * @returns {string}     Slug canonico, o '' se nessun match
-         */
         inferTag(name) {
             const n = String(name || '').toLowerCase();
             if (!n) return '';
-
             for (const entry of TAXONOMY) {
                 if (!entry.inferrable || !entry.keywords.length) continue;
                 if (entry.keywords.some((k) => n.includes(k.toLowerCase()))) {
@@ -344,29 +296,16 @@ const ProductTagsTaxonomy = (() => {
             }
             return '';
         },
-
-        /**
-         * Verifica se un tag è nella whitelist (canonical o alias).
-         *
-         * @param {string} tag
-         * @returns {boolean}
-         */
         isKnown(tag) {
             const canonical = this.canonicalize(tag);
             return TAXONOMY.some((t) => t.value === canonical);
         },
-
-        /**
-         * Tutti i tag (per debug / admin).
-         */
         getAll() {
             return TAXONOMY.map(({ value, label, ui, inferrable }) =>
                 ({ value, label, ui, inferrable })
             );
         },
     };
-
 })();
 
-// Esposizione globale
 window.ProductTagsTaxonomy = ProductTagsTaxonomy;

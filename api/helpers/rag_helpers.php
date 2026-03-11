@@ -17,23 +17,16 @@ if (!defined('RAG_ENABLED')) {
  * Inizializza il motore RAG con configurazione personalizzata per la farmacia
  */
 function init_rag_engine($config = []) {
+    // NON hardcodare modelli qui — vengono da settings.php
     $defaultConfig = [
         'openai_api_key' => $_ENV['JTA_APP_OPENAI_API_KEY'],
-        'gpt_model' => 'gpt-4-turbo-preview',
-        'embedding_model' => 'text-embedding-ada-002',
-        'max_chunks' => 5,
-        'chunk_size' => 200,
-        'max_tokens' => 8000,
-        'base_prompt' => get_chatbot_context(), // Usa il prompt esistente della farmacia
-        'data_dir' => site_path() . '/rag/data',
+        'base_prompt'    => get_chatbot_context(),
+        'data_dir'       => site_path() . '/rag/data',
         'embeddings_dir' => site_path() . '/rag/data/embeddings',
-        'documents_dir' => site_path() . '/rag/data/documents',
-        'debug_mode' => false
+        'documents_dir'  => site_path() . '/rag/data/documents',
+        'debug_mode'     => false,
     ];
-    
-    $finalConfig = array_merge($defaultConfig, $config);
-    
-    return new RAGEngine($finalConfig);
+    return new RAGEngine(array_merge($defaultConfig, $config));
 }
 
 /**

@@ -18,6 +18,7 @@ require_once('helpers/models.php');
 require_once('helpers/jwt.php');
 require_once('helpers/wa_helpers.php');
 require_once('helpers/bot_ai_helpers.php');
+require_once('helpers/openai_client.php');
 require_once('helpers/file_helpers.php');
 require_once('helpers/rag_helpers.php');
 require_once('helpers/misc_helpers.php');
